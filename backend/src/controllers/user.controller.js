@@ -7,8 +7,22 @@ const {
 } = require("../services/user.service");
 
 const createUser = async (req, res) => {
-  const { email, username, password, role } = req.body;
-  const data = await createUserService(email, username, password, role);
+  const { email, username, password, role, grade, major, school } = req.body;
+  if (!email || !username || !password) {
+    return res.status(400).json({
+      message: "Vui lòng nhập đầy đủ thông tin",
+    });
+  }
+
+  const data = await createUserService(
+    email,
+    username,
+    password,
+    role,
+    grade,
+    major,
+    school
+  );
   return res.status(200).json(data);
 };
 const handleLogin = async (req, res) => {

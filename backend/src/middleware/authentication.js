@@ -4,8 +4,8 @@ const jwt = require("jsonwebtoken");
 const authentication = (req, res, next) => {
   // Danh sách các đường dẫn không yêu cầu xác thực
   const white_lists = [
-    "/user/login",
-    "/user/register",
+    "/users/login",
+    "/users/register",
     "/topic",
     "/comment",
     "/topic/:id",
@@ -41,6 +41,11 @@ const authentication = (req, res, next) => {
           email: decoded.email,
           username: decoded.username,
           role: decoded.role,
+          class: decoded.class,
+          grade: decoded.grade,
+          major: decoded.major,
+          school: decoded.school,
+          avatar_url: decoded.avatar_url,
         };
         console.log(decoded);
         next();

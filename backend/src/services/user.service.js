@@ -4,17 +4,43 @@ const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
-const createUserService = async (email, username, password, role) => {
+const createUserService = async (
+  email,
+  username,
+  password,
+  role,
+  grade,
+  major,
+  school
+) => {
   try {
+    const existingUser = await User.findOne({ email: email });
+
+    if (existingUser) {
+      return {
+        message: "Email đã tồn tại",
+      };
+    }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    if (role === "admin" && !req.user.role === "admin") {
+      return {
+        message: "Bạn không có quyền tạo tài khoản admin",
+      };
+    }
     let result = await User.create({
       email: email,
       username: username,
       password: hashedPassword,
       role: role,
+      grade: grade,
+      major: major,
+      school: school,
     });
-    return result;
+    return {
+      message: "Tạo tài khoản thành công",
+      data: result,
+    };
   } catch (error) {
     console.error(error);
     return null;
@@ -23,8 +49,7 @@ const createUserService = async (email, username, password, role) => {
 
 const getUsersService = async () => {
   try {
-    let result = await User.find({}).select("-password");
-
+    let result = await User.find({});
     return result;
   } catch (error) {
     console.error(error);
@@ -33,8 +58,11 @@ const getUsersService = async () => {
 };
 const getUserByIdService = async (id) => {
   try {
-    let result = await User.findById(id).select("-password");
-    return result;
+    let result = await User.findById(id);
+    return {
+      message: "Lấy thông tin người dùng thành công",
+      data: result,
+    };
   } catch (error) {
     console.error(error);
     return null;
@@ -47,8 +75,11 @@ const updateUserService = async (id, updateData) => {
     }
     let result = await User.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).select("-password");
-    return result;
+    });
+    return {
+      message: "Cập nhật thông tin người dùng thành công",
+      data: result,
+    };
   } catch (error) {
     console.error(error);
     return null;
@@ -57,7 +88,7 @@ const updateUserService = async (id, updateData) => {
 
 const loginService = async (email, password) => {
   try {
-    const user = await User.findOne({ email: email });
+    const user = await User.findOne({ email: email }).select("+password");
     if (user) {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (isValidPassword) {
@@ -66,6 +97,11 @@ const loginService = async (email, password) => {
           email: user.email,
           role: user.role,
           username: user.username,
+          class: user.class,
+          grade: user.grade,
+          major: user.major,
+          school: user.school,
+          avatar_url: user.avatar_url,
         };
         const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
           expiresIn: process.env.JWT_EXPIRE,
@@ -73,23 +109,26 @@ const loginService = async (email, password) => {
         return {
           EC: 0,
           access_token,
-          user: {
+          data: {
             id: user.id,
             email: user.email,
             role: user.role,
             username: user.username,
+            class: user.class,
+            grade: user.grade,
+            major: user.major,
+            school: user.school,
+            avatar_url: user.avatar_url,
           },
         };
       } else {
         return {
-          EC: 2,
-          EM: "Email/password không hợp lệ",
+          message: "Email/password không hợp lệ",
         };
       }
     } else {
       return {
-        EC: 1,
-        EM: "Email/password không hợp lệ",
+        message: "Email/password không hợp lệ",
       };
     }
   } catch (error) {
