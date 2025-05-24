@@ -10,6 +10,7 @@ const postRoutes = require("./routes/post.route");
 const commentRoutes = require("./routes/comment.route");
 const searchHistoryRoutes = require("./routes/searchHistory.route");
 const subjectRoutes = require("./routes/subject.route");
+const tagRoutes = require("./routes/tag.route");
 
 const app = express();
 const port = process.env.PORT || 8888;
@@ -26,6 +27,7 @@ app.use("/api/posts/", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/search-history", searchHistoryRoutes);
 app.use("/api/subjects", subjectRoutes);
+app.use("/api/tags", tagRoutes);
 
 (async () => {
   try {
