@@ -10,6 +10,8 @@ import PostPage from "./pages/PostPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
+import InformationPage from "./pages/InformationPage.jsx";
+import TestPage from "./pages/TestPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,10 @@ const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "/test",
+        element: <TestPage />,
+      },
     ],
   },
   {
@@ -46,15 +52,45 @@ const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />,
   },
+  {
+    path: "/information",
+    element: <InformationPage />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <ConfigProvider
       theme={{
+        components: {
+          Tabs: {
+            itemColor: "#6b6b6b",
+          },
+          Input: {
+            activeShadow: "none",
+            borderRadiusLG: 20,
+          },
+          Select: {
+            activeOutlineColor: "none",
+            borderRadiusLG: 20,
+          },
+          Radio: {
+            dotSize: 0,
+            radioSize: 0,
+          },
+          Menu: {
+            itemSelectedBg: "#222831",
+            itemSelectedColor: "#ffffff",
+          },
+          Button: {
+            defaultShadow: "none",
+            primaryShadow: "none",
+            borderRadiusLG: 20,
+          },
+        },
         token: {
-          colorPrimary: "#52c41a", // Green primary color
-          fontFamily: "Bitter, serif", // Custom font
+          colorPrimary: "#222831",
+          fontFamily: "Roboto, serif",
         },
       }}
     >

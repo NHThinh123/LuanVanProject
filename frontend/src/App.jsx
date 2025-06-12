@@ -1,11 +1,12 @@
+import { Outlet } from "react-router-dom";
+
+import MainLayout from "./layouts/MainLayout";
+
 function App() {
   return (
-    <>
-      <div className="App">
-        <h1>Welcome to the React App</h1>
-        <p>This is a simple React application.</p>
-      </div>
-    </>
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
   );
 }
 
