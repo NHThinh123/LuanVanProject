@@ -20,7 +20,7 @@ export const MainLayout = ({ children }) => {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
+    <Layout style={{ minHeight: "100vh" }}>
       <Header
         style={{
           position: "fixed",
@@ -28,7 +28,7 @@ export const MainLayout = ({ children }) => {
           left: 0,
           right: 0,
           zIndex: 10,
-
+          borderBottom: "1px solid #e8e8e8",
           background: "#fff",
           height: 64,
           padding: "0 16px",
@@ -48,18 +48,17 @@ export const MainLayout = ({ children }) => {
           </Col>
           <Col span={12}>
             <Input
-              size="large"
               placeholder="Tìm kiếm..."
               prefix={<SearchOutlined />}
-              style={{ width: "100%" }}
+              style={{ width: "100%", maxWidth: 600 }}
             />
           </Col>
           <Col span={6}>
             <Flex justify="end" gap={16}>
-              <Button variant="outlined" size="large">
+              <Button variant="outlined" href="/login">
                 Đăng nhập
               </Button>
-              <Button variant="solid" color="primary" size="large">
+              <Button variant="solid" color="primary" href="/signup">
                 Đăng ký
               </Button>
             </Flex>
@@ -80,17 +79,17 @@ export const MainLayout = ({ children }) => {
               {
                 key: "1",
                 icon: <HomeOutlined />,
-                label: <Link to="/">Home</Link>,
+                label: <Link to="/">Trang chủ</Link>,
               },
               {
                 key: "2",
                 icon: <AppstoreOutlined />,
-                label: <Link to="/login">Dashboard</Link>,
+                label: <Link to="/posts/a">Bài viết</Link>,
               },
               {
                 key: "3",
                 icon: <CommentOutlined />,
-                label: <Link to="/signup">Settings</Link>,
+                label: <Link to="">Cài đặt</Link>,
               },
               {
                 key: 4,

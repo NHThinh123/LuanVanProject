@@ -69,6 +69,7 @@ createRoot(document.getElementById("root")).render(
           Input: {
             activeShadow: "none",
             borderRadiusLG: 20,
+            borderRadius: 20,
           },
           Select: {
             activeOutlineColor: "none",
@@ -86,6 +87,7 @@ createRoot(document.getElementById("root")).render(
             defaultShadow: "none",
             primaryShadow: "none",
             borderRadiusLG: 20,
+            borderRadius: 20,
           },
         },
         token: {

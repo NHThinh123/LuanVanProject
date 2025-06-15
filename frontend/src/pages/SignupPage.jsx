@@ -93,8 +93,21 @@ const SignupPage = () => {
               </Form.Item>
             </Form>
             <Divider />
-            <Typography.Text style={{ textAlign: "center", display: "block" }}>
-              Bạn đã có tài khoản? <Link to={"/login"}> Đăng nhập ngay</Link>
+            <Typography.Text
+              style={{
+                textAlign: "center",
+                display: "block",
+                color: "#8c8c8c",
+              }}
+            >
+              Bạn đã có tài khoản?{" "}
+              <Link
+                to={"/login"}
+                style={{ color: "#000", textDecoration: "underline" }}
+              >
+                {" "}
+                Đăng nhập ngay
+              </Link>
             </Typography.Text>
           </BoxCustom>
         </Row>
