@@ -14,7 +14,8 @@ import PostList from "../features/home/components/templates/PostList";
 import PostPopularList from "../features/home/components/templates/PostPopularList";
 
 import { postPopular, topics, posts, featuredUser } from "../mockups/mockup";
-import FeaturedUserList from "../features/home/components/templates/FeaturedUserList";
+
+import UserList from "../features/home/components/templates/FeaturedUserList";
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -41,7 +42,7 @@ const HomePage = () => {
       >
         <PostPopularList postPopular={postPopular} />
         <Divider />
-        <FeaturedUserList featuredUser={featuredUser} />
+        <UserList users={featuredUser} />
       </Col>
     </Row>
   );

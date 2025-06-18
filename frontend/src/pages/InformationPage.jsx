@@ -86,7 +86,7 @@ const InformationPage = () => {
   );
 
   return (
-    <>
+    <Layout style={{ minHeight: "100vh" }}>
       <Link
         to={"/"}
         style={{
@@ -221,7 +221,7 @@ const InformationPage = () => {
           size="large"
         />
       </Modal>
-    </>
+    </Layout>
   );
 };
 

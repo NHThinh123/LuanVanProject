@@ -3,13 +3,13 @@ import Title from "antd/es/skeleton/Title";
 import React from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 
-const FeaturedUserList = ({ featuredUser }) => {
+const UserList = ({ users }) => {
   return (
     <div>
       <Title level={4}>Người dùng nổi bật</Title>
       <List
         grid={{ column: 1 }}
-        dataSource={featuredUser}
+        dataSource={users}
         renderItem={(user) => (
           <List.Item>
             <Flex justify="space-between" align="center">
@@ -19,10 +19,12 @@ const FeaturedUserList = ({ featuredUser }) => {
                   name={user.name}
                   size={40}
                   color={"#000"}
-                  style={{ fontWeight: "bold" }}
+                  // style={{ fontWeight: "bold" }}
                 />
               </div>
-              <Button variant="outlined">Theo dõi</Button>
+              <Button variant="outlined" color="primary">
+                Theo dõi
+              </Button>
             </Flex>
           </List.Item>
         )}
@@ -32,4 +34,4 @@ const FeaturedUserList = ({ featuredUser }) => {
   );
 };
 
-export default FeaturedUserList;
+export default UserList;

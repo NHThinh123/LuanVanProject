@@ -55,7 +55,7 @@ export const MainLayout = ({ children }) => {
           </Col>
           <Col span={6}>
             <Flex justify="end" gap={16}>
-              <Button variant="outlined" href="/login">
+              <Button variant="outlined" color="primary" href="/login">
                 Đăng nhập
               </Button>
               <Button variant="solid" color="primary" href="/signup">
@@ -89,7 +89,7 @@ export const MainLayout = ({ children }) => {
               {
                 key: "3",
                 icon: <CommentOutlined />,
-                label: <Link to="">Cài đặt</Link>,
+                label: <Link to="/profile">Trang cá nhân</Link>,
               },
               {
                 key: 4,
@@ -110,6 +110,7 @@ export const MainLayout = ({ children }) => {
               padding: 16,
               backgroundColor: "#fff",
               minHeight: "calc(100vh - 128px)",
+              maxWidth: "1600px",
             }}
           >
             {children}

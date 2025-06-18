@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import InformationPage from "./pages/InformationPage.jsx";
 import TestPage from "./pages/TestPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
             element: <PostDetailPage />,
           },
         ],
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />,
       },
       {
         path: "/test",
@@ -82,6 +87,10 @@ createRoot(document.getElementById("root")).render(
           Menu: {
             itemSelectedBg: "#222831",
             itemSelectedColor: "#ffffff",
+          },
+          Card: {
+            bodyPadding: "16px 0px",
+            colorBorderSecondary: "#fff",
           },
           Button: {
             defaultShadow: "none",

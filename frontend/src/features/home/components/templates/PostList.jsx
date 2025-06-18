@@ -56,6 +56,7 @@ const PostList = ({ posts }) => {
           ></AvatarCustom>
 
           <List.Item.Meta
+            style={{ minHeight: 80, margin: 0 }}
             title={<a href="#">{item.title}</a>}
             description={
               <Text

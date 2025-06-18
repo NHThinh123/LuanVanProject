@@ -7,6 +7,15 @@ export const topics = [
   "Khác",
 ];
 
+export const user = {
+  name: "Colin Myers",
+  avatar: "https://bom.edu.vn/upload/2025/03/hinh-anh-dai-dien-dep-1.webp",
+  followers: 1200,
+  following: 300,
+  bio: "Software developer and tech enthusiast. Sharing insights on coding, AI, and the future of technology.",
+  postCount: 50,
+  joinDate: "2023-01-15",
+};
 export const posts = [
   {
     id: 1,
@@ -28,9 +37,9 @@ export const posts = [
     title:
       "Why clients pay me 10x more than developers who are better at coding than me",
     content:
-      "Last week I charged $15,000 for work a better coder would do for $1,500 and I think you should learn these skills now that we have...",
+      "Last week I charged $15,000 for work a better coder would do for $1,500 and I think you should learn these skills now that we have AI to do the coding for us.",
     image:
-      "https://cdn.tgdd.vn/Files/2018/09/14/1117277/tri-tue-nhan-tao-ai-la-gi-ung-dung-nhu-the-nao-trong-cuoc-song--6.jpg",
+      "https://parametric-architecture.com/wp-content/uploads/2024/01/What-is-AI-web.jpg",
     likes: 3900,
     comments: 61,
     date: "Jun 2",
@@ -86,3 +95,49 @@ export const featuredUser = [
     followers: 950,
   },
 ];
+
+export const postDetail = {
+  id: 1,
+  title:
+    "Why clients pay me 10x more than developers who are better at coding than me",
+  content:
+    "How does it stack up against Cursor and AI Agent-based workflow? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  image:
+    "https://cdn.tgdd.vn/Files/2018/09/14/1117277/tri-tue-nhan-tao-ai-la-gi-ung-dung-nhu-the-nao-trong-cuoc-song--6.jpg",
+  author: {
+    name: "Giulio Serafini",
+    avatar: "https://m.yodycdn.com/blog/anh-dai-dien-hai-yodyvn77.jpg",
+    followers: 950,
+  },
+  likeCounts: 309,
+  commentCounts: 10,
+  comments: [
+    {
+      id: 1,
+      author: {
+        name: "John Doe",
+        avatar:
+          "https://i.pinimg.com/736x/d0/eb/c7/d0ebc736a1a914c333814ab7a64182c0.jpg",
+        followers: 150,
+      },
+      content: "Great post! Really enjoyed reading it.",
+      likeCounts: 5,
+      date: "1d ago",
+      replyCounts: 2,
+    },
+    {
+      id: 2,
+      author: {
+        name: "Jane Smith",
+        avatar:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQJZScF5xB5GB_KwsKfT2TKhrhQz3kLrOWcmoEy9fDzpPQwi_-Rc_OhgXOqljJtmwHGF4&usqp=CAU",
+        followers: 200,
+      },
+      content: "I found this very insightful, thanks for sharing!",
+      likeCounts: 10,
+      replyCounts: 1,
+      date: "2d ago",
+    },
+  ],
+  date: "2d ago",
+};
