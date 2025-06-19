@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
+    university_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "University",
+    },
     email: { type: String, unique: true, required: true },
     password: { type: String, require: true, select: false },
     role: {
