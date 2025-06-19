@@ -14,8 +14,7 @@ import PostList from "../features/home/components/templates/PostList";
 import PostPopularList from "../features/home/components/templates/PostPopularList";
 
 import { postPopular, topics, posts, featuredUser } from "../mockups/mockup";
-
-import UserList from "../features/home/components/templates/FeaturedUserList";
+import UserList from "../features/home/components/templates/UserList";
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -40,8 +39,14 @@ const HomePage = () => {
           borderLeft: "1px solid #f0f0f0",
         }}
       >
+        <Title level={4} style={{ marginBottom: 28 }}>
+          Bài viết phổ biến
+        </Title>
         <PostPopularList postPopular={postPopular} />
         <Divider />
+        <Title level={4} style={{ marginBottom: 28 }}>
+          Người dùng nổi bật
+        </Title>
         <UserList users={featuredUser} />
       </Col>
     </Row>

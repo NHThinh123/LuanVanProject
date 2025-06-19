@@ -1,15 +1,14 @@
-import { Avatar, Button, Flex, List } from "antd";
+import { featuredUser } from "../../../../mockups/mockup";
 import Title from "antd/es/skeleton/Title";
-import React from "react";
+import { Button, Divider, Flex, List } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 
-const UserList = ({ users }) => {
+const SearchingUserList = () => {
   return (
     <div>
-      <Title level={4}>Người dùng nổi bật</Title>
       <List
         grid={{ column: 1 }}
-        dataSource={users}
+        dataSource={featuredUser}
         renderItem={(user) => (
           <List.Item>
             <Flex justify="space-between" align="center">
@@ -17,15 +16,18 @@ const UserList = ({ users }) => {
                 <AvatarCustom
                   src={user.avatar}
                   name={user.name}
-                  size={40}
+                  size={60}
                   color={"#000"}
-                  // style={{ fontWeight: "bold" }}
+                  bio={user.bio}
+                  isHover={false}
+                  style={{ gap: 16 }}
                 />
               </div>
               <Button variant="outlined" color="primary">
                 Theo dõi
               </Button>
             </Flex>
+            <Divider />
           </List.Item>
         )}
         style={{ marginBottom: 16 }}
@@ -34,4 +36,4 @@ const UserList = ({ users }) => {
   );
 };
 
-export default UserList;
+export default SearchingUserList;

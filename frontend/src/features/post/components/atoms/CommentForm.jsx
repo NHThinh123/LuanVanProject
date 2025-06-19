@@ -13,7 +13,7 @@ const CommentForm = ({ author }) => (
     <Input.TextArea
       placeholder="Nhập bình luận của bạn"
       rows={2}
-      style={{ margin: "8px 0" }}
+      style={{ margin: "8px 0", borderRadius: 10 }}
     />
     <Flex justify="flex-end" gap={8}>
       <Button variant="outlined" color="primary">

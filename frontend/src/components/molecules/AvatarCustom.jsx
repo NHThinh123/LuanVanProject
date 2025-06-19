@@ -1,4 +1,5 @@
 import { Avatar, Button, Col, Popover, Row } from "antd";
+import { Link } from "react-router-dom";
 
 const AvatarCustom = ({
   style,
@@ -8,6 +9,8 @@ const AvatarCustom = ({
   name,
   color,
   follower = 200,
+  bio,
+  isHover = true,
 }) => {
   return (
     <Popover
@@ -21,7 +24,7 @@ const AvatarCustom = ({
           <Col span={12}>
             <Avatar src={src} shape="circle" size={size || 64} />
             <p style={{ fontWeight: "bold" }}>{name}</p>
-            <p> {follower} người theo dõi</p>
+            <p style={{ color: "#8c8c8c" }}> {follower} người theo dõi</p>
           </Col>
           <Col span={12}>
             <Button block style={{ marginBottom: 8 }}>
@@ -33,7 +36,7 @@ const AvatarCustom = ({
           </Col>
         </Row>
       }
-      trigger={"hover"}
+      trigger={isHover ? "hover" : "click"}
     >
       <div
         style={{
@@ -46,9 +49,40 @@ const AvatarCustom = ({
           ...style,
         }}
       >
-        <Avatar src={src} shape="circle" size={size || 36} />
+        <Avatar
+          src={src}
+          shape="circle"
+          size={size || 36}
+          style={{ minWidth: size || 36 }}
+        />
+        {bio ? (
+          <div>
+            <Link
+              to={`/profile`}
+              style={{ margin: 0, color: "#000", fontWeight: "bold" }}
+            >
+              {name}
+            </Link>
+            <p
+              style={{
+                color: "#8c8c8c",
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: 600,
+              }}
+            >
+              {bio}
+            </p>
+          </div>
+        ) : (
+          <Link to={`/profile`} style={{ margin: 0, color: "#000" }}>
+            {name}
+          </Link>
+        )}
 
-        <p style={{ margin: 0 }}>{name}</p>
         {children}
       </div>
     </Popover>
