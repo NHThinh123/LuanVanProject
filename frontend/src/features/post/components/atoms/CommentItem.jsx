@@ -54,11 +54,7 @@ const CommentItem = ({ comment }) => {
         </Col>
         {showReply && (
           <Col span={23} style={{ marginTop: 8 }}>
-            <Input.TextArea
-              placeholder="Nhập phản hồi của bạn"
-              rows={2}
-              style={{ borderRadius: 10 }}
-            />
+            <Input.TextArea placeholder="Nhập phản hồi của bạn" rows={2} />
             <Flex justify="flex-end" gap={8} style={{ marginTop: 8 }}>
               <Button variant="outlined" color="primary">
                 Hủy

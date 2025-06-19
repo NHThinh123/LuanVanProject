@@ -13,8 +13,6 @@ import SignupPage from "./pages/SignupPage.jsx";
 import InformationPage from "./pages/InformationPage.jsx";
 import TestPage from "./pages/TestPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-import Search from "antd/es/transfer/search.js";
-import SearchingPage from "./pages/SearchingPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 const queryClient = new QueryClient();
@@ -44,10 +42,6 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <ProfilePage />,
-      },
-      {
-        path: "/searching",
-        element: <SearchingPage />,
       },
       {
         path: "/test",
@@ -82,11 +76,9 @@ createRoot(document.getElementById("root")).render(
             borderRadiusLG: 20,
             borderRadius: 20,
           },
-
           Select: {
             activeOutlineColor: "none",
             borderRadiusLG: 20,
-            borderRadius: 20,
           },
           Radio: {
             dotSize: 0,

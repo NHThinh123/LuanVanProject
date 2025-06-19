@@ -1,13 +1,4 @@
-import {
-  Layout,
-  Menu,
-  Button,
-  AutoComplete,
-  Flex,
-  Row,
-  Col,
-  Input,
-} from "antd";
+import { Layout, Menu, Button, Input, Space, Flex, Row, Col } from "antd";
 import {
   AppstoreOutlined,
   CommentOutlined,
@@ -15,32 +6,18 @@ import {
   MenuOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
-import { searchHistory } from "../mockups/mockup";
 
 const { Header, Content, Footer, Sider } = Layout;
 
 export const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
 
   const toggleSider = () => {
     setCollapsed(!collapsed);
   };
-
-  // Xử lý khi chọn một mục trong lịch sử tìm kiếm
-  const handleSelect = (value) => {
-    setSearchValue(value);
-    console.log("Đã chọn từ khóa tìm kiếm:", value);
-  };
-
-  // Chuyển đổi searchHistory thành định dạng options cho AutoComplete
-  const searchOptions = searchHistory.map((item) => ({
-    value: item,
-    label: item,
-  }));
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -70,28 +47,11 @@ export const MainLayout = ({ children }) => {
             </Flex>
           </Col>
           <Col span={12}>
-            <AutoComplete
-              options={searchOptions}
-              onSelect={handleSelect}
-              onChange={(value) => setSearchValue(value)}
-              value={searchValue}
+            <Input
+              placeholder="Tìm kiếm..."
+              prefix={<SearchOutlined />}
               style={{ width: "100%", maxWidth: 600 }}
-              filterOption={(inputValue, option) =>
-                // Lọc gợi ý, hỗ trợ tiếng Việt
-                option.value
-                  .normalize("NFD")
-                  .replace(/[\u0300-\u036f]/g, "")
-                  .toLowerCase()
-                  .includes(
-                    inputValue
-                      .normalize("NFD")
-                      .replace(/[\u0300-\u036f]/g, "")
-                      .toLowerCase()
-                  )
-              }
-            >
-              <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm..." />
-            </AutoComplete>
+            />
           </Col>
           <Col span={6}>
             <Flex justify="end" gap={16}>
@@ -117,27 +77,22 @@ export const MainLayout = ({ children }) => {
             style={{ height: "100%" }}
             items={[
               {
-                key: "home",
+                key: "1",
                 icon: <HomeOutlined />,
                 label: <Link to="/">Trang chủ</Link>,
               },
               {
-                key: "post",
+                key: "2",
                 icon: <AppstoreOutlined />,
                 label: <Link to="/posts/a">Bài viết</Link>,
               },
               {
-                key: "profile",
+                key: "3",
                 icon: <CommentOutlined />,
                 label: <Link to="/profile">Trang cá nhân</Link>,
               },
               {
-                key: "searching",
-                icon: <SearchOutlined />,
-                label: <Link to="/searching">Tìm kiếm</Link>,
-              },
-              {
-                key: "test",
+                key: 4,
                 label: <Link to="/test">Testing</Link>,
               },
             ]}
@@ -166,7 +121,7 @@ export const MainLayout = ({ children }) => {
               background: "#fff",
             }}
           >
-            © 2025 Knowee
+            © 2025 Your Company
           </Footer>
         </Layout>
       </Layout>

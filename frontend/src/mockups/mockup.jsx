@@ -7,14 +7,6 @@ export const topics = [
   "Khác",
 ];
 
-export const searchHistory = [
-  "Lập trình web",
-  "Học máy",
-  "Phát triển ứng dụng di động",
-  "Thiết kế UX/UI",
-  "Khoa học dữ liệu",
-];
-
 export const user = {
   name: "Colin Myers",
   avatar: "https://bom.edu.vn/upload/2025/03/hinh-anh-dai-dien-dep-1.webp",
@@ -95,14 +87,12 @@ export const featuredUser = [
     name: "Colin Myers",
     avatar: "https://bom.edu.vn/upload/2025/03/hinh-anh-dai-dien-dep-1.webp",
     followers: 1200,
-    bio: "Software developer and tech enthusiast. Sharing insights on coding, AI, and the future of technology. Passionate about open-source projects and community building. Loves to explore new technologies and share knowledge with others.",
   },
   {
     name: "Giulio Serafini",
     avatar:
       "https://i.pinimg.com/736x/6e/af/1a/6eaf1a844ae4b6fa6eeb6ff17f468cc0.jpg",
     followers: 950,
-    bio: "Tech entrepreneur and AI advocate. Passionate about building innovative solutions that make a difference.",
   },
 ];
 

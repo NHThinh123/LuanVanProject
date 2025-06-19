@@ -10,9 +10,8 @@ import {
 } from "antd";
 import { user, featuredUser } from "../mockups/mockup";
 import ProfilePostList from "../features/profile/components/templates/ProfilePostList";
-
+import UserList from "../features/home/components/templates/FeaturedUserList";
 import ProfileAbout from "../features/profile/components/templates/ProfileAbout";
-import UserList from "../features/home/components/templates/UserList";
 
 const ProfilePage = () => {
   const tabItems = [
