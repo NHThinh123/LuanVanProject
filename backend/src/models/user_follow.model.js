@@ -17,6 +17,7 @@ const userFollowSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+userFollowSchema.index({ user_id: 1, user_follow_id: 1 }, { unique: true });
 
 const UserFollow = mongoose.model("UserFollow", userFollowSchema);
 

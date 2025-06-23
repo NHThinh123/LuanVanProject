@@ -1,149 +1,176 @@
 const Comment = require("../models/comment.model");
 const Post = require("../models/post.model");
+const User = require("../models/user.model");
 
-const createCommentService = async (commentData) => {
+const createCommentService = async (
+  user_id,
+  post_id,
+  content,
+  parent_comment_id = null
+) => {
   try {
-    // Kiểm tra xem post_id có tồn tại
-    const post = await Post.findById(commentData.post_id);
+    // Kiểm tra bài viết có tồn tại không
+    const post = await Post.findById(post_id);
     if (!post) {
-      return {
-        message: "Bài đăng không tồn tại",
-        data: null,
-      };
+      return { message: "Bài viết không tồn tại", EC: 1 };
     }
-    // Nếu có parent_comment_id, kiểm tra xem bình luận cha có tồn tại
-    if (commentData.parent_comment_id) {
-      const parentComment = await Comment.findById(
-        commentData.parent_comment_id
-      );
-      if (!parentComment) {
+
+    // Kiểm tra người dùng có tồn tại không
+    const user = await User.findById(user_id);
+    if (!user) {
+      return { message: "Người dùng không tồn tại", EC: 1 };
+    }
+
+    // Kiểm tra nội dung bình luận
+    if (!content || content.trim().length === 0) {
+      return { message: "Nội dung bình luận không hợp lệ", EC: 1 };
+    }
+
+    // Nếu là bình luận trả lời, kiểm tra bình luận cha
+    if (parent_comment_id) {
+      const parentComment = await Comment.findById(parent_comment_id);
+      if (
+        !parentComment ||
+        parentComment.post_id.toString() !== post_id.toString()
+      ) {
         return {
-          message: "Bình luận cha không tồn tại",
-          data: null,
+          message: "Bình luận cha không tồn tại hoặc không thuộc bài viết này",
+          EC: 1,
         };
       }
     }
-    const comment = await Comment.create(commentData);
-    const populatedComment = await Comment.findById(comment._id)
-      .populate("user_id", "username avatar_url")
-      .populate("post_id", "title")
-      .populate("parent_comment_id", "content user_id");
+
+    // Tạo bình luận mới
+    const comment = await Comment.create({
+      post_id,
+      user_id,
+      parent_comment_id,
+      content,
+    });
+
     return {
       message: "Tạo bình luận thành công",
-      data: populatedComment,
-    };
-  } catch (error) {
-    throw new Error("Không thể tạo bình luận: " + error.message);
-  }
-};
-
-const getCommentsByPostService = async (post_id) => {
-  try {
-    // Kiểm tra xem post_id có tồn tại
-    const post = await Post.findById(post_id);
-    if (!post) {
-      return {
-        message: "Bài đăng không tồn tại",
-        data: null,
-      };
-    }
-    const comments = await Comment.find({ post_id })
-      .populate("user_id", "username avatar_url")
-      .populate("post_id", "title")
-      .populate("parent_comment_id", "content user_id");
-    return {
-      message: "Lấy danh sách bình luận thành công",
-      data: comments,
-    };
-  } catch (error) {
-    throw new Error("Không thể lấy danh sách bình luận: " + error.message);
-  }
-};
-
-const getCommentByIdService = async (id) => {
-  try {
-    const comment = await Comment.findById(id)
-      .populate("user_id", "username avatar_url")
-      .populate("post_id", "title")
-      .populate("parent_comment_id", "content user_id");
-    if (!comment) {
-      return {
-        message: "Bình luận không tồn tại",
-        data: null,
-      };
-    }
-    return {
-      message: "Lấy bình luận thành công",
+      EC: 0,
       data: comment,
     };
   } catch (error) {
-    throw new Error("Không thể lấy bình luận: " + error.message);
+    console.error("Error in createCommentService:", error);
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 
-const updateCommentService = async (id, updateData, user) => {
+const deleteCommentService = async (user_id, comment_id) => {
   try {
-    const comment = await Comment.findById(id);
+    // Kiểm tra bình luận có tồn tại và thuộc về người dùng không
+    const comment = await Comment.findOne({ _id: comment_id, user_id });
     if (!comment) {
       return {
-        message: "Bình luận không tồn tại",
-        data: null,
+        message: "Bình luận không tồn tại hoặc không thuộc về bạn",
+        EC: 1,
       };
     }
-    // Kiểm tra quyền: chỉ chủ sở hữu hoặc admin có thể cập nhật
-    if (comment.user_id.toString() !== user.id && user.role !== "admin") {
-      return {
-        message: "Bạn không có quyền cập nhật bình luận này",
-        data: null,
-      };
-    }
-    const updatedComment = await Comment.findByIdAndUpdate(id, updateData, {
-      new: true,
-    })
-      .populate("user_id", "username avatar_url")
-      .populate("post_id", "title")
-      .populate("parent_comment_id", "content user_id");
-    return {
-      message: "Cập nhật bình luận thành công",
-      data: updatedComment,
-    };
-  } catch (error) {
-    throw new Error("Không thể cập nhật bình luận: " + error.message);
-  }
-};
 
-const deleteCommentService = async (id, user) => {
-  try {
-    const comment = await Comment.findById(id);
-    if (!comment) {
-      return {
-        message: "Bình luận không tồn tại",
-        data: null,
-      };
-    }
-    // Kiểm tra quyền: chỉ chủ sở hữu hoặc admin có thể xóa
-    if (comment.user_id.toString() !== user.id && user.role !== "admin") {
-      return {
-        message: "Bạn không có quyền xóa bình luận này",
-        data: null,
-      };
-    }
-    // Xóa các bình luận con (nếu có)
-    await Comment.deleteMany({ parent_comment_id: id });
-    await Comment.findByIdAndDelete(id);
+    // Xóa bình luận và các bình luận con
+    await Comment.deleteMany({
+      $or: [{ _id: comment_id }, { parent_comment_id: comment_id }],
+    });
+
     return {
       message: "Xóa bình luận thành công",
-      data: { id },
+      EC: 0,
     };
   } catch (error) {
-    throw new Error("Không thể xóa bình luận: " + error.message);
+    console.error("Error in deleteCommentService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
+const getCommentsByPostService = async (post_id, query) => {
+  try {
+    // Kiểm tra bài viết có tồn tại không
+    const post = await Post.findById(post_id);
+    if (!post) {
+      return { message: "Bài viết không tồn tại", EC: 1 };
+    }
+
+    const { page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    // Lấy danh sách bình luận cấp 1 (không có parent_comment_id)
+    const comments = await Comment.find({ post_id, parent_comment_id: null })
+      .populate("user_id", "full_name avatar_url")
+      .select("user_id content createdAt parent_comment_id")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Lấy tổng số bình luận cấp 1
+    const total = await Comment.countDocuments({
+      post_id,
+      parent_comment_id: null,
+    });
+
+    // Lấy bình luận con cho mỗi bình luận cấp 1
+    const commentsWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await Comment.find({ parent_comment_id: comment._id })
+          .populate("user_id", "full_name avatar_url")
+          .select("user_id content createdAt parent_comment_id")
+          .sort({ createdAt: 1 });
+        return { ...comment._doc, replies };
+      })
+    );
+
+    return {
+      message: "Lấy danh sách bình luận thành công",
+      EC: 0,
+      data: {
+        comments: commentsWithReplies,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getCommentsByPostService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
+const getCommentByIdService = async (comment_id) => {
+  try {
+    // Lấy chi tiết bình luận
+    const comment = await Comment.findById(comment_id)
+      .populate("user_id", "full_name avatar_url")
+      .populate("post_id", "title user_id")
+      .select("user_id post_id content createdAt parent_comment_id");
+    if (!comment) {
+      return { message: "Bình luận không tồn tại", EC: 1 };
+    }
+
+    // Lấy bình luận con nếu có
+    const replies = await Comment.find({ parent_comment_id: comment_id })
+      .populate("user_id", "full_name avatar_url")
+      .select("user_id content createdAt parent_comment_id")
+      .sort({ createdAt: 1 });
+
+    return {
+      message: "Lấy thông tin bình luận thành công",
+      EC: 0,
+      data: { ...comment._doc, replies },
+    };
+  } catch (error) {
+    console.error("Error in getCommentByIdService:", error);
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 
 module.exports = {
   createCommentService,
+  deleteCommentService,
   getCommentsByPostService,
   getCommentByIdService,
-  updateCommentService,
-  deleteCommentService,
 };

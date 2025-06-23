@@ -14,6 +14,16 @@ export const searchHistory = [
   "Thiết kế UX/UI",
   "Khoa học dữ liệu",
 ];
+export const universities = [
+  "HCMC University of Physical Education and Sport",
+  "Trường Đại học An Giang",
+  "VNU University of Engineering and Technology",
+  "UEF - University of Economics and Finance",
+  "Học viện Tòa án",
+  "ĐẠI HỌC ĐỒNG Á",
+  "University of Social Sciences and Humanities",
+  "Học viện Âm nhạc quốc gia",
+];
 
 export const user = {
   name: "Colin Myers",

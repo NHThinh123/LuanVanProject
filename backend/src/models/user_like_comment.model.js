@@ -17,6 +17,7 @@ const userLikeCommentSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+userLikeCommentSchema.index({ user_id: 1, comment_id: 1 }, { unique: true });
 
 const User_Like_Comment = mongoose.model(
   "User_Like_Comment",

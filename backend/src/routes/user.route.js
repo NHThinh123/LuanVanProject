@@ -5,19 +5,22 @@ const {
   createUser,
   handleLogin,
   getAccount,
+  getUserById,
+  updateUser,
 } = require("../controllers/user.controller");
 const isAdmin = require("../middleware/isAdmin");
+const authentication = require("../middleware/authentication");
 
 // Public routes
-
 router.post("/register", createUser);
 router.post("/login", handleLogin);
-router.get("/account", getAccount);
 
-// Admin routes
-router.use(isAdmin);
-router.get("/", getUsers);
+// Protected routes (yêu cầu JWT)
+router.get("/account", authentication, getAccount);
+router.get("/:id", authentication, getUserById);
+router.put("/:id", authentication, updateUser);
 
-// Protected routes
+// Admin routes (yêu cầu JWT và role admin)
+router.get("/", authentication, isAdmin, getUsers);
 
 module.exports = router;

@@ -12,6 +12,8 @@ const universitySchema = new mongoose.Schema(
   }
 );
 
+universitySchema.index({ university_name: 1 });
+
 const University = mongoose.model("University", universitySchema);
 
 module.exports = University;

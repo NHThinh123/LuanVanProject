@@ -1,168 +1,222 @@
-import {
-  Layout,
-  Menu,
-  Button,
-  AutoComplete,
-  Space,
-  Flex,
-  Row,
-  Col,
-  Input,
-} from "antd";
-import {
-  AppstoreOutlined,
-  CommentOutlined,
-  HomeOutlined,
-  MenuOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import { Outlet, Link } from "react-router-dom";
 import { useState } from "react";
+import BoxCustom from "../components/atoms/BoxCustom";
+import {
+  Button,
+  Divider,
+  Form,
+  Input,
+  Layout,
+  Radio,
+  Row,
+  Typography,
+  AutoComplete,
+  Modal,
+} from "antd";
+import { Link, useNavigate } from "react-router-dom";
+
 import logo from "../assets/Logo/Logo.png";
-import { searchHistory } from "../mockups/mockup";
+import { universities } from "../mockups/mockup";
 
-const { Header, Content, Footer, Sider } = Layout;
+const { Option } = AutoComplete;
 
-export const MainLayout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+const InformationPage = () => {
+  const [university, setUniversity] = useState("");
+  const [mockUniversities, setMockUniversities] = useState(universities);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newUniversity, setNewUniversity] = useState("");
 
-  const toggleSider = () => {
-    setCollapsed(!collapsed);
+  const currentYear = new Date().getFullYear();
+  const years = Array.from(
+    { length: currentYear - 2020 },
+    (_, i) => currentYear - i
+  ).concat("Khác");
+  const navigate = useNavigate();
+
+  const onSelect = (value) => {
+    setUniversity(value);
   };
 
-  // Xử lý khi chọn một mục trong lịch sử tìm kiếm
-  const handleSelect = (value) => {
-    setSearchValue(value);
-    console.log("Đã chọn từ khóa tìm kiếm:", value);
+  const onSearch = (value) => {
+    setUniversity(value);
   };
 
-  // Chuyển đổi searchHistory thành định dạng options cho AutoComplete
-  const searchOptions = searchHistory.map((item) => ({
-    value: item,
-    label: item,
-  }));
+  const filterOptions = (inputValue) => {
+    return mockUniversities.filter((uni) =>
+      uni.toLowerCase().includes(inputValue.toLowerCase())
+    );
+  };
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleModalOk = () => {
+    if (newUniversity.trim()) {
+      setMockUniversities([...mockUniversities, newUniversity.trim()]);
+      setUniversity(newUniversity.trim());
+      setNewUniversity("");
+      setIsModalVisible(false);
+    }
+  };
+
+  const handleModalCancel = () => {
+    setNewUniversity("");
+    setIsModalVisible(false);
+  };
+
+  // Tùy chỉnh dropdown của AutoComplete
+  const dropdownRender = (menu) => (
+    <div>
+      {menu}
+      <Divider style={{ margin: "8px 0" }} />
+      <Typography.Link
+        onClick={showModal}
+        style={{ display: "block", textAlign: "center" }}
+      >
+        Không có trường của bạn, Thêm mới?
+      </Typography.Link>
+    </div>
+  );
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Header
+      <Link
+        to={"/"}
         style={{
           position: "fixed",
           top: 0,
           left: 0,
-          right: 0,
+
           zIndex: 10,
-          borderBottom: "1px solid #e8e8e8",
-          background: "#fff",
-          height: 64,
-          padding: "0 16px",
+          display: "flex",
+          alignItems: "center",
+          padding: "16px",
         }}
       >
-        <Row align="middle">
-          <Col span={6}>
-            <Flex>
-              <Button
-                type="text"
-                icon={<MenuOutlined />}
-                onClick={toggleSider}
-                style={{ marginRight: 16 }}
-              />
-              <img src={logo} alt="Logo" style={{ height: 42 }} />
-            </Flex>
-          </Col>
-          <Col span={12}>
-            <AutoComplete
-              options={searchOptions}
-              onSelect={handleSelect}
-              onChange={(value) => setSearchValue(value)}
-              value={searchValue}
-              style={{ width: "100%", maxWidth: 600 }}
-              placeholder="Tìm kiếm..."
-              prefix={<SearchOutlined />}
-              filterOption={(inputValue, option) =>
-                option.value.toLowerCase().includes(inputValue.toLowerCase())
-              }
-            />
-          </Col>
-          <Col span={6}>
-            <Flex justify="end" gap={16}>
-              <Button variant="outlined" color="primary" href="/login">
-                Đăng nhập
-              </Button>
-              <Button variant="solid" color="primary" href="/signup">
-                Đăng ký
-              </Button>
-            </Flex>
-          </Col>
-        </Row>
-      </Header>
-      <Layout style={{ marginTop: 64 }}>
-        <Sider
-          collapsed={collapsed}
-          width={200}
-          style={{ position: "fixed", top: 64, bottom: 0 }}
-        >
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={["1"]}
-            style={{ height: "100%" }}
-            items={[
-              {
-                key: "home",
-                icon: <HomeOutlined />,
-                label: <Link to="/">Trang chủ</Link>,
-              },
-              {
-                key: "post",
-                icon: <AppstoreOutlined />,
-                label: <Link to="/posts/a">Bài viết</Link>,
-              },
-              {
-                key: "profile",
-                icon: <CommentOutlined />,
-                label: <Link to="/profile">Trang cá nhân</Link>,
-              },
-              {
-                key: "searching",
-                icon: <SearchOutlined />,
-                label: <Link to="/searching">Tìm kiếm</Link>,
-              },
-              {
-                key: "test",
-                label: <Link to="/test">Testing</Link>,
-              },
-            ]}
-          />
-        </Sider>
-        <Layout
+        <img src={logo} alt="Logo" style={{ height: 48, marginRight: 16 }} />
+      </Link>
+
+      <Row justify="center" align="middle" style={{ height: "100vh" }}>
+        <BoxCustom
           style={{
-            marginLeft: collapsed ? 80 : 200,
-            transition: "margin-left 0.3s",
-            background: "#fff",
+            width: "500px",
+            backgroundColor: "#fff",
           }}
         >
-          <Content
-            style={{
-              padding: 16,
-              backgroundColor: "#fff",
-              minHeight: "calc(100vh - 128px)",
-              maxWidth: "1600px",
-            }}
+          <Typography.Title
+            level={2}
+            style={{ textAlign: "center", fontWeight: "bolder" }}
           >
-            {children}
-          </Content>
-          <Footer
-            style={{
-              textAlign: "center",
-              background: "#fff",
+            Thông tin cá nhân
+          </Typography.Title>
+          <Form
+            layout="vertical"
+            initialValues={{ remember: false }}
+            onFinish={(values) => {
+              console.log("Login values:", values);
+              navigate("/");
             }}
+            style={{ maxWidth: "400px", margin: "0 auto" }}
           >
-            © 2025 Knowee
-          </Footer>
-        </Layout>
-      </Layout>
+            <Form.Item
+              label="Họ và tên"
+              name="name"
+              rules={[
+                { required: true, message: "Vui lòng nhập tên của bạn " },
+              ]}
+            >
+              <Input
+                type="name"
+                placeholder="Nhập họ và tên của bạn"
+                size="large"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Trường học"
+              name="university"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng chọn trường bạn đang theo học",
+                },
+              ]}
+            >
+              <AutoComplete
+                value={university}
+                onSelect={onSelect}
+                onSearch={onSearch}
+                placeholder="Nhập tên trường học của bạn"
+                size="large"
+                style={{ width: "100%" }}
+                dropdownRender={dropdownRender}
+              >
+                {filterOptions(university).map((university) => (
+                  <Option key={university} value={university}>
+                    {university}
+                  </Option>
+                ))}
+              </AutoComplete>
+            </Form.Item>
+
+            <Form.Item
+              label="Năm bắt đầu học"
+              name="startYear"
+              rules={[
+                { required: true, message: "Vui lòng chọn năm bắt đầu học" },
+              ]}
+            >
+              <Radio.Group
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                }}
+              >
+                {years.map((year) => (
+                  <Radio.Button
+                    key={year}
+                    value={year}
+                    style={{
+                      flex: "1 1 25%",
+                      textAlign: "center",
+                      borderRadius: "20px",
+                      borderWidth: "1px",
+                    }}
+                  >
+                    {year}
+                  </Radio.Button>
+                ))}
+              </Radio.Group>
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block size="large">
+                Xác nhận
+              </Button>
+            </Form.Item>
+          </Form>
+        </BoxCustom>
+      </Row>
+
+      <Modal
+        title="Thêm trường học mới"
+        visible={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        okText="Thêm"
+        cancelText="Hủy"
+      >
+        <Input
+          placeholder="Nhập tên trường học mới"
+          value={newUniversity}
+          onChange={(e) => setNewUniversity(e.target.value)}
+          size="large"
+        />
+      </Modal>
     </Layout>
   );
 };
 
-export default MainLayout;
+export default InformationPage;

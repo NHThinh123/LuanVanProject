@@ -10,7 +10,6 @@ const documentSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["pdf", "docx", "xlsx", "image", "rar", "zip"],
-      required: true,
     },
     document_url: {
       type: String,
@@ -21,6 +20,7 @@ const documentSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+documentSchema.index({ post_id: 1 });
 
 const Document = mongoose.model("Document", documentSchema);
 

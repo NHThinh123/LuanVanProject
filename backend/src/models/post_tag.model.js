@@ -18,6 +18,8 @@ const postTagSchema = new mongoose.Schema(
   }
 );
 
+postTagSchema.index({ post_id: 1, tag_id: 1 }, { unique: true });
+
 const Post_Tag = mongoose.model("Post_Tag", postTagSchema);
 
 module.exports = Post_Tag;

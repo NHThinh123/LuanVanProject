@@ -11,6 +11,7 @@ const tagSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+tagSchema.index({ tag_name: 1 });
 
 const Tag = mongoose.model("Tag", tagSchema);
 

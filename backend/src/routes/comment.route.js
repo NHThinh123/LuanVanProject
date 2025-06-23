@@ -2,19 +2,18 @@ const express = require("express");
 const router = express.Router();
 const {
   createComment,
+  deleteComment,
   getCommentsByPost,
   getCommentById,
-  updateComment,
-  deleteComment,
 } = require("../controllers/comment.controller");
+const authentication = require("../middleware/authentication");
 
-// Public routes
-router.get("/post/:post_id", getCommentsByPost); // Lấy bình luận theo post_id
-router.get("/:id", getCommentById); // Lấy bình luận theo ID
+// Endpoint yêu cầu xác thực
+router.post("/", authentication, createComment); // Tạo bình luận
+router.delete("/:comment_id", authentication, deleteComment); // Xóa bình luận
 
-// Protected routes (yêu cầu đăng nhập)
-router.post("/", createComment); // Tạo bình luận mới
-router.put("/:id", updateComment); // Cập nhật bình luận
-router.delete("/:id", deleteComment); // Xóa bình luận
+// Endpoint công khai
+router.get("/post/:post_id", getCommentsByPost); // Lấy danh sách bình luận của bài viết
+router.get("/:comment_id", getCommentById); // Lấy chi tiết bình luận
 
 module.exports = router;

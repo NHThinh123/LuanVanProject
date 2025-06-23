@@ -7,9 +7,13 @@ const postSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    subject_id: {
+    course_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
+      ref: "Course",
+    },
+    category_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
     },
     title: { type: String, required: true },
     content: { type: String, required: true },
@@ -23,6 +27,11 @@ const postSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+postSchema.index({ user_id: 1, createdAt: -1 });
+postSchema.index({ course_id: 1 });
+postSchema.index({ category_id: 1 });
+postSchema.index({ status: 1 });
 
 const Post = mongoose.model("Post", postSchema);
 

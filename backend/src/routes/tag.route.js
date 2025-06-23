@@ -2,19 +2,21 @@ const express = require("express");
 const router = express.Router();
 const {
   createTag,
-  getTags,
-  getTagById,
   updateTag,
   deleteTag,
+  getAllTags,
+  getTagById,
 } = require("../controllers/tag.controller");
+const authentication = require("../middleware/authentication");
+const isAdmin = require("../middleware/isAdmin");
 
-// Public routes
-router.get("/", getTags); // Lấy tất cả thẻ
-router.get("/:id", getTagById); // Lấy thẻ theo ID
+// Endpoint yêu cầu xác thực và quyền admin
+router.post("/", authentication, isAdmin, createTag); // Tạo thẻ
+router.put("/:id", authentication, isAdmin, updateTag); // Cập nhật thẻ
+router.delete("/:id", authentication, isAdmin, deleteTag); // Xóa thẻ
 
-// Admin routes (yêu cầu đăng nhập và quyền admin)
-router.post("/", createTag); // Tạo thẻ mới
-router.put("/:id", updateTag); // Cập nhật thẻ
-router.delete("/:id", deleteTag); // Xóa thẻ
+// Endpoint công khai
+router.get("/", getAllTags); // Lấy danh sách thẻ
+router.get("/:id", getTagById); // Lấy chi tiết thẻ
 
 module.exports = router;

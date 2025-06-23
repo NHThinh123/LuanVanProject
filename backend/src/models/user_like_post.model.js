@@ -17,6 +17,7 @@ const userLikePostSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+userLikePostSchema.index({ post_id: 1, user_id: 1 }, { unique: true });
 
 const User_Like_Post = mongoose.model("User_Like_Post", userLikePostSchema);
 

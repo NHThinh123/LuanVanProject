@@ -4,11 +4,30 @@ const jwt = require("jsonwebtoken");
 const authentication = (req, res, next) => {
   // Danh sách các đường dẫn không yêu cầu xác thực
   const white_lists = [
-    "/users/login",
     "/users/register",
-    "/topic",
-    "/comment",
-    "/topic/:id",
+    "/users/login",
+    "/courses",
+    "/courses/:id",
+    "/tags",
+    "/tags/:id",
+    "/likes/post/:post_id",
+    "/like-comments/comment/:comment_id",
+    "/follows/followers/:user_id",
+    "/follows/following/:user_id",
+    "/universities",
+    "/universities/:id",
+    "/posts",
+    "/posts/:post_id",
+    "/post-tags/post/:post_id",
+    "/post-tags/tag/:tag_id",
+    "/majors",
+    "/majors/:id",
+    "/documents/post/:post_id",
+    "/documents/:document_id",
+    "/comments/post/:post_id",
+    "/comments/:comment_id",
+    "/categories",
+    "/categories/:id",
   ];
 
   // Hàm kiểm tra đường dẫn hiện tại với danh sách trắng
@@ -16,49 +35,49 @@ const authentication = (req, res, next) => {
     return white_lists.some((item) => {
       if (item.includes(":")) {
         // Xử lý dynamic route
-        const regex = new RegExp(
-          `^${item.replace(/:\w+/g, "[^/]+")}$` // Thay :param bằng regex
-        );
+        const regex = new RegExp(`^${item.replace(/:\w+/g, "[^/]+")}$`);
         return regex.test(url);
       }
       return item === url;
     });
   };
 
-  // Kiểm tra xem đường dẫn hiện tại có thuộc danh sách trắng hay không
-  if (isWhiteListed(req.originalUrl.split("?")[0].replace("/api", ""))) {
-    next();
-  } else {
-    // Kiểm tra authorization header
-    if (req?.headers?.authorization) {
-      const token = req.headers.authorization.split(" ")[1];
+  // Chuẩn hóa URL bằng cách loại bỏ `/api` và query params
+  const normalizedUrl = req.originalUrl.split("?")[0].replace("/api", "");
 
-      // Xác minh token
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = {
-          id: decoded.id,
-          email: decoded.email,
-          username: decoded.username,
-          role: decoded.role,
-          class: decoded.class,
-          grade: decoded.grade,
-          major: decoded.major,
-          school: decoded.school,
-          avatar_url: decoded.avatar_url,
-        };
-        console.log(decoded);
-        next();
-      } catch (error) {
-        return res.status(401).json({
-          message: "Token không hợp lệ hoặc hết hạn",
-        });
-      }
-    } else {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
-    }
+  // Kiểm tra xem đường dẫn hiện tại có thuộc danh sách trắng hay không
+  if (isWhiteListed(normalizedUrl)) {
+    return next();
+  }
+
+  // Kiểm tra authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      message: "Không có token hoặc token không đúng định dạng",
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  // Xác minh token
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      full_name: decoded.full_name,
+      start_year: decoded.start_year,
+      major_id: decoded.major_id,
+      university_id: decoded.university_id,
+      avatar_url: decoded.avatar_url,
+    };
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      message: "Token không hợp lệ hoặc đã hết hạn",
+    });
   }
 };
 

@@ -2,19 +2,25 @@ const express = require("express");
 const router = express.Router();
 const {
   createPost,
-  getPosts,
-  getPostById,
   updatePost,
   deletePost,
+  getPosts,
+  getPostById,
+  updatePostStatus,
 } = require("../controllers/post.controller");
+const authentication = require("../middleware/authentication");
+const isAdmin = require("../middleware/isAdmin");
 
-// Public routes
-router.get("/", getPosts); // Lấy tất cả bài đăng
-router.get("/:id", getPostById); // Lấy bài đăng theo ID
+// Endpoint yêu cầu xác thực
+router.post("/", authentication, createPost); // Tạo bài viết
+router.put("/:post_id", authentication, updatePost); // Cập nhật bài viết
+router.delete("/:post_id", authentication, deletePost); // Xóa bài viết
 
-// Protected routes (yêu cầu đăng nhập)
-router.post("/", createPost); // Tạo bài đăng mới
-router.put("/:id", updatePost); // Cập nhật bài đăng
-router.delete("/:id", deletePost); // Xóa bài đăng
+// Endpoint yêu cầu xác thực và quyền admin
+router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // Cập nhật trạng thái bài viết
+
+// Endpoint công khai
+router.get("/", getPosts); // Lấy danh sách bài viết
+router.get("/:post_id", getPostById); // Lấy chi tiết bài viết
 
 module.exports = router;

@@ -6,15 +6,17 @@ const User = require("../models/user.model");
 
 const createUserService = async (
   email,
-  username,
+
   password,
   role,
-  grade,
-  major,
-  school
+  university_id,
+  major_id,
+  full_name,
+  start_year,
+  avatar_url
 ) => {
   try {
-    const existingUser = await User.findOne({ email: email });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return {
@@ -23,19 +25,18 @@ const createUserService = async (
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    if (role === "admin" && !req.user.role === "admin") {
-      return {
-        message: "Bạn không có quyền tạo tài khoản admin",
-      };
-    }
     let result = await User.create({
-      email: email,
-      username: username,
+      email,
+
       password: hashedPassword,
-      role: role,
-      grade: grade,
-      major: major,
-      school: school,
+      role: role || "user",
+      university_id,
+      major_id,
+      full_name: full_name || "",
+      start_year: start_year || 2025,
+      avatar_url:
+        avatar_url ||
+        "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png",
     });
     return {
       message: "Tạo tài khoản thành công",
@@ -49,16 +50,26 @@ const createUserService = async (
 
 const getUsersService = async () => {
   try {
-    let result = await User.find({});
+    let result = await User.find({})
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
     return result;
   } catch (error) {
     console.error(error);
     return null;
   }
 };
+
 const getUserByIdService = async (id) => {
   try {
-    let result = await User.findById(id);
+    let result = await User.findById(id)
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
+    if (!result) {
+      return {
+        message: "Người dùng không tồn tại",
+      };
+    }
     return {
       message: "Lấy thông tin người dùng thành công",
       data: result,
@@ -68,17 +79,43 @@ const getUserByIdService = async (id) => {
     return null;
   }
 };
+
 const updateUserService = async (id, updateData) => {
   try {
     if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
+      updateData.password = await bcrypt.hash(updateData.password, saltRounds);
     }
     let result = await User.findByIdAndUpdate(id, updateData, {
       new: true,
+    })
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
+    if (!result) {
+      return {
+        message: "Người dùng không tồn tại",
+      };
+    }
+
+    // Tạo token mới với thông tin cập nhật
+    const payload = {
+      id: result._id,
+      email: result.email,
+      role: result.role,
+      username: result.username,
+      full_name: result.full_name,
+      start_year: result.start_year,
+      major_id: result.major_id,
+      university_id: result.university_id,
+      avatar_url: result.avatar_url,
+    };
+    const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE,
     });
+
     return {
       message: "Cập nhật thông tin người dùng thành công",
       data: result,
+      access_token, // Trả về token mới
     };
   } catch (error) {
     console.error(error);
@@ -88,19 +125,19 @@ const updateUserService = async (id, updateData) => {
 
 const loginService = async (email, password) => {
   try {
-    const user = await User.findOne({ email: email }).select("+password");
+    const user = await User.findOne({ email }).select("+password");
     if (user) {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (isValidPassword) {
         const payload = {
-          id: user.id,
+          id: user._id,
           email: user.email,
           role: user.role,
-          username: user.username,
-          class: user.class,
-          grade: user.grade,
-          major: user.major,
-          school: user.school,
+
+          full_name: user.full_name,
+          start_year: user.start_year,
+          major_id: user.major_id,
+          university_id: user.university_id,
           avatar_url: user.avatar_url,
         };
         const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -110,25 +147,25 @@ const loginService = async (email, password) => {
           EC: 0,
           access_token,
           data: {
-            id: user.id,
+            id: user._id,
             email: user.email,
             role: user.role,
-            username: user.username,
-            class: user.class,
-            grade: user.grade,
-            major: user.major,
-            school: user.school,
+
+            full_name: user.full_name,
+            start_year: user.start_year,
+            major_id: user.major_id,
+            university_id: user.university_id,
             avatar_url: user.avatar_url,
           },
         };
       } else {
         return {
-          message: "Email/password không hợp lệ",
+          message: "Email hoặc mật khẩu không hợp lệ",
         };
       }
     } else {
       return {
-        message: "Email/password không hợp lệ",
+        message: "Email hoặc mật khẩu không hợp lệ",
       };
     }
   } catch (error) {
