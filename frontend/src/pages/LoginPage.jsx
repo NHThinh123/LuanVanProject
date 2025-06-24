@@ -3,7 +3,15 @@ import BoxCustom from "../components/atoms/BoxCustom";
 import { Button, Divider, Form, Input, Layout, Row, Typography } from "antd";
 import { Link } from "react-router-dom";
 import logo from "../assets/Logo/Logo.png";
+import { useAuth } from "../features/auth/hooks/useAuth";
+
 const LoginPage = () => {
+  const { handleLogin, isLoading } = useAuth();
+
+  const onFinish = (values) => {
+    handleLogin(values);
+  };
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Link
@@ -25,7 +33,6 @@ const LoginPage = () => {
           <BoxCustom
             style={{
               width: "500px",
-
               backgroundColor: "#fff",
             }}
           >
@@ -38,9 +45,7 @@ const LoginPage = () => {
             <Form
               layout="vertical"
               initialValues={{ remember: false }}
-              onFinish={(values) => {
-                console.log("Login values:", values);
-              }}
+              onFinish={onFinish}
               style={{ maxWidth: "400px", margin: "0 auto" }}
             >
               <Form.Item
@@ -48,6 +53,9 @@ const LoginPage = () => {
                 name="email"
                 rules={[
                   { required: true, message: "Vui lòng nhập email của bạn" },
+                  { type: "email", message: "Email không hợp lệ" },
+                  { max: 100, message: "Email không được vượt quá 100 ký tự" },
+                  { min: 12, message: "Email phải có ít nhất 12 ký tự" },
                 ]}
               >
                 <Input
@@ -59,7 +67,11 @@ const LoginPage = () => {
               <Form.Item
                 label="Mật khẩu"
                 name="password"
-                rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập mật khẩu" },
+                  { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" },
+                  { max: 50, message: "Mật khẩu không được vượt quá 50 ký tự" },
+                ]}
               >
                 <Input.Password
                   placeholder="Nhập mật khẩu của bạn"
@@ -67,7 +79,13 @@ const LoginPage = () => {
                 />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" block size="large">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  size="large"
+                  loading={isLoading}
+                >
                   Đăng nhập
                 </Button>
               </Form.Item>
@@ -80,7 +98,7 @@ const LoginPage = () => {
                 color: "#8c8c8c",
               }}
             >
-              Chưa có tài khoản?{"    "}
+              Chưa có tài khoản?{" "}
               <Link
                 to={"/signup"}
                 style={{ color: "#000", textDecoration: "underline" }}

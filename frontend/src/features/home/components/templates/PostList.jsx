@@ -9,6 +9,7 @@ import {
   Row,
   Col,
   Button,
+  Tag,
 } from "antd";
 import { LikeOutlined, CommentOutlined } from "@ant-design/icons";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
@@ -71,6 +72,13 @@ const PostList = ({ posts }) => {
               </Text>
             }
           />
+          <Flex gap="4px 0" wrap style={{ marginTop: 8 }}>
+            {item.tags.map((tag) => (
+              <Tag key={tag} color="#222831">
+                #{tag}
+              </Tag>
+            ))}
+          </Flex>
         </List.Item>
       )}
     />

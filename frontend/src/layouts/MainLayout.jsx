@@ -7,6 +7,8 @@ import {
   Row,
   Col,
   Input,
+  Avatar,
+  Dropdown,
 } from "antd";
 import {
   AppstoreOutlined,
@@ -19,13 +21,57 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { searchHistory } from "../mockups/mockup";
+import { BookCopy, Braces, Clock, LogOut, UserRoundPen } from "lucide-react";
+import { useAuthContext } from "../contexts/auth.context";
+import { useAuth } from "../features/auth/hooks/useAuth";
 
 const { Header, Content, Footer, Sider } = Layout;
 
 export const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const { user } = useAuthContext();
+  const { handleLogout } = useAuth();
 
+  const dropdownItems = [
+    {
+      key: "1",
+      label: (
+        <Flex align="center" gap={16} style={{ padding: "4px 8px" }}>
+          <UserRoundPen strokeWidth={1.25} />
+          <Link to="/profile/edit" style={{ color: "inherit" }}>
+            Thông tin cá nhân
+          </Link>
+        </Flex>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <Flex align="center" gap={16} style={{ padding: "4px 8px" }}>
+          <BookCopy strokeWidth={1.25} />
+          <Link to="/profile" style={{ color: "inherit" }}>
+            Quản lý bài viết
+          </Link>
+        </Flex>
+      ),
+    },
+    {
+      key: "3",
+      label: (
+        <Flex align="center" gap={16} style={{ padding: "4px 8px" }}>
+          <LogOut strokeWidth={1.25} />
+          <Button
+            type="link"
+            onClick={handleLogout}
+            style={{ color: "inherit", padding: 0 }}
+          >
+            Đăng xuất
+          </Button>
+        </Flex>
+      ),
+    },
+  ];
   const toggleSider = () => {
     setCollapsed(!collapsed);
   };
@@ -75,7 +121,7 @@ export const MainLayout = ({ children }) => {
               onSelect={handleSelect}
               onChange={(value) => setSearchValue(value)}
               value={searchValue}
-              style={{ width: "100%", maxWidth: 600 }}
+              style={{ width: "100%", maxWidth: 500 }}
               filterOption={(inputValue, option) =>
                 // Lọc gợi ý, hỗ trợ tiếng Việt
                 option.value
@@ -94,14 +140,28 @@ export const MainLayout = ({ children }) => {
             </AutoComplete>
           </Col>
           <Col span={6}>
-            <Flex justify="end" gap={16}>
-              <Button variant="outlined" color="primary" href="/login">
-                Đăng nhập
-              </Button>
-              <Button variant="solid" color="primary" href="/signup">
-                Đăng ký
-              </Button>
-            </Flex>
+            {!user ? (
+              <Flex justify="end" gap={16}>
+                <Button variant="outlined" color="primary" href="/login">
+                  Đăng nhập
+                </Button>
+                <Button variant="solid" color="primary" href="/signup">
+                  Đăng ký
+                </Button>
+              </Flex>
+            ) : (
+              <Flex justify="end" align="center" gap={16}>
+                <p style={{ fontWeight: 600, fontSize: 16 }}>
+                  {user.full_name}
+                </p>
+                <Dropdown
+                  menu={{ items: dropdownItems }}
+                  placement="bottomRight"
+                >
+                  <Avatar src={user.avatar_url} size={40} />
+                </Dropdown>
+              </Flex>
+            )}
           </Col>
         </Row>
       </Header>
@@ -138,6 +198,7 @@ export const MainLayout = ({ children }) => {
               },
               {
                 key: "test",
+                icon: <Clock strokeWidth={1.5} size={18} />,
                 label: <Link to="/test">Testing</Link>,
               },
             ]}

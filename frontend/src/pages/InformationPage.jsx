@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import BoxCustom from "../components/atoms/BoxCustom";
 import {
   Button,
@@ -11,60 +11,52 @@ import {
   Typography,
   AutoComplete,
   Modal,
+  message,
 } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import logo from "../assets/Logo/Logo.png";
-import { universities } from "../mockups/mockup";
+import { useAuthContext } from "../contexts/auth.context";
+import { useAuth } from "../features/auth/hooks/useAuth";
+import { useUniversity } from "../features/auth/hooks/useUniversity";
 
 const { Option } = AutoComplete;
 
 const InformationPage = () => {
-  const [university, setUniversity] = useState("");
-  const [mockUniversities, setMockUniversities] = useState(universities);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newUniversity, setNewUniversity] = useState("");
+  const { user, isLoading: authLoading } = useAuthContext();
+  const {
+    handleUpdateUser,
+    isLoading: updateLoading,
+    error: updateError,
+  } = useAuth();
+  const {
+    university,
+    universities,
+    universitiesLoading,
+    isModalVisible,
+    newUniversity,
+    setNewUniversity,
+    onSelect,
+    onSearch,
+    filterOptions,
+    showModal,
+    handleModalOk,
+    handleModalCancel,
+    createUniversityLoading,
+  } = useUniversity();
 
   const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: currentYear - 2020 },
     (_, i) => currentYear - i
   ).concat("Khác");
-  const navigate = useNavigate();
 
-  const onSelect = (value) => {
-    setUniversity(value);
-  };
-
-  const onSearch = (value) => {
-    setUniversity(value);
-  };
-
-  const filterOptions = (inputValue) => {
-    return mockUniversities.filter((uni) =>
-      uni.toLowerCase().includes(inputValue.toLowerCase())
-    );
-  };
-
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleModalOk = () => {
-    if (newUniversity.trim()) {
-      setMockUniversities([...mockUniversities, newUniversity.trim()]);
-      setUniversity(newUniversity.trim());
-      setNewUniversity("");
-      setIsModalVisible(false);
+  useEffect(() => {
+    if (updateError) {
+      message.error(updateError.message);
     }
-  };
+  }, [updateError]);
 
-  const handleModalCancel = () => {
-    setNewUniversity("");
-    setIsModalVisible(false);
-  };
-
-  // Tùy chỉnh dropdown của AutoComplete
   const dropdownRender = (menu) => (
     <div>
       {menu}
@@ -78,6 +70,23 @@ const InformationPage = () => {
     </div>
   );
 
+  const onFinish = (values) => {
+    const selectedUniversity = (universities || []).find(
+      (uni) => uni.name === values.university
+    );
+    handleUpdateUser({
+      id: user?.id,
+      full_name: values.name,
+      university_id: selectedUniversity?.id,
+      start_year:
+        values.startYear === "Khác" ? null : parseInt(values.startYear),
+    });
+  };
+
+  if (authLoading || universitiesLoading) {
+    return <div>Đang tải...</div>;
+  }
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Link
@@ -86,7 +95,6 @@ const InformationPage = () => {
           position: "fixed",
           top: 0,
           left: 0,
-
           zIndex: 10,
           display: "flex",
           alignItems: "center",
@@ -95,7 +103,6 @@ const InformationPage = () => {
       >
         <img src={logo} alt="Logo" style={{ height: 48, marginRight: 16 }} />
       </Link>
-
       <Row justify="center" align="middle" style={{ height: "100vh" }}>
         <BoxCustom
           style={{
@@ -111,27 +118,21 @@ const InformationPage = () => {
           </Typography.Title>
           <Form
             layout="vertical"
-            initialValues={{ remember: false }}
-            onFinish={(values) => {
-              console.log("Login values:", values);
-              navigate("/");
+            initialValues={{
+              name: user?.full_name || "",
+              university: "",
+              startYear: user?.start_year || undefined,
             }}
+            onFinish={onFinish}
             style={{ maxWidth: "400px", margin: "0 auto" }}
           >
             <Form.Item
               label="Họ và tên"
               name="name"
-              rules={[
-                { required: true, message: "Vui lòng nhập tên của bạn " },
-              ]}
+              rules={[{ required: true, message: "Vui lòng nhập tên của bạn" }]}
             >
-              <Input
-                type="name"
-                placeholder="Nhập họ và tên của bạn"
-                size="large"
-              />
+              <Input placeholder="Nhập họ và tên của bạn" size="large" />
             </Form.Item>
-
             <Form.Item
               label="Trường học"
               name="university"
@@ -149,16 +150,15 @@ const InformationPage = () => {
                 placeholder="Nhập tên trường học của bạn"
                 size="large"
                 style={{ width: "100%" }}
-                dropdownRender={dropdownRender}
+                popupRender={dropdownRender}
               >
-                {filterOptions(university).map((university) => (
-                  <Option key={university} value={university}>
-                    {university}
+                {filterOptions(university).map((uni) => (
+                  <Option key={uni.id} value={uni.name}>
+                    {uni.name}
                   </Option>
                 ))}
               </AutoComplete>
             </Form.Item>
-
             <Form.Item
               label="Năm bắt đầu học"
               name="startYear"
@@ -190,23 +190,28 @@ const InformationPage = () => {
                 ))}
               </Radio.Group>
             </Form.Item>
-
             <Form.Item>
-              <Button type="primary" htmlType="submit" block size="large">
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                size="large"
+                loading={updateLoading}
+              >
                 Xác nhận
               </Button>
             </Form.Item>
           </Form>
         </BoxCustom>
       </Row>
-
       <Modal
         title="Thêm trường học mới"
-        visible={isModalVisible}
+        open={isModalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         okText="Thêm"
         cancelText="Hủy"
+        confirmLoading={createUniversityLoading}
       >
         <Input
           placeholder="Nhập tên trường học mới"

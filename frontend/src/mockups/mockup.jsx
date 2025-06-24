@@ -39,6 +39,8 @@ export const posts = [
     id: 1,
     title: "Xcode 26 is here, with Code Intelligence",
     content: "How does it stack up against Cursor and AI Agent-based workflow?",
+    tags: ["Xcode", "AI", "Development"],
+    category: "Technology",
     image:
       "https://cdn.tgdd.vn/Files/2018/09/14/1117277/tri-tue-nhan-tao-ai-la-gi-ung-dung-nhu-the-nao-trong-cuoc-song--6.jpg",
     likes: 309,
@@ -56,6 +58,8 @@ export const posts = [
       "Why clients pay me 10x more than developers who are better at coding than me",
     content:
       "Last week I charged $15,000 for work a better coder would do for $1,500 and I think you should learn these skills now that we have AI to do the coding for us.",
+    tags: ["Freelancing", "Skills", "AI"],
+    category: "Career",
     image:
       "https://parametric-architecture.com/wp-content/uploads/2024/01/What-is-AI-web.jpg",
     likes: 3900,

@@ -11,7 +11,7 @@ const authentication = require("../middleware/authentication");
 const isAdmin = require("../middleware/isAdmin");
 
 // Endpoint yêu cầu xác thực và quyền admin
-router.post("/", authentication, isAdmin, createUniversity); // Tạo trường đại học
+router.post("/", authentication, createUniversity); // Tạo trường đại học
 router.put("/:id", authentication, isAdmin, updateUniversity); // Cập nhật trường đại học
 router.delete("/:id", authentication, isAdmin, deleteUniversity); // Xóa trường đại học
 

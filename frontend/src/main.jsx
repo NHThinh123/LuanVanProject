@@ -15,6 +15,8 @@ import TestPage from "./pages/TestPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import Search from "antd/es/transfer/search.js";
 import SearchingPage from "./pages/SearchingPage.jsx";
+import { AuthProvider } from "./contexts/auth.context.jsx";
+import EditProfilePage from "./pages/EditProfilePage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 const queryClient = new QueryClient();
@@ -43,7 +45,16 @@ const router = createBrowserRouter([
       },
       {
         path: "/profile",
-        element: <ProfilePage />,
+        children: [
+          {
+            index: true,
+            element: <ProfilePage />,
+          },
+          {
+            path: "edit",
+            element: <EditProfilePage />,
+          },
+        ],
       },
       {
         path: "/searching",
@@ -114,9 +125,9 @@ createRoot(document.getElementById("root")).render(
       }}
     >
       <AntdApp>
-        <RouterProvider router={router} />
-        {/* <AuthWrapper>
-        </AuthWrapper> */}
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </AntdApp>
     </ConfigProvider>
     <ReactQueryDevtools initialIsOpen={false} />

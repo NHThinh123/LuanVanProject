@@ -17,19 +17,19 @@ import { postPopular, topics, posts, featuredUser } from "../mockups/mockup";
 import UserList from "../features/home/components/templates/UserList";
 
 const { Title } = Typography;
-const { TabPane } = Tabs;
 
 const HomePage = () => {
+  // Chuyển đổi topics thành items cho Tabs
+  const tabItems = topics.map((topic, index) => ({
+    label: topic,
+    key: `${index + 1}`,
+    children: <PostList posts={posts} />,
+  }));
+
   return (
     <Row gutter={16}>
       <Col span={16} style={{ padding: "0px 24px" }}>
-        <Tabs defaultActiveKey="1">
-          {topics.map((topic, index) => (
-            <TabPane tab={topic} key={index + 1}>
-              <PostList posts={posts} />
-            </TabPane>
-          ))}
-        </Tabs>
+        <Tabs defaultActiveKey="1" items={tabItems} />
       </Col>
       <Col
         span={8}

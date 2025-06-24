@@ -18,11 +18,12 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "user"],
       default: "user",
     },
+    bio: { type: String, default: "" },
     start_year: { type: Number, default: 2025 },
     avatar_url: {
       type: String,
       default:
-        "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png",
+        "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg",
     },
   },
   {

@@ -6,9 +6,9 @@ const User = require("../models/user.model");
 
 const createUserService = async (
   email,
-
   password,
   role,
+  bio,
   university_id,
   major_id,
   full_name,
@@ -21,30 +21,51 @@ const createUserService = async (
     if (existingUser) {
       return {
         message: "Email đã tồn tại",
+        EC: 1,
       };
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
+    const defaultName =
+      full_name || "Người dùng " + Math.floor(100000 + Math.random() * 900000);
     let result = await User.create({
       email,
-
       password: hashedPassword,
       role: role || "user",
+      bio: bio || "",
       university_id,
       major_id,
-      full_name: full_name || "",
+      full_name: full_name || defaultName,
       start_year: start_year || 2025,
       avatar_url:
         avatar_url ||
-        "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png",
+        "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg",
     });
+
+    // Tạo token mới
+    const payload = {
+      id: result._id,
+      email: result.email,
+      role: result.role,
+      bio: result.bio,
+      full_name: result.full_name,
+      start_year: result.start_year,
+      major_id: result.major_id,
+      university_id: result.university_id,
+      avatar_url: result.avatar_url,
+    };
+    const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE,
+    });
+
     return {
       message: "Tạo tài khoản thành công",
+      EC: 0,
       data: result,
+      access_token, // Trả về token
     };
   } catch (error) {
     console.error(error);
-    return null;
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 
@@ -115,7 +136,7 @@ const updateUserService = async (id, updateData) => {
     return {
       message: "Cập nhật thông tin người dùng thành công",
       data: result,
-      access_token, // Trả về token mới
+      access_token,
     };
   } catch (error) {
     console.error(error);
@@ -133,7 +154,6 @@ const loginService = async (email, password) => {
           id: user._id,
           email: user.email,
           role: user.role,
-
           full_name: user.full_name,
           start_year: user.start_year,
           major_id: user.major_id,
@@ -150,7 +170,6 @@ const loginService = async (email, password) => {
             id: user._id,
             email: user.email,
             role: user.role,
-
             full_name: user.full_name,
             start_year: user.start_year,
             major_id: user.major_id,
@@ -161,16 +180,18 @@ const loginService = async (email, password) => {
       } else {
         return {
           message: "Email hoặc mật khẩu không hợp lệ",
+          EC: 1,
         };
       }
     } else {
       return {
         message: "Email hoặc mật khẩu không hợp lệ",
+        EC: 1,
       };
     }
   } catch (error) {
     console.error(error);
-    return null;
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 

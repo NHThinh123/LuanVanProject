@@ -67,6 +67,7 @@ const authentication = (req, res, next) => {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
+      bio: decoded.bio,
       full_name: decoded.full_name,
       start_year: decoded.start_year,
       major_id: decoded.major_id,

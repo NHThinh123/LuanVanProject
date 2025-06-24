@@ -5,7 +5,9 @@
 .ant-radio-button-wrapper:not(:first-child)::before {
   width: 0;
 }
-
+.ant-select-dropdown {
+  border-radius: 10px;
+}
 /* p {
   display: -webkit-box;
   -webkit-line-clamp: 2;
