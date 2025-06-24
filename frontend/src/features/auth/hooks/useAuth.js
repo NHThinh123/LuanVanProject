@@ -75,8 +75,8 @@ export const useAuth = () => {
 
   const handleUpdateUser = (values) => {
     console.log(access_token);
-    if (user?._id) {
-      updateUserMutation.mutate({ id: user._id, data: values });
+    if (user?.id) {
+      updateUserMutation.mutate({ id: user.id, data: values });
     } else {
       message.error("Không tìm thấy thông tin người dùng");
     }

@@ -146,7 +146,10 @@ const updateUserService = async (id, updateData) => {
 
 const loginService = async (email, password) => {
   try {
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email })
+      .select("+password")
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
     if (user) {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (isValidPassword) {

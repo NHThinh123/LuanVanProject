@@ -74,6 +74,7 @@ export const useUniversity = () => {
     universitiesLoading,
     isModalVisible,
     newUniversity,
+    setUniversity,
     setNewUniversity,
     onSelect,
     onSearch,
