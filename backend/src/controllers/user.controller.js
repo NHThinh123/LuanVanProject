@@ -10,9 +10,9 @@ const {
 const createUser = async (req, res) => {
   const {
     email,
-
     password,
     role,
+    bio,
     university_id,
     major_id,
     full_name,
@@ -29,10 +29,12 @@ const createUser = async (req, res) => {
       message: "Không có quyền tạo người dùng với vai trò admin",
     });
   }
+
   const data = await createUserService(
     email,
     password,
     role,
+    bio,
     university_id,
     major_id,
     full_name,

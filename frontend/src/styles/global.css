@@ -8,6 +8,9 @@
 .ant-select-dropdown {
   border-radius: 10px;
 }
+.ant-list-item-meta-title {
+  font-size: 24px !important;
+}
 /* p {
   display: -webkit-box;
   -webkit-line-clamp: 2;

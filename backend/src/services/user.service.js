@@ -40,19 +40,29 @@ const createUserService = async (
         avatar_url ||
         "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg",
     });
+    const user = await User.findById(result._id)
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
+    if (!user) {
+      return {
+        message: "Tạo tài khoản không thành công",
+        EC: 1,
+      };
+    }
 
     // Tạo token mới
     const payload = {
-      id: result._id,
-      email: result.email,
-      role: result.role,
-      bio: result.bio,
-      full_name: result.full_name,
-      start_year: result.start_year,
-      major_id: result.major_id,
-      university_id: result.university_id,
-      avatar_url: result.avatar_url,
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+      username: user.username,
+      full_name: user.full_name,
+      start_year: user.start_year,
+      major_id: user.major_id,
+      university_id: user.university_id,
+      avatar_url: user.avatar_url,
     };
+
     const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRE,
     });
@@ -154,7 +164,7 @@ const loginService = async (email, password) => {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (isValidPassword) {
         const payload = {
-          id: user._id,
+          _id: user._id,
           email: user.email,
           role: user.role,
           full_name: user.full_name,
@@ -170,7 +180,7 @@ const loginService = async (email, password) => {
           EC: 0,
           access_token,
           data: {
-            id: user._id,
+            _id: user._id,
             email: user.email,
             role: user.role,
             full_name: user.full_name,

@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-
-import { message } from "antd";
+import { notification } from "antd";
 import { loginUser, signupUser, updateUser } from "../services/auth.service";
 import { useAuthContext } from "../../../contexts/auth.context";
 
@@ -14,6 +13,9 @@ export const useAuth = () => {
     mutationFn: loginUser,
     onSuccess: (data) => {
       if (data.EC === 0) {
+        notification.success({
+          message: "Đăng nhập thành công",
+        });
         login(data.data, data.access_token);
         navigate("/");
       } else {
@@ -22,7 +24,9 @@ export const useAuth = () => {
     },
     onError: (error) => {
       console.error("Lỗi đăng nhập:", error.message);
-      message.error(error.message || "Đăng nhập thất bại, vui lòng thử lại");
+      notification.error({
+        message: error.message || "Đăng nhập thất bại, vui lòng thử lại",
+      });
     },
   });
 
@@ -32,7 +36,9 @@ export const useAuth = () => {
     onSuccess: (data) => {
       if (data.EC === 0) {
         login(data.data, data.access_token);
-        message.success("Đăng ký thành công");
+        notification.success({
+          message: "Đăng ký thành công",
+        });
         navigate("/information");
       } else {
         throw new Error(data.message);
@@ -40,7 +46,9 @@ export const useAuth = () => {
     },
     onError: (error) => {
       console.error("Lỗi đăng ký:", error.message);
-      message.error(error.message || "Đăng ký thất bại, vui lòng thử lại");
+      notification.error({
+        message: error.message || "Đăng ký thất bại, vui lòng thử lại",
+      });
     },
   });
 
@@ -50,7 +58,9 @@ export const useAuth = () => {
     onSuccess: (data) => {
       if (data.message === "Cập nhật thông tin người dùng thành công") {
         login(data.data, data.access_token);
-        message.success("Cập nhật thông tin thành công");
+        notification.success({
+          message: "Cập nhật thông tin thành công",
+        });
         navigate("/");
       } else {
         throw new Error(data.message);
@@ -58,9 +68,10 @@ export const useAuth = () => {
     },
     onError: (error) => {
       console.error("Lỗi cập nhật thông tin:", error.message);
-      message.error(
-        error.message || "Cập nhật thông tin thất bại, vui lòng thử lại"
-      );
+      notification.error({
+        message:
+          error.message || "Cập nhật thông tin thất bại, vui lòng thử lại",
+      });
     },
   });
 
@@ -75,10 +86,12 @@ export const useAuth = () => {
 
   const handleUpdateUser = (values) => {
     console.log(access_token);
-    if (user?.id) {
-      updateUserMutation.mutate({ id: user.id, data: values });
+    if (user?._id) {
+      updateUserMutation.mutate({ id: user._id, data: values });
     } else {
-      message.error("Không tìm thấy thông tin người dùng");
+      notification.error({
+        message: "Không tìm thấy thông tin người dùng",
+      });
     }
   };
 

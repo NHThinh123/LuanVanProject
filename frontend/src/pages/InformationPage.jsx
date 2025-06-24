@@ -1,26 +1,14 @@
-import { useEffect } from "react";
-import BoxCustom from "../components/atoms/BoxCustom";
-import {
-  Button,
-  Divider,
-  Form,
-  Input,
-  Layout,
-  Radio,
-  Row,
-  Typography,
-  AutoComplete,
-  Modal,
-  message,
-} from "antd";
-import { Link } from "react-router-dom";
-
-import logo from "../assets/Logo/Logo.png";
+import React, { useEffect } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useUniversity } from "../features/auth/hooks/useUniversity";
-
-const { Option } = AutoComplete;
+import { useMajor } from "../features/auth/hooks/useMajor";
+import { Link } from "react-router-dom";
+import { Divider, Form, Layout, message, Row, Typography } from "antd";
+import logo from "../assets/Logo/Logo.png";
+import BoxCustom from "../components/atoms/BoxCustom";
+import ProfileForm from "../features/profile/components/templates/ProfileForm";
+import AddNewModal from "../features/profile/components/atoms/AddNewModal";
 
 const InformationPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
@@ -33,23 +21,33 @@ const InformationPage = () => {
     university,
     universities,
     universitiesLoading,
-    isModalVisible,
+    isModalVisible: isUniversityModalVisible,
     newUniversity,
     setNewUniversity,
-    onSelect,
-    onSearch,
-    filterOptions,
-    showModal,
-    handleModalOk,
-    handleModalCancel,
+    onSelect: onSelectUniversity,
+    onSearch: onSearchUniversity,
+    filterOptions: filterUniversityOptions,
+    showModal: showUniversityModal,
+    handleModalOk: handleUniversityModalOk,
+    handleModalCancel: handleUniversityModalCancel,
     createUniversityLoading,
   } = useUniversity();
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from(
-    { length: currentYear - 2020 },
-    (_, i) => currentYear - i
-  ).concat("Khác");
+  const {
+    major,
+    majors,
+    majorsLoading,
+    isModalVisible: isMajorModalVisible,
+    newMajor,
+    setNewMajor,
+    onSelect: onSelectMajor,
+    onSearch: onSearchMajor,
+    filterOptions: filterMajorOptions,
+    showModal: showMajorModal,
+    handleModalOk: handleMajorModalOk,
+    handleModalCancel: handleMajorModalCancel,
+    createMajorLoading,
+  } = useMajor();
+  const [form] = Form.useForm();
 
   useEffect(() => {
     if (updateError) {
@@ -57,12 +55,12 @@ const InformationPage = () => {
     }
   }, [updateError]);
 
-  const dropdownRender = (menu) => (
+  const universityDropdownRender = (menu) => (
     <div>
       {menu}
       <Divider style={{ margin: "8px 0" }} />
       <Typography.Link
-        onClick={showModal}
+        onClick={showUniversityModal}
         style={{ display: "block", textAlign: "center" }}
       >
         Không có trường của bạn, Thêm mới?
@@ -70,20 +68,34 @@ const InformationPage = () => {
     </div>
   );
 
+  const majorDropdownRender = (menu) => (
+    <div>
+      {menu}
+      <Divider style={{ margin: "8px 0" }} />
+      <Typography.Link
+        onClick={showMajorModal}
+        style={{ display: "block", textAlign: "center" }}
+      >
+        Không có ngành của bạn, Thêm mới?
+      </Typography.Link>
+    </div>
+  );
+
   const onFinish = (values) => {
-    const selectedUniversity = (universities || []).find(
+    const selectedUniversity = universities.find(
       (uni) => uni.name === values.university
     );
+    const selectedMajor = majors.find((maj) => maj.name === values.major);
     handleUpdateUser({
-      id: user?.id,
       full_name: values.name,
       university_id: selectedUniversity?.id,
+      major_id: selectedMajor?.id,
       start_year:
         values.startYear === "Khác" ? null : parseInt(values.startYear),
     });
   };
 
-  if (authLoading || universitiesLoading) {
+  if (authLoading || universitiesLoading || majorsLoading) {
     return <div>Đang tải...</div>;
   }
 
@@ -116,110 +128,49 @@ const InformationPage = () => {
           >
             Thông tin cá nhân
           </Typography.Title>
-          <Form
-            layout="vertical"
-            initialValues={{
-              name: user?.full_name || "",
-              university: "",
-              startYear: user?.start_year || undefined,
-            }}
+          <ProfileForm
+            form={form}
+            user={user}
             onFinish={onFinish}
-            style={{ maxWidth: "400px", margin: "0 auto" }}
-          >
-            <Form.Item
-              label="Họ và tên"
-              name="name"
-              rules={[{ required: true, message: "Vui lòng nhập tên của bạn" }]}
-            >
-              <Input placeholder="Nhập họ và tên của bạn" size="large" />
-            </Form.Item>
-            <Form.Item
-              label="Trường học"
-              name="university"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn trường bạn đang theo học",
-                },
-              ]}
-            >
-              <AutoComplete
-                value={university}
-                onSelect={onSelect}
-                onSearch={onSearch}
-                placeholder="Nhập tên trường học của bạn"
-                size="large"
-                style={{ width: "100%" }}
-                popupRender={dropdownRender}
-              >
-                {filterOptions(university).map((uni) => (
-                  <Option key={uni.id} value={uni.name}>
-                    {uni.name}
-                  </Option>
-                ))}
-              </AutoComplete>
-            </Form.Item>
-            <Form.Item
-              label="Năm bắt đầu học"
-              name="startYear"
-              rules={[
-                { required: true, message: "Vui lòng chọn năm bắt đầu học" },
-              ]}
-            >
-              <Radio.Group
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "10px",
-                }}
-              >
-                {years.map((year) => (
-                  <Radio.Button
-                    key={year}
-                    value={year}
-                    style={{
-                      flex: "1 1 25%",
-                      textAlign: "center",
-                      borderRadius: "20px",
-                      borderWidth: "1px",
-                    }}
-                  >
-                    {year}
-                  </Radio.Button>
-                ))}
-              </Radio.Group>
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                block
-                size="large"
-                loading={updateLoading}
-              >
-                Xác nhận
-              </Button>
-            </Form.Item>
-          </Form>
+            updateLoading={updateLoading}
+            universityProps={{
+              university,
+              onSelect: onSelectUniversity,
+              onSearch: onSearchUniversity,
+              filterOptions: filterUniversityOptions,
+              dropdownRender: universityDropdownRender,
+            }}
+            majorProps={{
+              major,
+              onSelect: onSelectMajor,
+              onSearch: onSearchMajor,
+              filterOptions: filterMajorOptions,
+              dropdownRender: majorDropdownRender,
+            }}
+            useRadioForYear
+          />
         </BoxCustom>
       </Row>
-      <Modal
+      <AddNewModal
         title="Thêm trường học mới"
-        open={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={handleModalCancel}
-        okText="Thêm"
-        cancelText="Hủy"
-        confirmLoading={createUniversityLoading}
-      >
-        <Input
-          placeholder="Nhập tên trường học mới"
-          value={newUniversity}
-          onChange={(e) => setNewUniversity(e.target.value)}
-          size="large"
-        />
-      </Modal>
+        visible={isUniversityModalVisible}
+        onOk={handleUniversityModalOk}
+        onCancel={handleUniversityModalCancel}
+        value={newUniversity}
+        onChange={(e) => setNewUniversity(e.target.value)}
+        loading={createUniversityLoading}
+        placeholder="Nhập tên trường học mới"
+      />
+      <AddNewModal
+        title="Thêm ngành học mới"
+        visible={isMajorModalVisible}
+        onOk={handleMajorModalOk}
+        onCancel={handleMajorModalCancel}
+        value={newMajor}
+        onChange={(e) => setNewMajor(e.target.value)}
+        loading={createMajorLoading}
+        placeholder="Nhập tên ngành học mới"
+      />
     </Layout>
   );
 };
