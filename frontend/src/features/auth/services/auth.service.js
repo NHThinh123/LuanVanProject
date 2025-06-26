@@ -1,4 +1,4 @@
-import axios from "../../../services/axios.customize"; // Sử dụng instance Axios tùy chỉnh
+import axios from "../../../services/axios.customize";
 
 export const loginUser = async ({ email, password }) => {
   try {
@@ -33,5 +33,19 @@ export const updateUser = async (id, data) => {
     return response;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi cập nhật thông tin người dùng");
+  }
+};
+
+export const updateAvatar = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", file);
+    const response = await axios.post("/users/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật avatar");
   }
 };

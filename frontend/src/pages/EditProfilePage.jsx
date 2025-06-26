@@ -4,7 +4,7 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import { useUniversity } from "../features/auth/hooks/useUniversity";
 import { useMajor } from "../features/auth/hooks/useMajor";
 
-import { Col, Divider, Form, message, Row, Typography } from "antd";
+import { Col, Divider, Form, notification, Row, Typography } from "antd"; // Thay message bằng notification
 import AddNewModal from "../features/profile/components/atoms/AddNewModal";
 import ProfileForm from "../features/profile/components/templates/ProfileForm";
 
@@ -51,9 +51,17 @@ const EditProfilePage = () => {
   const [form] = Form.useForm();
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || null);
 
+  // Đồng bộ avatarUrl với user.avatar_url
+  useEffect(() => {
+    setAvatarUrl(user?.avatar_url || null);
+  }, [user?.avatar_url]);
+
   useEffect(() => {
     if (updateError) {
-      message.error(updateError.message);
+      notification.error({
+        message: "Lỗi",
+        description: updateError.message,
+      });
     }
   }, [updateError]);
 
@@ -93,7 +101,10 @@ const EditProfilePage = () => {
     );
     const selectedMajor = majors.find((maj) => maj.name === values.major);
     if (!user?._id) {
-      message.error("Không tìm thấy thông tin người dùng");
+      notification.error({
+        message: "Lỗi",
+        description: "Không tìm thấy thông tin người dùng",
+      });
       return;
     }
     const updateData = {

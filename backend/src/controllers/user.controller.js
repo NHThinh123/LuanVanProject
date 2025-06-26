@@ -5,6 +5,7 @@ const {
   getUsersService,
   getUserByIdService,
   updateUserService,
+  updateAvatarService,
 } = require("../services/user.service");
 
 const createUser = async (req, res) => {
@@ -87,6 +88,19 @@ const updateUser = async (req, res) => {
 const getAccount = async (req, res) => {
   return res.status(200).json(req.user);
 };
+const updateAvatar = async (req, res) => {
+  const user_id = req.user._id;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ message: "Vui lòng chọn file ảnh", EC: 1 });
+  }
+
+  const result = await updateAvatarService(user_id, file);
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 400 : 500)
+    .json(result);
+};
 
 module.exports = {
   getUsers,
@@ -95,4 +109,5 @@ module.exports = {
   handleLogin,
   getAccount,
   updateUser,
+  updateAvatar,
 };

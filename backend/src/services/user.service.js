@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
+const cloudinary = require("../config/cloudinary");
 
 const createUserService = async (
   email,
@@ -129,7 +130,7 @@ const updateUserService = async (id, updateData) => {
 
     // Tạo token mới với thông tin cập nhật
     const payload = {
-      id: result._id,
+      _id: result._id,
       email: result.email,
       role: result.role,
       username: result.username,
@@ -208,10 +209,68 @@ const loginService = async (email, password) => {
   }
 };
 
+const updateAvatarService = async (user_id, file) => {
+  try {
+    const user = await User.findById(user_id);
+    if (!user) {
+      return {
+        message: "Người dùng không tồn tại",
+        EC: 1,
+      };
+    }
+
+    // Xóa ảnh đại diện cũ trên Cloudinary nếu không phải ảnh mặc định
+    if (
+      user.avatar_url &&
+      user.avatar_url !==
+        "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg"
+    ) {
+      const publicId = user.avatar_url.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`User/${publicId}`);
+    }
+
+    // Cập nhật ảnh đại diện mới
+    const avatar_url = file.path; // URL từ Cloudinary
+    const result = await User.findByIdAndUpdate(
+      user_id,
+      { avatar_url },
+      { new: true }
+    )
+      .populate("university_id", "university_name")
+      .populate("major_id", "major_name");
+
+    // Tạo token mới với thông tin cập nhật
+    const payload = {
+      _id: result._id,
+      email: result.email,
+      role: result.role,
+      full_name: result.full_name,
+      start_year: result.start_year,
+      major_id: result.major_id,
+      university_id: result.university_id,
+      avatar_url: result.avatar_url,
+    };
+    const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE,
+    });
+
+    return {
+      message: "Cập nhật ảnh đại diện thành công",
+      EC: 0,
+      data: result,
+      access_token,
+    };
+  } catch (error) {
+    console.error(error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
 module.exports = {
   createUserService,
   loginService,
   getUsersService,
   getUserByIdService,
   updateUserService,
+  updateAvatarService,
 };

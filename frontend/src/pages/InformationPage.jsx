@@ -4,7 +4,7 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import { useUniversity } from "../features/auth/hooks/useUniversity";
 import { useMajor } from "../features/auth/hooks/useMajor";
 import { Link } from "react-router-dom";
-import { Divider, Form, Layout, message, Row, Typography } from "antd";
+import { Divider, Form, Layout, notification, Row, Typography } from "antd";
 import logo from "../assets/Logo/Logo.png";
 import BoxCustom from "../components/atoms/BoxCustom";
 import ProfileForm from "../features/profile/components/templates/ProfileForm";
@@ -51,7 +51,10 @@ const InformationPage = () => {
 
   useEffect(() => {
     if (updateError) {
-      message.error(updateError.message);
+      notification.error({
+        message: updateError.message || "Cập nhật thông tin thất bại",
+        description: "Vui lòng kiểm tra lại thông tin và thử lại.",
+      });
     }
   }, [updateError]);
 

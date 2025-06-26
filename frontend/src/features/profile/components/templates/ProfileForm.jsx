@@ -18,6 +18,7 @@ const ProfileForm = ({
   setAvatarUrl,
   useRadioForYear = false,
   showBio = false,
+  maxWidth = "400px",
 }) => {
   useEffect(() => {
     form.setFieldsValue({
@@ -34,7 +35,7 @@ const ProfileForm = ({
       form={form}
       layout="vertical"
       onFinish={onFinish}
-      style={{ maxWidth: "400px", margin: "0 auto" }}
+      style={{ maxWidth: maxWidth, margin: "0 auto" }}
     >
       {showAvatar && (
         <Col span={24}>

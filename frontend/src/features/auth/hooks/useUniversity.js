@@ -4,7 +4,7 @@ import {
   getAllUniversities,
   createUniversity,
 } from "../services/university.service";
-import { message } from "antd";
+import { notification } from "antd";
 
 export const useUniversity = () => {
   const [university, setUniversity] = useState("");
@@ -29,13 +29,19 @@ export const useUniversity = () => {
         setUniversity(data.data.university_name);
         setIsModalVisible(false);
         setNewUniversity("");
-        message.success("Thêm trường đại học thành công");
+        notification.success({
+          message: "Thành công",
+          description: "Thêm trường đại học thành công",
+        });
       } else {
         throw new Error(data.message);
       }
     },
     onError: (error) => {
-      message.error(error.message || "Thêm trường đại học thất bại");
+      notification.error({
+        message: "Lỗi",
+        description: error.message || "Thêm trường đại học thất bại",
+      });
     },
   });
 

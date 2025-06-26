@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllMajors, createMajor } from "../services/major.service";
-import { message } from "antd";
+import { notification } from "antd";
 
 export const useMajor = () => {
   const [major, setMajor] = useState("");
@@ -26,13 +26,19 @@ export const useMajor = () => {
         setMajor(data.data.major_name);
         setIsModalVisible(false);
         setNewMajor("");
-        message.success("Thêm ngành học thành công");
+        notification.success({
+          message: "Thành công",
+          description: "Thêm ngành học thành công",
+        });
       } else {
         throw new Error(data.message);
       }
     },
     onError: (error) => {
-      message.error(error.message || "Thêm ngành học thất bại");
+      notification.error({
+        message: "Lỗi",
+        description: error.message || "Thêm ngành học thất bại",
+      });
     },
   });
 

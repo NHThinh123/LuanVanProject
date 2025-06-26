@@ -8,7 +8,7 @@ import {
   Layout,
   Row,
   Typography,
-  message,
+  notification,
 } from "antd";
 import { Link } from "react-router-dom";
 import logo from "../assets/Logo/Logo.png";
@@ -19,7 +19,9 @@ const SignupPage = () => {
 
   React.useEffect(() => {
     if (error) {
-      message.error(error.message);
+      notification.error({
+        message: error.message || "Đăng ký thất bại, vui lòng thử lại",
+      });
     }
   }, [error]);
 
