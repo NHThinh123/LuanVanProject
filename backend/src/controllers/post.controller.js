@@ -9,7 +9,7 @@ const {
 
 const createPost = async (req, res) => {
   const { course_id, category_id, title, content } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!title || !content) {
     return res.status(400).json({ message: "Thiếu title hoặc content", EC: 1 });
@@ -29,7 +29,7 @@ const createPost = async (req, res) => {
 const updatePost = async (req, res) => {
   const { post_id } = req.params;
   const { course_id, category_id, title, content } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await updatePostService(user_id, post_id, {
     course_id,
@@ -44,7 +44,7 @@ const updatePost = async (req, res) => {
 
 const deletePost = async (req, res) => {
   const { post_id } = req.params;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await deletePostService(user_id, post_id);
   return res
@@ -72,7 +72,7 @@ const getPostById = async (req, res) => {
 const updatePostStatus = async (req, res) => {
   const { post_id } = req.params;
   const { status } = req.body;
-  const admin_id = req.user.id;
+  const admin_id = req.user._id;
 
   if (!status) {
     return res.status(400).json({ message: "Thiếu status", EC: 1 });

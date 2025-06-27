@@ -1,14 +1,15 @@
 import React, { useEffect } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { useUniversity } from "../features/auth/hooks/useUniversity";
-import { useMajor } from "../features/auth/hooks/useMajor";
+
 import { Link } from "react-router-dom";
 import { Divider, Form, Layout, notification, Row, Typography } from "antd";
 import logo from "../assets/Logo/Logo.png";
 import BoxCustom from "../components/atoms/BoxCustom";
 import ProfileForm from "../features/profile/components/templates/ProfileForm";
-import AddNewModal from "../features/profile/components/atoms/AddNewModal";
+import { useUniversity } from "../features/university/hooks/useUniversity";
+import { useMajor } from "../features/major/hooks/useMajor";
+import AddNewModal from "../components/organisms/AddNewModal";
 
 const InformationPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();

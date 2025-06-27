@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useAuthContext } from "../contexts/auth.context";
-import { useAuth } from "../features/auth/hooks/useAuth";
-import { useUniversity } from "../features/auth/hooks/useUniversity";
-import { useMajor } from "../features/auth/hooks/useMajor";
 
 import { Col, Divider, Form, notification, Row, Typography } from "antd"; // Thay message bằng notification
-import AddNewModal from "../features/profile/components/atoms/AddNewModal";
+import { useAuthContext } from "../contexts/auth.context";
+import { useAuth } from "../features/auth/hooks/useAuth";
+import { useUniversity } from "../features/university/hooks/useUniversity";
+import { useMajor } from "../features/major/hooks/useMajor";
 import ProfileForm from "../features/profile/components/templates/ProfileForm";
+import AddNewModal from "../components/organisms/AddNewModal";
 
 const EditProfilePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();

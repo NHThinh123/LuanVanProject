@@ -1,8 +1,9 @@
 import { Button, Col, Form, Input } from "antd";
 import React, { useEffect } from "react";
 import AvatarUpload from "../atoms/AvatarUpload";
-import AutoCompleteField from "../atoms/AutocompleteField";
+
 import YearSelector from "../atoms/YearSelector";
+import AutoCompleteField from "../../../../components/organisms/AutoCompleteField";
 
 const { TextArea } = Input;
 

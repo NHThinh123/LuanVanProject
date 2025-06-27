@@ -21,7 +21,14 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { searchHistory } from "../mockups/mockup";
-import { BookCopy, Braces, Clock, LogOut, UserRoundPen } from "lucide-react";
+import {
+  BookCopy,
+  Braces,
+  Clock,
+  LogOut,
+  PenLine,
+  UserRoundPen,
+} from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
@@ -139,7 +146,15 @@ export const MainLayout = ({ children }) => {
               <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm..." />
             </AutoComplete>
           </Col>
-          <Col span={6}>
+          <Col span={3}>
+            <Flex justify="end">
+              <Button variant="outlined" color="primary" href="/posts/create">
+                <PenLine strokeWidth={1.25} size={18} />
+                Đăng bài
+              </Button>
+            </Flex>
+          </Col>
+          <Col span={3}>
             {!user ? (
               <Flex justify="end" gap={16}>
                 <Button variant="outlined" color="primary" href="/login">
@@ -196,11 +211,11 @@ export const MainLayout = ({ children }) => {
                 icon: <SearchOutlined />,
                 label: <Link to="/searching">Tìm kiếm</Link>,
               },
-              {
-                key: "test",
-                icon: <Clock strokeWidth={1.5} size={18} />,
-                label: <Link to="/test">Testing</Link>,
-              },
+              // {
+              //   key: "test",
+              //   icon: <Clock strokeWidth={1.5} size={18} />,
+              //   label: <Link to="/test">Testing</Link>,
+              // },
             ]}
           />
         </Sider>

@@ -17,6 +17,7 @@ import Search from "antd/es/transfer/search.js";
 import SearchingPage from "./pages/SearchingPage.jsx";
 import { AuthProvider } from "./contexts/auth.context.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
+import PostCreatePage from "./pages/PostCreatePage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
           {
             path: ":id",
             element: <PostDetailPage />,
+          },
+          {
+            path: "create",
+            element: <PostCreatePage />,
           },
         ],
       },
