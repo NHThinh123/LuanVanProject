@@ -7,7 +7,7 @@ const {
 
 const joinChatRoom = async (req, res) => {
   const { chat_room_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!chat_room_id) {
     return res.status(400).json({ message: "Thiếu chat_room_id", EC: 1 });
@@ -21,7 +21,7 @@ const joinChatRoom = async (req, res) => {
 
 const leaveChatRoom = async (req, res) => {
   const { chat_room_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!chat_room_id) {
     return res.status(400).json({ message: "Thiếu chat_room_id", EC: 1 });
@@ -35,7 +35,7 @@ const leaveChatRoom = async (req, res) => {
 
 const updateLastRead = async (req, res) => {
   const { chat_room_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!chat_room_id) {
     return res.status(400).json({ message: "Thiếu chat_room_id", EC: 1 });
@@ -48,7 +48,7 @@ const updateLastRead = async (req, res) => {
 };
 
 const getUserChatRooms = async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await getUserChatRoomsService(user_id);
   return res

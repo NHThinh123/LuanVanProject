@@ -199,7 +199,9 @@ export const MainLayout = ({ children }) => {
               {
                 key: "post",
                 icon: <AppstoreOutlined />,
-                label: <Link to="/posts/a">Bài viết</Link>,
+                label: (
+                  <Link to="/posts/685e87fef9fd8be34dad6056">Bài viết</Link>
+                ),
               },
               {
                 key: "profile",

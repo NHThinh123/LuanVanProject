@@ -7,7 +7,7 @@ const {
 
 const createChatRoom = async (req, res) => {
   const { name, type, member_ids } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!type || !member_ids) {
     return res
@@ -41,7 +41,7 @@ const updateLastMessage = async (req, res) => {
 };
 
 const getUserChatRooms = async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = req.user._id;
   const { page, limit } = req.query;
 
   const result = await getUserChatRoomsService(user_id, { page, limit });
@@ -52,7 +52,7 @@ const getUserChatRooms = async (req, res) => {
 
 const deleteChatRoom = async (req, res) => {
   const { chat_room_id } = req.params;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await deleteChatRoomService(user_id, chat_room_id);
   return res

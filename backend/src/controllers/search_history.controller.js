@@ -7,7 +7,7 @@ const {
 
 const addSearchHistory = async (req, res) => {
   const { keyword } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!keyword) {
     return res.status(400).json({ message: "Thiếu keyword", EC: 1 });
@@ -20,7 +20,7 @@ const addSearchHistory = async (req, res) => {
 };
 
 const getSearchHistory = async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await getSearchHistoryService(user_id);
   return res
@@ -30,7 +30,7 @@ const getSearchHistory = async (req, res) => {
 
 const deleteSearchHistory = async (req, res) => {
   const { search_id } = req.params;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await deleteSearchHistoryService(user_id, search_id);
   return res
@@ -39,7 +39,7 @@ const deleteSearchHistory = async (req, res) => {
 };
 
 const clearAllSearchHistory = async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await clearAllSearchHistoryService(user_id);
   return res

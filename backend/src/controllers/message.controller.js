@@ -6,7 +6,7 @@ const {
 
 const sendMessage = async (req, res) => {
   const { chat_room_id, content } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!chat_room_id || !content) {
     return res
@@ -23,7 +23,7 @@ const sendMessage = async (req, res) => {
 const getMessagesByChatRoom = async (req, res) => {
   const { chat_room_id } = req.params;
   const { page, limit } = req.query;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await getMessagesByChatRoomService(user_id, chat_room_id, {
     page,
@@ -36,7 +36,7 @@ const getMessagesByChatRoom = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
   const { message_id } = req.params;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await deleteMessageService(user_id, message_id);
   return res

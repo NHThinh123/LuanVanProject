@@ -7,7 +7,7 @@ const {
 
 const likeComment = async (req, res) => {
   const { comment_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!comment_id) {
     return res.status(400).json({ message: "Thiếu comment_id", EC: 1 });
@@ -21,7 +21,7 @@ const likeComment = async (req, res) => {
 
 const unlikeComment = async (req, res) => {
   const { comment_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!comment_id) {
     return res.status(400).json({ message: "Thiếu comment_id", EC: 1 });
@@ -44,7 +44,7 @@ const getLikesByComment = async (req, res) => {
 
 const checkUserLikedComment = async (req, res) => {
   const { comment_id } = req.query;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!comment_id) {
     return res.status(400).json({ message: "Thiếu comment_id", EC: 1 });

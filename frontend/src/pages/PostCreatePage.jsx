@@ -157,7 +157,7 @@ const PostCreatePage = () => {
               { required: true, message: "Vui lòng nhập tiêu đề bài viết" },
             ]}
           >
-            <Input
+            <Input.TextArea
               placeholder="Nhập tiêu đề bài viết"
               size="large"
               style={{
@@ -165,6 +165,7 @@ const PostCreatePage = () => {
                 borderRadius: "4px",
                 fontWeight: "bold",
               }}
+              autoSize
             />
           </Form.Item>
           <Form.Item
@@ -242,9 +243,8 @@ const PostCreatePage = () => {
             </Button>
           </Form.Item>
         </Form>
-        <Card
+        {/* <Card
           title={<Title level={4}>Bài viết khi được hiển thị</Title>}
-          bordered
           style={{
             borderRadius: "4px",
             boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
@@ -258,7 +258,7 @@ const PostCreatePage = () => {
             dangerouslySetInnerHTML={{ __html: content }}
             style={{ minHeight: "100px" }}
           />
-        </Card>
+        </Card> */}
         <AddNewModal
           title="Thêm khóa học mới"
           visible={isModalVisible}

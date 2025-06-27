@@ -4,8 +4,8 @@ import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 const CommentForm = ({ author }) => (
   <div>
     <AvatarCustom
-      src={author.avatar}
-      name={author.name}
+      src={author.avatar_url}
+      name={author.full_name}
       size={36}
       style={{ fontSize: 16 }}
       color="#000"

@@ -1,29 +1,24 @@
 import React from "react";
-import {
-  Layout,
-  Row,
-  Col,
-  Typography,
-  Tabs,
-  Divider,
-  Avatar,
-  List,
-} from "antd";
+import { Layout, Row, Col, Typography, Tabs, Divider } from "antd";
 
 import PostList from "../features/home/components/templates/PostList";
 import PostPopularList from "../features/home/components/templates/PostPopularList";
-
-import { postPopular, topics, posts, featuredUser } from "../mockups/mockup";
 import UserList from "../features/home/components/templates/UserList";
+import { topics, featuredUser } from "../mockups/mockup";
+import { usePosts } from "../features/post/hooks/usePost";
 
 const { Title } = Typography;
 
 const HomePage = () => {
+  // Sử dụng hook usePosts để lấy danh sách bài viết
+  const { posts, isLoading } = usePosts({ status: "pending" });
+
+  console.log("Posts:", posts);
   // Chuyển đổi topics thành items cho Tabs
   const tabItems = topics.map((topic, index) => ({
     label: topic,
     key: `${index + 1}`,
-    children: <PostList posts={posts} />,
+    children: <PostList posts={posts} isLoading={isLoading} />,
   }));
 
   return (
@@ -42,7 +37,7 @@ const HomePage = () => {
         <Title level={4} style={{ marginBottom: 28 }}>
           Bài viết phổ biến
         </Title>
-        <PostPopularList postPopular={postPopular} />
+        <PostPopularList postPopular={posts.slice(0, 3)} />
         <Divider />
         <Title level={4} style={{ marginBottom: 28 }}>
           Người dùng nổi bật

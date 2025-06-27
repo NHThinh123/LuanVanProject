@@ -7,7 +7,7 @@ const {
 
 const addInterestCourse = async (req, res) => {
   const { course_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!course_id) {
     return res.status(400).json({ message: "Thiếu course_id", EC: 1 });
@@ -21,7 +21,7 @@ const addInterestCourse = async (req, res) => {
 
 const removeInterestCourse = async (req, res) => {
   const { course_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!course_id) {
     return res.status(400).json({ message: "Thiếu course_id", EC: 1 });
@@ -34,7 +34,7 @@ const removeInterestCourse = async (req, res) => {
 };
 
 const getInterestedCourses = async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await getInterestedCoursesByUserService(user_id);
   return res
@@ -44,7 +44,7 @@ const getInterestedCourses = async (req, res) => {
 
 const checkUserInterestedCourse = async (req, res) => {
   const { course_id } = req.query;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!course_id) {
     return res.status(400).json({ message: "Thiếu course_id", EC: 1 });

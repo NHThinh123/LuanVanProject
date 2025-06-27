@@ -7,7 +7,7 @@ const {
 
 const createComment = async (req, res) => {
   const { post_id, content, parent_comment_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!post_id || !content) {
     return res
@@ -28,7 +28,7 @@ const createComment = async (req, res) => {
 
 const deleteComment = async (req, res) => {
   const { comment_id } = req.params;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   const result = await deleteCommentService(user_id, comment_id);
   return res

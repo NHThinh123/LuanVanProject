@@ -7,7 +7,7 @@ const {
 
 const addTagToPost = async (req, res) => {
   const { post_id, tag_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!post_id || !tag_id) {
     return res
@@ -23,7 +23,7 @@ const addTagToPost = async (req, res) => {
 
 const removeTagFromPost = async (req, res) => {
   const { post_id, tag_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!post_id || !tag_id) {
     return res

@@ -10,20 +10,29 @@ import {
   Col,
   Button,
   Tag,
+  Spin,
 } from "antd";
 import { LikeOutlined, CommentOutlined } from "@ant-design/icons";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
-
+import "quill/dist/quill.snow.css";
+import { formatDate } from "../../../../constants/formatDate";
 const { Text } = Typography;
 
-const PostList = ({ posts }) => {
+const PostList = ({ posts, isLoading }) => {
+  if (isLoading) {
+    return <Spin tip="Đang tải bài viết..." />;
+  }
+
+  // Đảm bảo posts là mảng
+  const validPosts = Array.isArray(posts) ? posts : [];
+
   return (
     <List
       itemLayout="vertical"
-      dataSource={posts}
+      dataSource={validPosts}
       renderItem={(item) => (
         <List.Item
-          key={item.id}
+          key={item._id}
           style={{ marginBottom: 28 }}
           styles={{
             extra: {
@@ -34,46 +43,47 @@ const PostList = ({ posts }) => {
           }}
           actions={[
             <span>
-              <LikeOutlined /> {item.likes}
+              <LikeOutlined /> {item.likes || 0}
             </span>,
             <span>
-              <CommentOutlined /> {item.comments}
+              <CommentOutlined /> {item.comments || 0}
             </span>,
-            <span>{item.date}</span>,
+            <span>{formatDate(item?.createdAt)}</span>,
           ]}
           extra={
-            <img
-              src={item.image}
-              alt={item.title}
-              style={{ maxWidth: 250, height: "auto", objectFit: "cover" }}
-            />
+            item.image && (
+              <img
+                src={item.image}
+                alt={item.title}
+                style={{ maxWidth: 250, height: "auto", objectFit: "cover" }}
+              />
+            )
           }
         >
           <AvatarCustom
-            src={item.author.avatar}
-            name={item.author.name}
+            src={item.user_id?.avatar_url || ""}
+            name={item.user_id?.full_name || "Unknown"}
             size={36}
             color={"#000"}
           ></AvatarCustom>
 
           <List.Item.Meta
             style={{ minHeight: 80, margin: 0 }}
-            title={<a href="#">{item.title}</a>}
+            title={<a href={`/posts/${item?._id}`}>{item?.title}</a>}
             description={
-              <Text
+              <div
                 style={{
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
-              >
-                {item.content}
-              </Text>
+                dangerouslySetInnerHTML={{ __html: item?.content || "" }}
+              />
             }
           />
           <Flex gap="4px 0" wrap style={{ marginTop: 8 }}>
-            {item.tags.map((tag) => (
+            {item.tags?.map((tag) => (
               <Tag key={tag} color="#222831">
                 #{tag}
               </Tag>

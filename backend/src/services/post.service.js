@@ -2,6 +2,12 @@ const Post = require("../models/post.model");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const Category = require("../models/category.model");
+const { getDocumentsByPostService } = require("./document.service");
+
+const { getLikesByPostService } = require("./user_like_post.service");
+const { getCommentsByPostService } = require("./comment.service");
+
+const { getTagsByPostService } = require("./post_tag.service");
 
 const createPostService = async (user_id, postData) => {
   try {
@@ -155,11 +161,42 @@ const getPostsService = async (query) => {
 
     const total = await Post.countDocuments(filter);
 
+    // Lấy thêm thông tin documents, tags, likeCount, commentCount cho mỗi bài viết
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const [documentsResult, tagsResult, likesResult, commentsResult] =
+          await Promise.all([
+            getDocumentsByPostService(post._id),
+            getTagsByPostService(post._id),
+            getLikesByPostService(post._id),
+            getCommentsByPostService(post._id, { page: 1, limit: 0 }), // limit: 0 để chỉ lấy tổng số
+          ]);
+        const image =
+          documentsResult.EC === 0 && documentsResult.data.length > 0
+            ? documentsResult.data.find((doc) => doc.type === "image")
+                ?.document_url ||
+              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+        return {
+          ...post._doc,
+          image,
+          tags:
+            tagsResult.EC === 0
+              ? tagsResult.data.map((tag) => tag.tag_name)
+              : [],
+          likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
+          commentCount:
+            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        };
+      })
+    );
+
     return {
       message: "Lấy danh sách bài viết thành công",
       EC: 0,
       data: {
-        posts,
+        posts: postsWithDetails,
         pagination: {
           page,
           limit,
@@ -185,10 +222,27 @@ const getPostByIdService = async (post_id) => {
       return { message: "Bài viết không tồn tại", EC: 1 };
     }
 
+    // Lấy thêm thông tin documents, tags, likeCount, commentCount
+    const [documentsResult, tagsResult, likesResult, commentsResult] =
+      await Promise.all([
+        getDocumentsByPostService(post_id),
+        getTagsByPostService(post_id),
+        getLikesByPostService(post_id),
+        getCommentsByPostService(post_id, { page: 1, limit: 0 }), // limit: 0 để chỉ lấy tổng số
+      ]);
+
     return {
       message: "Lấy thông tin bài viết thành công",
       EC: 0,
-      data: post,
+      data: {
+        ...post._doc,
+        documents: documentsResult.EC === 0 ? documentsResult.data : [],
+        tags:
+          tagsResult.EC === 0 ? tagsResult.data.map((tag) => tag.tag_name) : [],
+        likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
+        commentCount:
+          commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+      },
     };
   } catch (error) {
     console.error("Error in getPostByIdService:", error);

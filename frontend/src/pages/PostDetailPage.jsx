@@ -7,20 +7,31 @@ import CommentForm from "../features/post/components/atoms/CommentForm";
 
 import CommentList from "../features/post/components/templates/CommentList";
 import SuggestedPostList from "../features/post/components/templates/SuggestedPostList";
-
+import { usePostById } from "../features/post/hooks/usePostById";
+import { useParams } from "react-router-dom";
+import { formatDate } from "../constants/formatDate";
+import "quill/dist/quill.snow.css";
+import { useAuthContext } from "../contexts/auth.context";
 const PostDetailPage = () => {
+  const { user, isLoading: authLoading } = useAuthContext();
+  const post_id = useParams().id;
+  const { post } = usePostById(post_id);
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
   return (
     <Row justify="center">
       <Col style={{ width: "100%", maxWidth: 800 }}>
         {/* Tiêu đề bài viết */}
 
         <Typography.Title level={1} style={{ fontSize: 36, marginBottom: 20 }}>
-          {postDetail.title}
+          {post.title || "Tiêu đề bài viết"}
         </Typography.Title>
         <Flex align="center" gap={16}>
           <AvatarCustom
-            src={postDetail.author.avatar}
-            name={postDetail.author.name}
+            src={post.user_id?.avatar_url}
+            name={post.user_id?.full_name}
             size={40}
             style={{ fontSize: 16 }}
             color="#000"
@@ -28,13 +39,10 @@ const PostDetailPage = () => {
           <Button variant="outlined" color="primary">
             Theo dõi
           </Button>
-          <Typography.Text>{postDetail.date}</Typography.Text>
+          <Typography.Text>{formatDate(post.createdAt)}</Typography.Text>
         </Flex>
         <Divider style={{ margin: "16px 0" }} />
-        <ActionButtons
-          likes={postDetail.likeCounts}
-          comments={postDetail.commentCounts}
-        />
+        <ActionButtons likes={post.likeCount} comments={post.commentCount} />
         <Divider style={{ margin: "16px 0" }} />
 
         {/* Nội dung bài viết */}
@@ -47,24 +55,19 @@ const PostDetailPage = () => {
             marginBottom: 20,
           }}
         >
-          <Typography.Paragraph>{postDetail.content}</Typography.Paragraph>
-          <img
-            src={postDetail.image}
-            alt={postDetail.title}
-            style={{ width: "100%" }}
+          <div
+            className="ql-editor"
+            dangerouslySetInnerHTML={{ __html: post?.content || "" }}
           />
         </div>
         <Divider style={{ margin: "16px 0" }} />
-        <ActionButtons
-          likes={postDetail.likeCounts}
-          comments={postDetail.commentCounts}
-        />
+        <ActionButtons likes={post.likeCount} comments={post.commentCount} />
         <Divider style={{ margin: "16px 0" }} />
         {/* Bình luận */}
         <Typography.Title level={2} style={{ marginBottom: 16 }}>
-          Bình luận ({postDetail.commentCounts})
+          Bình luận ({post.commentCount})
         </Typography.Title>
-        <CommentForm author={postDetail.author} />
+        <CommentForm author={user} />
         <Divider />
 
         <CommentList comments={postDetail.comments} />

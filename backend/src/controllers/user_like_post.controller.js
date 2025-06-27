@@ -7,7 +7,7 @@ const {
 
 const likePost = async (req, res) => {
   const { post_id } = req.body;
-  const user_id = req.user.id; // Lấy từ middleware authentication
+  const user_id = req.user._id; // Lấy từ middleware authentication
 
   if (!post_id) {
     return res.status(400).json({ message: "Thiếu post_id", EC: 1 });
@@ -21,7 +21,7 @@ const likePost = async (req, res) => {
 
 const unlikePost = async (req, res) => {
   const { post_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!post_id) {
     return res.status(400).json({ message: "Thiếu post_id", EC: 1 });
@@ -44,7 +44,7 @@ const getLikesByPost = async (req, res) => {
 
 const checkUserLikedPost = async (req, res) => {
   const { post_id } = req.query;
-  const user_id = req.user.id;
+  const user_id = req.user._id;
 
   if (!post_id) {
     return res.status(400).json({ message: "Thiếu post_id", EC: 1 });

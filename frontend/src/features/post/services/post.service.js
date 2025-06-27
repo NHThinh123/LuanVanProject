@@ -19,3 +19,21 @@ export const createPost = async ({
     throw new Error(error.message || "Lỗi khi tạo bài viết");
   }
 };
+
+export const getPosts = async (queryParams = {}) => {
+  try {
+    const response = await axios.get("/posts", { params: queryParams });
+
+    return response.data.posts; // Trả về danh sách bài viết
+  } catch (error) {
+    throw new Error(error.message || "Lỗi server");
+  }
+};
+export const getPostById = async (post_id) => {
+  try {
+    const response = await axios.get(`/posts/${post_id}`);
+    return response.data; // Trả về bài viết chi tiết
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi lấy thông tin bài viết");
+  }
+};
