@@ -1,18 +1,41 @@
 import { Col, Divider, Flex, Row, Typography } from "antd";
-import React from "react";
-import { user } from "../../../../mockups/mockup";
 
+import { useAuthContext } from "../../../../contexts/auth.context";
+import "quill/dist/quill.snow.css";
 const ProfileAbout = () => {
+  const { user, isLoading: authLoading } = useAuthContext();
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Row>
       <Col span={24}>
-        <p>{user.bio ? user.bio : "This user has not provided a bio yet."}</p>
+        <div
+          className="ql-editor"
+          dangerouslySetInnerHTML={{ __html: user.bio || "" }}
+        ></div>
         <Divider />
-        <p>Là thành viên học tập của Knowee từ {user.joinDate} </p>
-        <Divider />
+
         <Flex align="center" gap={16} style={{ marginTop: 8 }}>
-          <a>{user.followers} người theo dõi</a>
-          <a>{user.following} người đang theo dõi</a>
+          <a
+            style={{
+              color: "#000",
+              textDecoration: "underline",
+              fontWeight: "bold",
+            }}
+          >
+            {user.followers || 0} người theo dõi
+          </a>
+          <a
+            style={{
+              color: "#000",
+              textDecoration: "underline",
+              fontWeight: "bold",
+            }}
+          >
+            {user.following || 0} người đang theo dõi
+          </a>
         </Flex>
       </Col>
     </Row>

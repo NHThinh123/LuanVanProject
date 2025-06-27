@@ -69,7 +69,18 @@ const PostList = ({ posts, isLoading }) => {
 
           <List.Item.Meta
             style={{ minHeight: 80, margin: 0 }}
-            title={<a href={`/posts/${item?._id}`}>{item?.title}</a>}
+            title={
+              <a
+                href={`/posts/${item?._id}`}
+                style={{ textDecoration: "none" }}
+                onMouseEnter={(e) =>
+                  (e.target.style.textDecoration = "underline")
+                }
+                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+              >
+                {item?.title}
+              </a>
+            }
             description={
               <div
                 style={{

@@ -183,7 +183,7 @@ const getPostsService = async (query) => {
           image,
           tags:
             tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => tag.tag_name)
+              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
               : [],
           likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
           commentCount:
@@ -238,7 +238,9 @@ const getPostByIdService = async (post_id) => {
         ...post._doc,
         documents: documentsResult.EC === 0 ? documentsResult.data : [],
         tags:
-          tagsResult.EC === 0 ? tagsResult.data.map((tag) => tag.tag_name) : [],
+          tagsResult.EC === 0
+            ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+            : [],
         likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
         commentCount:
           commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,

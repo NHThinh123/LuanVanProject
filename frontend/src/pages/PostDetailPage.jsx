@@ -1,4 +1,4 @@
-import { Button, Col, Divider, Flex, Row, Typography } from "antd";
+import { Button, Col, Divider, Flex, Row, Tag, Typography } from "antd";
 
 import AvatarCustom from "../components/molecules/AvatarCustom";
 import { postDetail, posts } from "../mockups/mockup";
@@ -28,6 +28,7 @@ const PostDetailPage = () => {
         <Typography.Title level={1} style={{ fontSize: 36, marginBottom: 20 }}>
           {post.title || "Tiêu đề bài viết"}
         </Typography.Title>
+
         <Flex align="center" gap={16}>
           <AvatarCustom
             src={post.user_id?.avatar_url}
@@ -44,14 +45,29 @@ const PostDetailPage = () => {
         <Divider style={{ margin: "16px 0" }} />
         <ActionButtons likes={post.likeCount} comments={post.commentCount} />
         <Divider style={{ margin: "16px 0" }} />
+        {post.tags && post.tags.length > 0 && (
+          <>
+            {post.tags?.map((tag) => (
+              <Tag
+                style={{ padding: 4, fontSize: 14 }}
+                key={tag}
+                color="#222831"
+              >
+                #{tag}
+              </Tag>
+            ))}
+
+            <Divider style={{ margin: "16px 0" }} />
+          </>
+        )}
 
         {/* Nội dung bài viết */}
 
         <div
           style={{
-            fontSize: 18,
+            fontSize: 16,
             lineHeight: 1.6,
-            color: "#333",
+
             marginBottom: 20,
           }}
         >

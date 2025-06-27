@@ -4,13 +4,15 @@ import SearchingPostList from "../features/searching/components/templates/Search
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
 import { featuredUser } from "../mockups/mockup";
 import UserList from "../features/home/components/templates/UserList";
+import { usePosts } from "../features/post/hooks/usePost";
 
 const SearchingPage = () => {
+  const { posts, isLoading } = usePosts({ status: "pending" });
   const tabItems = [
     {
       key: "1",
       label: "Bài viết",
-      children: <SearchingPostList />,
+      children: <SearchingPostList posts={posts} />,
     },
     {
       key: "2",
@@ -18,6 +20,9 @@ const SearchingPage = () => {
       children: <SearchingUserList />,
     },
   ];
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
   return (
     <Row justify="center" style={{ height: "100vh" }}>
       <Col span={16}>

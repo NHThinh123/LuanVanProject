@@ -11,7 +11,18 @@ const PostPopularList = ({ postPopular }) => {
     <div>
       {postPopular.map((pick) => (
         <div key={pick._id} style={{ marginBottom: 16 }}>
-          <Title level={5}>{pick.title}</Title>
+          <Title level={5}>
+            <a
+              href={`/posts/${pick?._id}`}
+              style={{ textDecoration: "none", color: "#000" }}
+              onMouseEnter={(e) =>
+                (e.target.style.textDecoration = "underline")
+              }
+              onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+            >
+              {pick?.title}
+            </a>
+          </Title>
           <Text type="secondary" style={{ display: "block" }}>
             <Flex justify="space-between" align="center">
               <div>

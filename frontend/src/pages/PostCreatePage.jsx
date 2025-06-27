@@ -165,12 +165,13 @@ const PostCreatePage = () => {
                 borderRadius: "4px",
                 fontWeight: "bold",
               }}
+              variant="underlined"
               autoSize
             />
           </Form.Item>
           <Form.Item
             name="category_id"
-            label="Danh mục"
+            label="Danh mục bài viết"
             rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
           >
             <Select
@@ -188,7 +189,7 @@ const PostCreatePage = () => {
           </Form.Item>
           <Form.Item
             name="course_name"
-            label="Khóa học"
+            label="Khóa học liên quan"
             rules={[
               { required: true, message: "Vui lòng chọn hoặc thêm khóa học" },
             ]}

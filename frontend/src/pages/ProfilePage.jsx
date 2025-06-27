@@ -8,18 +8,22 @@ import {
   Typography,
   Tabs,
 } from "antd";
-import { user, featuredUser } from "../mockups/mockup";
+import { featuredUser } from "../mockups/mockup";
 import ProfilePostList from "../features/profile/components/templates/ProfilePostList";
 
 import ProfileAbout from "../features/profile/components/templates/ProfileAbout";
 import UserList from "../features/home/components/templates/UserList";
+import { useAuthContext } from "../contexts/auth.context";
+import { usePosts } from "../features/post/hooks/usePost";
 
 const ProfilePage = () => {
+  const { user, isLoading: authLoading } = useAuthContext();
+  const { posts, isLoading } = usePosts({ status: "pending" });
   const tabItems = [
     {
       key: "1",
       label: "Bài viết",
-      children: <ProfilePostList />,
+      children: <ProfilePostList posts={posts} />,
     },
     {
       key: "2",
@@ -28,12 +32,16 @@ const ProfilePage = () => {
     },
   ];
 
+  if (authLoading || isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Row style={{ height: "100vh" }} justify="center" gutter={[24, 24]}>
       <Col span={16}>
         <Flex align="center" flex={1} gap={16}>
           <Avatar
-            src={user.avatar}
+            src={user.avatar_url}
             size={156}
             style={{ display: "block", margin: "0 auto", marginTop: 20 }}
           />
@@ -41,10 +49,10 @@ const ProfilePage = () => {
             <Flex align="center" justify="space-between">
               <div>
                 <h1 style={{ textAlign: "center", marginTop: 20 }}>
-                  {user.name}
+                  {user.full_name}
                 </h1>
                 <Typography.Text type="secondary" style={{ fontSize: 18 }}>
-                  {user.followers} follower
+                  {user.followers || 0} follower
                 </Typography.Text>
               </div>
               <Flex align="center">

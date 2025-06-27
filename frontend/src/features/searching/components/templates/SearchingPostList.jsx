@@ -1,8 +1,7 @@
 import React from "react";
 import PostList from "../../../home/components/templates/PostList";
-import { posts } from "../../../../mockups/mockup";
 
-const SearchingPostList = () => {
+const SearchingPostList = ({ posts }) => {
   return (
     <div>
       <PostList posts={posts} />

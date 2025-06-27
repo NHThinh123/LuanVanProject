@@ -17,7 +17,7 @@ import {
   MenuOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; // Add useLocation
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { searchHistory } from "../mockups/mockup";
@@ -39,6 +39,7 @@ export const MainLayout = ({ children }) => {
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
+  const location = useLocation(); // Get current URL
 
   const dropdownItems = [
     {
@@ -79,6 +80,7 @@ export const MainLayout = ({ children }) => {
       ),
     },
   ];
+
   const toggleSider = () => {
     setCollapsed(!collapsed);
   };
@@ -94,6 +96,21 @@ export const MainLayout = ({ children }) => {
     value: item,
     label: item,
   }));
+
+  // Map URL paths to menu keys
+  const getSelectedKey = () => {
+    const path = location.pathname;
+    if (path === "/") return "home";
+    if (path.startsWith("/posts")) return "post";
+    if (path.startsWith("/profile")) return "profile";
+    if (path === "/searching") return "searching";
+    return "home"; // Default to home if no match
+  };
+
+  // Handle logo click to reload page
+  const handleLogoClick = () => {
+    window.location.reload();
+  };
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -112,14 +129,20 @@ export const MainLayout = ({ children }) => {
       >
         <Row align="middle">
           <Col span={6}>
-            <Flex>
+            <Flex align="center">
               <Button
                 type="text"
                 icon={<MenuOutlined />}
                 onClick={toggleSider}
                 style={{ marginRight: 16 }}
               />
-              <img src={logo} alt="Logo" style={{ height: 42 }} />
+              <Link
+                to="/"
+                onClick={handleLogoClick}
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <img src={logo} alt="Logo" style={{ height: 42 }} />
+              </Link>
             </Flex>
           </Col>
           <Col span={12}>
@@ -130,7 +153,6 @@ export const MainLayout = ({ children }) => {
               value={searchValue}
               style={{ width: "100%", maxWidth: 500 }}
               filterOption={(inputValue, option) =>
-                // Lọc gợi ý, hỗ trợ tiếng Việt
                 option.value
                   .normalize("NFD")
                   .replace(/[\u0300-\u036f]/g, "")
@@ -188,7 +210,7 @@ export const MainLayout = ({ children }) => {
         >
           <Menu
             mode="inline"
-            defaultSelectedKeys={["1"]}
+            selectedKeys={[getSelectedKey()]} // Dynamically set selected key
             style={{ height: "100%" }}
             items={[
               {
@@ -213,11 +235,6 @@ export const MainLayout = ({ children }) => {
                 icon: <SearchOutlined />,
                 label: <Link to="/searching">Tìm kiếm</Link>,
               },
-              // {
-              //   key: "test",
-              //   icon: <Clock strokeWidth={1.5} size={18} />,
-              //   label: <Link to="/test">Testing</Link>,
-              // },
             ]}
           />
         </Sider>

@@ -11,7 +11,7 @@ const authentication = require("../middleware/authentication");
 const isAdmin = require("../middleware/isAdmin");
 
 // Endpoint yêu cầu xác thực và quyền admin
-router.post("/", authentication, isAdmin, createTag); // Tạo thẻ
+router.post("/", authentication, createTag); // Tạo thẻ
 router.put("/:id", authentication, isAdmin, updateTag); // Cập nhật thẻ
 router.delete("/:id", authentication, isAdmin, deleteTag); // Xóa thẻ
 
