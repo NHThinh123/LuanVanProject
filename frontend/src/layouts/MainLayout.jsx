@@ -127,7 +127,7 @@ export const MainLayout = ({ children }) => {
           padding: "0 16px",
         }}
       >
-        <Row align="middle">
+        <Row align="middle" gutter={16}>
           <Col span={6}>
             <Flex align="center">
               <Button
@@ -145,7 +145,7 @@ export const MainLayout = ({ children }) => {
               </Link>
             </Flex>
           </Col>
-          <Col span={12}>
+          <Col span={11}>
             <AutoComplete
               options={searchOptions}
               onSelect={handleSelect}
@@ -168,6 +168,7 @@ export const MainLayout = ({ children }) => {
               <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm..." />
             </AutoComplete>
           </Col>
+
           <Col span={3}>
             <Flex justify="end">
               <Button variant="outlined" color="primary" href="/posts/create">
@@ -176,7 +177,7 @@ export const MainLayout = ({ children }) => {
               </Button>
             </Flex>
           </Col>
-          <Col span={3}>
+          <Col span={4}>
             {!user ? (
               <Flex justify="end" gap={16}>
                 <Button variant="outlined" color="primary" href="/login">
@@ -188,7 +189,16 @@ export const MainLayout = ({ children }) => {
               </Flex>
             ) : (
               <Flex justify="end" align="center" gap={16}>
-                <p style={{ fontWeight: 600, fontSize: 16 }}>
+                <p
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 16,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
                   {user.full_name}
                 </p>
                 <Dropdown

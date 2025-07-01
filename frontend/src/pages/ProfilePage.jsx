@@ -7,18 +7,24 @@ import {
   Row,
   Typography,
   Tabs,
+  Skeleton,
 } from "antd";
-import { featuredUser } from "../mockups/mockup";
+
 import ProfilePostList from "../features/profile/components/templates/ProfilePostList";
 
 import ProfileAbout from "../features/profile/components/templates/ProfileAbout";
 import UserList from "../features/home/components/templates/UserList";
 import { useAuthContext } from "../contexts/auth.context";
 import { usePosts } from "../features/post/hooks/usePost";
+import { useUsers } from "../features/user/hooks/useUsers";
 
 const ProfilePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
-  const { posts, isLoading } = usePosts({ status: "pending" });
+  const { posts, isLoading } = usePosts({
+    status: "pending",
+    user_id: user?._id,
+  });
+  const { users, isLoading: isUserLoading } = useUsers({});
   const tabItems = [
     {
       key: "1",
@@ -33,7 +39,26 @@ const ProfilePage = () => {
   ];
 
   if (authLoading || isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <Row style={{ height: "100vh" }} justify="center" gutter={[24, 24]}>
+        <Col span={16} style={{ marginTop: 20 }}>
+          <Skeleton
+            active
+            avatar={{ size: 156, shape: "circle" }}
+            paragraph={{ rows: 2 }}
+          />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 4 }} />
+        </Col>
+        <Col span={6} style={{ padding: "0px 16px" }}>
+          <Skeleton active paragraph={{ rows: 3 }} />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 3 }} />
+        </Col>
+      </Row>
+    );
   }
 
   return (
@@ -69,12 +94,12 @@ const ProfilePage = () => {
         <div style={{ position: "sticky", top: 80, padding: "0px 16px" }}>
           <div>
             <Typography.Title level={4}>Người theo dõi</Typography.Title>
-            <UserList users={featuredUser} />
+            <UserList users={users} loading={isUserLoading} />
           </div>
           <Divider />
           <div>
             <Typography.Title level={4}>Đang theo dõi</Typography.Title>
-            <UserList users={featuredUser} />
+            <UserList users={users} loading={isUserLoading} />
           </div>
         </div>
       </Col>

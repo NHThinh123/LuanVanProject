@@ -21,8 +21,8 @@
 
 .ql-editor p {
   margin-bottom: 12px !important;
-  margin-top: 12px !important;
-  margin-left: 16px !important;
+  /* margin-top: 12px !important;
+  margin-left: 16px !important; */
   text-align: justify !important;
   /* text-indent: 2em !important; */
 }

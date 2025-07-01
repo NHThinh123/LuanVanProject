@@ -22,7 +22,11 @@ export const createPost = async ({
 
 export const getPosts = async (queryParams = {}) => {
   try {
-    const response = await axios.get("/posts", { params: queryParams });
+    const response = await axios.get("/posts", {
+      params: {
+        ...queryParams, // Truyền các tham số truy vấn từ queryParams
+      },
+    });
 
     return response.data.posts; // Trả về danh sách bài viết
   } catch (error) {

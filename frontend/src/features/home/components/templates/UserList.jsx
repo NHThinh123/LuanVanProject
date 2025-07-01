@@ -1,9 +1,17 @@
-import { Avatar, Button, Flex, List } from "antd";
+import { Avatar, Button, Divider, Flex, List, Skeleton } from "antd";
 import Title from "antd/es/skeleton/Title";
 import React from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 
-const UserList = ({ users }) => {
+const UserList = ({ users, loading }) => {
+  if (loading)
+    return (
+      <>
+        <Skeleton active paragraph={{ rows: 2 }} />
+        <Divider />
+        <Skeleton active paragraph={{ rows: 2 }} />
+      </>
+    );
   return (
     <div>
       <List
@@ -14,8 +22,8 @@ const UserList = ({ users }) => {
             <Flex justify="space-between" align="center">
               <div>
                 <AvatarCustom
-                  src={user.avatar}
-                  name={user.name}
+                  src={user.avatar_url}
+                  name={user.full_name}
                   size={40}
                   color={"#000"}
                   // style={{ fontWeight: "bold" }}

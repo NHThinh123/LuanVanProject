@@ -28,6 +28,6 @@ router.post(
   updateAvatar
 );
 // Admin routes (yêu cầu JWT và role admin)
-router.get("/", authentication, isAdmin, getUsers);
+router.get("/", authentication, getUsers);
 
 module.exports = router;

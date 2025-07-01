@@ -54,9 +54,15 @@ const deletePost = async (req, res) => {
 
 const getPosts = async (req, res) => {
   const { user_id, course_id, category_id, status, page, limit } = req.query;
-  const query = { user_id, course_id, category_id, status, page, limit };
 
-  const result = await getPostsService(query);
+  const result = await getPostsService({
+    user_id,
+    course_id,
+    category_id,
+    status,
+    page,
+    limit,
+  });
   return res.status(result.EC === 0 ? 200 : 500).json(result);
 };
 

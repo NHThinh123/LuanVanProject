@@ -1,4 +1,13 @@
-import { Button, Col, Divider, Flex, Row, Tag, Typography } from "antd";
+import {
+  Button,
+  Col,
+  Divider,
+  Flex,
+  Row,
+  Skeleton,
+  Tag,
+  Typography,
+} from "antd";
 
 import AvatarCustom from "../components/molecules/AvatarCustom";
 import { postDetail, posts } from "../mockups/mockup";
@@ -15,10 +24,30 @@ import { useAuthContext } from "../contexts/auth.context";
 const PostDetailPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const post_id = useParams().id;
-  const { post } = usePostById(post_id);
+  const { post, isLoading: postsLoading } = usePostById(post_id);
 
-  if (authLoading) {
-    return <div>Loading...</div>;
+  if (authLoading || postsLoading) {
+    return (
+      <Row justify={"center"}>
+        <Col style={{ width: "100%", maxWidth: 800 }}>
+          <Skeleton active paragraph={{ rows: 2 }} />
+          <Divider style={{ margin: "16px 0" }} />
+          <Skeleton
+            active
+            avatar
+            paragraph={{ rows: 2 }}
+            style={{ marginBottom: 20 }}
+          />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider style={{ margin: "16px 0" }} />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider style={{ margin: "16px 0" }} />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider style={{ margin: "16px 0" }} />
+          <Skeleton active paragraph={{ rows: 4 }} />
+        </Col>
+      </Row>
+    );
   }
   return (
     <Row justify="center">

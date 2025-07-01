@@ -1,12 +1,20 @@
 import React from "react";
-import { Flex, Typography } from "antd";
+import { Divider, Flex, Skeleton, Typography } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { Link } from "react-router-dom";
 import { formatDate } from "../../../../constants/formatDate";
 
 const { Title, Text } = Typography;
 
-const PostPopularList = ({ postPopular }) => {
+const PostPopularList = ({ postPopular, loading }) => {
+  if (loading)
+    return (
+      <>
+        <Skeleton active paragraph={{ rows: 2 }} />
+        <Divider />
+        <Skeleton active paragraph={{ rows: 2 }} />
+      </>
+    );
   return (
     <div>
       {postPopular.map((pick) => (

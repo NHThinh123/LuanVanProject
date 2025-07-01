@@ -16,11 +16,12 @@ import { LikeOutlined, CommentOutlined } from "@ant-design/icons";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import "quill/dist/quill.snow.css";
 import { formatDate } from "../../../../constants/formatDate";
+import SkeletonLoading from "../../../../components/atoms/SkeletonLoading";
 const { Text } = Typography;
 
 const PostList = ({ posts, isLoading }) => {
   if (isLoading) {
-    return <Spin tip="Đang tải bài viết..." />;
+    return <SkeletonLoading />;
   }
 
   // Đảm bảo posts là mảng

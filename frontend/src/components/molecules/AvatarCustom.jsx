@@ -24,7 +24,7 @@ const AvatarCustom = ({
           <Col span={12}>
             <Avatar src={src} shape="circle" size={size || 64} />
             <p style={{ fontWeight: "bold" }}>{name}</p>
-            <p style={{ color: "#8c8c8c" }}> {follower} người theo dõi</p>
+            <p style={{ color: "#8c8c8c" }}> {follower || 0} người theo dõi</p>
           </Col>
           <Col span={12}>
             <Button block style={{ marginBottom: 8 }}>

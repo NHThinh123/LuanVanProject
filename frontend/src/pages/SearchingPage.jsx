@@ -1,13 +1,14 @@
-import { Col, Row, Tabs, Typography } from "antd";
-import React from "react";
+import { Col, Divider, Row, Skeleton, Tabs, Typography } from "antd";
 import SearchingPostList from "../features/searching/components/templates/SearchingPostList";
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
-import { featuredUser } from "../mockups/mockup";
 import UserList from "../features/home/components/templates/UserList";
 import { usePosts } from "../features/post/hooks/usePost";
+import { useUsers } from "../features/user/hooks/useUsers";
 
 const SearchingPage = () => {
-  const { posts, isLoading } = usePosts({ status: "pending" });
+  const { posts, isLoading: isPostsLoading } = usePosts({ status: "pending" });
+  const { users, isLoading: isUsersLoading } = useUsers({});
+
   const tabItems = [
     {
       key: "1",
@@ -20,8 +21,25 @@ const SearchingPage = () => {
       children: <SearchingUserList />,
     },
   ];
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isPostsLoading || isUsersLoading) {
+    return (
+      <Row justify={"center"} gutter={[24, 24]}>
+        <Col span={16}>
+          <Skeleton paragraph={{ rows: 2 }} active />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Divider />
+          <Skeleton active paragraph={{ rows: 4 }} />
+        </Col>
+        <Col span={6}>
+          <Skeleton paragraph={{ rows: 3 }} active />
+          <Divider />
+          <Skeleton paragraph={{ rows: 3 }} active />
+        </Col>
+      </Row>
+    );
   }
   return (
     <Row justify="center" style={{ height: "100vh" }}>
@@ -35,7 +53,7 @@ const SearchingPage = () => {
             <Typography.Title level={4}>
               Người dùng phù hợp với "a"
             </Typography.Title>
-            <UserList users={featuredUser} />
+            <UserList users={users} loading={isUsersLoading} />
           </div>
         </div>
       </Col>

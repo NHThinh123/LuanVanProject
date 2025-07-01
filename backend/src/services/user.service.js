@@ -81,15 +81,37 @@ const createUserService = async (
   }
 };
 
-const getUsersService = async () => {
+const getUsersService = async (query) => {
   try {
-    let result = await User.find({})
+    const { email, role, university_id, major_id, full_name } = query;
+    const filter = {};
+
+    if (email) filter.email = { $regex: email, $options: "i" }; // Tìm kiếm không phân biệt hoa thường
+    if (role) filter.role = role;
+    if (university_id) filter.university_id = university_id;
+    if (major_id) filter.major_id = major_id;
+    if (full_name) filter.full_name = { $regex: full_name, $options: "i" };
+
+    const result = await User.find(filter)
       .populate("university_id", "university_name")
       .populate("major_id", "major_name");
-    return result;
+
+    if (!result || result.length === 0) {
+      return {
+        message: "Không tìm thấy người dùng nào",
+        EC: 1,
+        data: [],
+      };
+    }
+
+    return {
+      message: "Lấy danh sách người dùng thành công",
+      EC: 0,
+      data: result,
+    };
   } catch (error) {
     console.error(error);
-    return null;
+    return { message: "Lỗi server", EC: -1, data: [] };
   }
 };
 
@@ -101,15 +123,17 @@ const getUserByIdService = async (id) => {
     if (!result) {
       return {
         message: "Người dùng không tồn tại",
+        EC: 1,
       };
     }
     return {
       message: "Lấy thông tin người dùng thành công",
+      EC: 0,
       data: result,
     };
   } catch (error) {
     console.error(error);
-    return null;
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 
@@ -126,6 +150,7 @@ const updateUserService = async (id, updateData) => {
     if (!result) {
       return {
         message: "Người dùng không tồn tại",
+        EC: 1,
       };
     }
 
@@ -148,12 +173,13 @@ const updateUserService = async (id, updateData) => {
 
     return {
       message: "Cập nhật thông tin người dùng thành công",
+      EC: 0,
       data: result,
       access_token,
     };
   } catch (error) {
     console.error(error);
-    return null;
+    return { message: "Lỗi server", EC: -1 };
   }
 };
 

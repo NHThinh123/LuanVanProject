@@ -5,7 +5,7 @@ import { notification } from "antd";
 export const usePosts = (queryParams = {}) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["posts", queryParams],
-    queryFn: getPosts,
+    queryFn: () => getPosts(queryParams),
     onError: (error) => {
       notification.error({
         message: error.message || "Lấy danh sách bài viết thất bại",
