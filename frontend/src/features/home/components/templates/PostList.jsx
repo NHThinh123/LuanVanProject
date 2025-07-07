@@ -8,15 +8,15 @@ import {
   Popover,
   Row,
   Col,
-  Button,
   Tag,
   Spin,
 } from "antd";
-import { LikeOutlined, CommentOutlined } from "@ant-design/icons";
+
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import "quill/dist/quill.snow.css";
 import { formatDate } from "../../../../constants/formatDate";
 import SkeletonLoading from "../../../../components/atoms/SkeletonLoading";
+import ActionButtons from "../../../post/components/atoms/ActionButtons";
 const { Text } = Typography;
 
 const PostList = ({ posts, isLoading }) => {
@@ -43,12 +43,12 @@ const PostList = ({ posts, isLoading }) => {
             },
           }}
           actions={[
-            <span>
-              <LikeOutlined /> {item.likes || 0}
-            </span>,
-            <span>
-              <CommentOutlined /> {item.comments || 0}
-            </span>,
+            <ActionButtons
+              postId={item._id}
+              likeCount={item.likeCount || 0}
+              isLiked={item.isLiked || false}
+              commentCount={item.commentCount || 0}
+            />,
             <span>{formatDate(item?.createdAt)}</span>,
           ]}
           extra={

@@ -72,7 +72,12 @@ const PostDetailPage = () => {
           <Typography.Text>{formatDate(post.createdAt)}</Typography.Text>
         </Flex>
         <Divider style={{ margin: "16px 0" }} />
-        <ActionButtons likes={post.likeCount} comments={post.commentCount} />
+        <ActionButtons
+          commentCount={post.commentCount}
+          isLiked={post.isLiked}
+          likeCount={post.likeCount}
+          postId={post._id}
+        />
         <Divider style={{ margin: "16px 0" }} />
         {post.tags && post.tags.length > 0 && (
           <>
@@ -106,7 +111,12 @@ const PostDetailPage = () => {
           />
         </div>
         <Divider style={{ margin: "16px 0" }} />
-        <ActionButtons likes={post.likeCount} comments={post.commentCount} />
+        <ActionButtons
+          commentCount={post.commentCount}
+          isLiked={post.isLiked}
+          likeCount={post.likeCount}
+          postId={post._id}
+        />
         <Divider style={{ margin: "16px 0" }} />
         {/* Bình luận */}
         <Typography.Title level={2} style={{ marginBottom: 16 }}>

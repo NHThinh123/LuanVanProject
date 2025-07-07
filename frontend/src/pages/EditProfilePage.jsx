@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Col, Divider, Form, notification, Row, Typography } from "antd"; // Thay message bằng notification
+import { Col, Divider, Form, notification, Row, Typography } from "antd";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useUniversity } from "../features/university/hooks/useUniversity";
@@ -21,7 +21,6 @@ const EditProfilePage = () => {
     universities,
     universitiesLoading,
     isModalVisible: isUniversityModalVisible,
-    newUniversity,
     setNewUniversity,
     onSelect: onSelectUniversity,
     onSearch: onSearchUniversity,
@@ -37,7 +36,6 @@ const EditProfilePage = () => {
     majors,
     majorsLoading,
     isModalVisible: isMajorModalVisible,
-    newMajor,
     setNewMajor,
     onSelect: onSelectMajor,
     onSearch: onSearchMajor,
@@ -121,19 +119,21 @@ const EditProfilePage = () => {
     handleUpdateUser(updateData);
   };
 
-  const onUniversityModalOk = () => {
-    if (newUniversity.trim()) {
-      handleUniversityModalOk();
-      form.setFieldsValue({ university: newUniversity });
-      setUniversity(newUniversity);
+  const onUniversityModalOk = (values) => {
+    if (values.name.trim()) {
+      setNewUniversity(values.name); // Cập nhật newUniversity để hook xử lý
+      handleUniversityModalOk(); // Gọi hàm từ hook để tạo university
+      form.setFieldsValue({ university: values.name }); // Cập nhật form
+      setUniversity(values.name); // Cập nhật state university
     }
   };
 
-  const onMajorModalOk = () => {
-    if (newMajor.trim()) {
-      handleMajorModalOk();
-      form.setFieldsValue({ major: newMajor });
-      setMajor(newMajor);
+  const onMajorModalOk = (values) => {
+    if (values.name.trim()) {
+      setNewMajor(values.name); // Cập nhật newMajor để hook xử lý
+      handleMajorModalOk(); // Gọi hàm từ hook để tạo major
+      form.setFieldsValue({ major: values.name }); // Cập nhật form
+      setMajor(values.name); // Cập nhật state major
     }
   };
 
@@ -179,20 +179,20 @@ const EditProfilePage = () => {
         visible={isUniversityModalVisible}
         onOk={onUniversityModalOk}
         onCancel={handleUniversityModalCancel}
-        value={newUniversity}
-        onChange={(e) => setNewUniversity(e.target.value)}
         loading={createUniversityLoading}
-        placeholder="Nhập tên trường học mới"
+        fields={[{ name: "name", label: "Tên trường học", required: true }]}
+        minLength={3}
+        maxLength={100}
       />
       <AddNewModal
         title="Thêm ngành học mới"
         visible={isMajorModalVisible}
         onOk={onMajorModalOk}
         onCancel={handleMajorModalCancel}
-        value={newMajor}
-        onChange={(e) => setNewMajor(e.target.value)}
         loading={createMajorLoading}
-        placeholder="Nhập tên ngành học mới"
+        fields={[{ name: "name", label: "Tên ngành học", required: true }]}
+        minLength={3}
+        maxLength={100}
       />
     </div>
   );

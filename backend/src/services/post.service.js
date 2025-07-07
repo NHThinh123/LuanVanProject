@@ -2,11 +2,9 @@ const Post = require("../models/post.model");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const Category = require("../models/category.model");
+const User_Like_Post = require("../models/user_like_post.model");
 const { getDocumentsByPostService } = require("./document.service");
-
-const { getLikesByPostService } = require("./user_like_post.service");
 const { getCommentsByPostService } = require("./comment.service");
-
 const { getTagsByPostService } = require("./post_tag.service");
 
 const createPostService = async (user_id, postData) => {
@@ -141,6 +139,7 @@ const getPostsService = async (query) => {
       status,
       page = 1,
       limit = 10,
+      current_user_id, // Thêm current_user_id để kiểm tra trạng thái thích
     } = query;
     const filter = {};
 
@@ -161,16 +160,27 @@ const getPostsService = async (query) => {
 
     const total = await Post.countDocuments(filter);
 
-    // Lấy thêm thông tin documents, tags, likeCount, commentCount cho mỗi bài viết
+    // Lấy thêm thông tin documents, tags, likeCount, commentCount, và isLiked cho mỗi bài viết
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
-        const [documentsResult, tagsResult, likesResult, commentsResult] =
-          await Promise.all([
-            getDocumentsByPostService(post._id),
-            getTagsByPostService(post._id),
-            getLikesByPostService(post._id),
-            getCommentsByPostService(post._id, { page: 1, limit: 0 }), // limit: 0 để chỉ lấy tổng số
-          ]);
+        const [
+          documentsResult,
+          tagsResult,
+          likesResult,
+          commentsResult,
+          likeStatus,
+        ] = await Promise.all([
+          getDocumentsByPostService(post._id),
+          getTagsByPostService(post._id),
+          User_Like_Post.find({ post_id: post._id }), // Lấy danh sách lượt thích
+          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
+          current_user_id
+            ? User_Like_Post.findOne({
+                user_id: current_user_id,
+                post_id: post._id,
+              })
+            : null, // Kiểm tra trạng thái thích
+        ]);
         const image =
           documentsResult.EC === 0 && documentsResult.data.length > 0
             ? documentsResult.data.find((doc) => doc.type === "image")
@@ -185,7 +195,8 @@ const getPostsService = async (query) => {
             tagsResult.EC === 0
               ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
               : [],
-          likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
+          likeCount: likesResult.length,
+          isLiked: current_user_id ? !!likeStatus : false, // Trạng thái thích của người dùng hiện tại
           commentCount:
             commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
         };
@@ -211,7 +222,7 @@ const getPostsService = async (query) => {
   }
 };
 
-const getPostByIdService = async (post_id) => {
+const getPostByIdService = async (post_id, current_user_id) => {
   try {
     const post = await Post.findById(post_id)
       .populate("user_id", "full_name avatar_url")
@@ -222,14 +233,22 @@ const getPostByIdService = async (post_id) => {
       return { message: "Bài viết không tồn tại", EC: 1 };
     }
 
-    // Lấy thêm thông tin documents, tags, likeCount, commentCount
-    const [documentsResult, tagsResult, likesResult, commentsResult] =
-      await Promise.all([
-        getDocumentsByPostService(post_id),
-        getTagsByPostService(post_id),
-        getLikesByPostService(post_id),
-        getCommentsByPostService(post_id, { page: 1, limit: 0 }), // limit: 0 để chỉ lấy tổng số
-      ]);
+    // Lấy thêm thông tin documents, tags, likeCount, commentCount, và isLiked
+    const [
+      documentsResult,
+      tagsResult,
+      likesResult,
+      commentsResult,
+      likeStatus,
+    ] = await Promise.all([
+      getDocumentsByPostService(post_id),
+      getTagsByPostService(post_id),
+      User_Like_Post.find({ post_id }),
+      getCommentsByPostService(post_id, { page: 1, limit: 0 }),
+      current_user_id
+        ? User_Like_Post.findOne({ user_id: current_user_id, post_id })
+        : null,
+    ]);
 
     return {
       message: "Lấy thông tin bài viết thành công",
@@ -241,7 +260,8 @@ const getPostByIdService = async (post_id) => {
           tagsResult.EC === 0
             ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
             : [],
-        likeCount: likesResult.EC === 0 ? likesResult.data.length : 0,
+        likeCount: likesResult.length,
+        isLiked: current_user_id ? !!likeStatus : false,
         commentCount:
           commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
       },
