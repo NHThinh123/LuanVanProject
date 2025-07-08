@@ -4,7 +4,7 @@ import "quill/dist/quill.snow.css";
 import { useCreatePost } from "../features/post/hooks/useCreatePost";
 import { useCategories } from "../features/category/hooks/useCategories";
 import { useCourses } from "../features/course/hooks/useCourses";
-
+import { useTag } from "../features/tag/hooks/useTag";
 import {
   Button,
   Col,
@@ -17,7 +17,6 @@ import {
   message,
 } from "antd";
 import AddNewModal from "../components/organisms/AddNewModal";
-import { useTag } from "../features/tag/hooks/useTag";
 
 const { Title } = Typography;
 
@@ -110,7 +109,10 @@ const PostCreatePage = () => {
       // Handle tags: Create new tags if they don't exist
       const tagIds = [];
       for (const tagName of selectedTags) {
-        const existingTag = tags.find((tag) => tag.tag_name === tagName);
+        const normalizedTagName = tagName.trim().toLowerCase();
+        const existingTag = tags.find(
+          (tag) => tag.tag_name.toLowerCase() === normalizedTagName
+        );
         if (existingTag) {
           tagIds.push(existingTag._id);
         } else {
@@ -118,7 +120,7 @@ const PostCreatePage = () => {
           if (newTag.EC === 0) {
             tagIds.push(newTag.data._id);
           } else {
-            message.error(`Không thể tạo thẻ: ${tagName}`);
+            message.error(`Không thể tạo thẻ "${tagName}": ${newTag.message}`);
           }
         }
       }
@@ -133,7 +135,7 @@ const PostCreatePage = () => {
 
       handleCreatePost(postData, {
         onSuccess: async (response) => {
-          // Attach tags to the post
+          // Attach tags to the post if there are any
           if (tagIds.length > 0) {
             await addTagsToPost({
               post_id: response.data._id,
@@ -145,14 +147,15 @@ const PostCreatePage = () => {
           quillRef.current.root.innerHTML = "";
           setSearchValue("");
           setSelectedTags([]);
-          message.success("Tạo bài viết và gắn thẻ thành công!");
+        },
+        onError: (error) => {
+          message.error(
+            `Lỗi khi tạo bài viết: ${error.message || "Không xác định"}`
+          );
         },
       });
     } catch (error) {
-      message.error(
-        "Có lỗi xảy ra khi tạo bài viết hoặc gắn thẻ",
-        error?.message
-      );
+      message.error(`Có lỗi xảy ra: ${error.message || "Không xác định"}`);
     }
   };
 
@@ -238,7 +241,7 @@ const PostCreatePage = () => {
                 setSearchValue(value);
               }}
               onSearch={(value) => setSearchValue(value)}
-              popupRender={dropdownRender}
+              dropdownRender={dropdownRender}
               style={{ width: "100%" }}
             />
           </Form.Item>

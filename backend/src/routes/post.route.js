@@ -20,7 +20,7 @@ router.delete("/:post_id", authentication, deletePost); // Xóa bài viết
 router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // Cập nhật trạng thái bài viết
 
 // Endpoint công khai
-router.get("/", getPosts); // Lấy danh sách bài viết
+router.get("/", authentication, getPosts); // Lấy danh sách bài viết
 router.get("/:post_id", getPostById); // Lấy chi tiết bài viết
 
 module.exports = router;

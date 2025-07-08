@@ -44,7 +44,7 @@ const HomePage = () => {
       </Row>
     );
   }
-  console.log("Posts:", posts);
+
   // Chuyển đổi topics thành items cho Tabs
   const tabItems = topics.map((topic, index) => ({
     label: topic,

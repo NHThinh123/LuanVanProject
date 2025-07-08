@@ -55,7 +55,9 @@ const deletePost = async (req, res) => {
 const getPosts = async (req, res) => {
   const { user_id, course_id, category_id, status, page, limit } = req.query;
 
-  const current_user_id = req.user ? req.user._id : null;
+  const current_user_id = req.user?._id;
+
+  console.log(current_user_id);
 
   const result = await getPostsService({
     user_id,
