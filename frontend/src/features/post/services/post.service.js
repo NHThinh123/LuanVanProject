@@ -24,7 +24,7 @@ export const getPosts = async (queryParams = {}) => {
   try {
     const response = await axios.get("/posts", {
       params: {
-        ...queryParams, // Truyền các tham số truy vấn từ queryParams
+        ...queryParams,
       },
     });
 

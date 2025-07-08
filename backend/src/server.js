@@ -34,8 +34,8 @@ app.use(express.urlencoded({ extended: true }));
 
 configViewEngine(app);
 
-app.use("/api/users/", userRoutes);
-app.use("/api/posts/", postRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/search-history", searchHistoryRoutes);
 app.use("/api/tags", tagRoutes);

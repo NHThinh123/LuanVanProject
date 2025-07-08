@@ -4,9 +4,9 @@ import "quill/dist/quill.snow.css";
 import { useCreatePost } from "../features/post/hooks/useCreatePost";
 import { useCategories } from "../features/category/hooks/useCategories";
 import { useCourses } from "../features/course/hooks/useCourses";
+
 import {
   Button,
-  Card,
   Col,
   Form,
   Input,
@@ -14,8 +14,10 @@ import {
   Select,
   Typography,
   AutoComplete,
+  message,
 } from "antd";
 import AddNewModal from "../components/organisms/AddNewModal";
+import { useTag } from "../features/tag/hooks/useTag";
 
 const { Title } = Typography;
 
@@ -27,9 +29,11 @@ const PostCreatePage = () => {
   const { handleCreatePost, isLoading } = useCreatePost();
   const { categories, loading: categoriesLoading } = useCategories();
   const { courses, loading: coursesLoading, addCourse } = useCourses();
+  const { tags, tagsLoading, createTag, addTagsToPost } = useTag();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [filteredCourses, setFilteredCourses] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
 
   // Initialize Quill editor
   useEffect(() => {
@@ -59,7 +63,8 @@ const PostCreatePage = () => {
   useEffect(() => {
     form.setFieldsValue({
       title: "",
-      course_name: "", // Reset course_name
+      course_name: "",
+      tags: [],
     });
   }, [form]);
 
@@ -73,19 +78,18 @@ const PostCreatePage = () => {
             .includes(searchValue.toLowerCase())
         )
         .map((course) => ({
-          value: `${course.course_code} - ${course.course_name}`, // Set value as course_code - course_name
-          label: `${course.course_code} - ${course.course_name}`, // Display as course_code - course_name
+          value: `${course.course_code} - ${course.course_name}`,
+          label: `${course.course_code} - ${course.course_name}`,
         }))
     );
   }, [searchValue, courses]);
 
-  const onFinish = (values) => {
-    // Extract course_code and course_name from the selected value
+  const onFinish = async (values) => {
+    // Extract course_code and course_name
     const [selectedCourseCode, selectedCourseName] = values.course_name
       .split(" - ")
       .map((str) => str.trim());
 
-    // Find the course_id based on both course_code and course_name
     const selectedCourse = courses.find(
       (course) =>
         course.course_code === selectedCourseCode &&
@@ -102,22 +106,54 @@ const PostCreatePage = () => {
       return;
     }
 
-    handleCreatePost(
-      {
-        course_id: selectedCourse._id, // Use the matched course_id
+    try {
+      // Handle tags: Create new tags if they don't exist
+      const tagIds = [];
+      for (const tagName of selectedTags) {
+        const existingTag = tags.find((tag) => tag.tag_name === tagName);
+        if (existingTag) {
+          tagIds.push(existingTag._id);
+        } else {
+          const newTag = await createTag(tagName);
+          if (newTag.EC === 0) {
+            tagIds.push(newTag.data._id);
+          } else {
+            message.error(`Không thể tạo thẻ: ${tagName}`);
+          }
+        }
+      }
+
+      // Create post
+      const postData = {
+        course_id: selectedCourse._id,
         category_id: values.category_id,
         title: values.title,
         content,
-      },
-      {
-        onSuccess: () => {
+      };
+
+      handleCreatePost(postData, {
+        onSuccess: async (response) => {
+          // Attach tags to the post
+          if (tagIds.length > 0) {
+            await addTagsToPost({
+              post_id: response.data._id,
+              tag_ids: tagIds,
+            });
+          }
           form.resetFields();
           setContent("");
           quillRef.current.root.innerHTML = "";
-          setSearchValue(""); // Reset search value
+          setSearchValue("");
+          setSelectedTags([]);
+          message.success("Tạo bài viết và gắn thẻ thành công!");
         },
-      }
-    );
+      });
+    } catch (error) {
+      message.error(
+        "Có lỗi xảy ra khi tạo bài viết hoặc gắn thẻ",
+        error?.message
+      );
+    }
   };
 
   const handleAddNewCourse = (values) => {
@@ -165,7 +201,6 @@ const PostCreatePage = () => {
                 borderRadius: "4px",
                 fontWeight: "bold",
               }}
-              variant="underlined"
               autoSize
             />
           </Form.Item>
@@ -199,13 +234,39 @@ const PostCreatePage = () => {
               placeholder="Nhập để tìm kiếm hoặc chọn khóa học"
               size="large"
               onSelect={(value) => {
-                form.setFieldsValue({ course_name: value }); // Set course_name in form
-                setSearchValue(value); // Update search value on select
+                form.setFieldsValue({ course_name: value });
+                setSearchValue(value);
               }}
-              onSearch={(value) => setSearchValue(value)} // Update search value on input
+              onSearch={(value) => setSearchValue(value)}
               popupRender={dropdownRender}
               style={{ width: "100%" }}
             />
+          </Form.Item>
+          <Form.Item
+            name="tags"
+            label="Thẻ"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn hoặc thêm ít nhất một thẻ",
+              },
+            ]}
+          >
+            <Select
+              mode="tags"
+              placeholder="Chọn hoặc nhập thẻ mới"
+              size="large"
+              style={{ width: "100%" }}
+              loading={tagsLoading}
+              onChange={(value) => setSelectedTags(value)}
+              value={selectedTags}
+            >
+              {tags.map((tag) => (
+                <Select.Option key={tag._id} value={tag.tag_name}>
+                  {tag.tag_name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item
             label="Nội dung"
@@ -244,22 +305,6 @@ const PostCreatePage = () => {
             </Button>
           </Form.Item>
         </Form>
-        {/* <Card
-          title={<Title level={4}>Bài viết khi được hiển thị</Title>}
-          style={{
-            borderRadius: "4px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-            marginTop: "16px",
-            maxWidth: "600px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            className="ql-editor"
-            dangerouslySetInnerHTML={{ __html: content }}
-            style={{ minHeight: "100px" }}
-          />
-        </Card> */}
         <AddNewModal
           title="Thêm khóa học mới"
           visible={isModalVisible}

@@ -19,18 +19,15 @@ import SkeletonLoading from "../../../../components/atoms/SkeletonLoading";
 import ActionButtons from "../../../post/components/atoms/ActionButtons";
 const { Text } = Typography;
 
-const PostList = ({ posts, isLoading }) => {
+const PostList = ({ posts = [], isLoading }) => {
   if (isLoading) {
     return <SkeletonLoading />;
   }
 
-  // Đảm bảo posts là mảng
-  const validPosts = Array.isArray(posts) ? posts : [];
-
   return (
     <List
       itemLayout="vertical"
-      dataSource={validPosts}
+      dataSource={posts}
       renderItem={(item) => (
         <List.Item
           key={item._id}

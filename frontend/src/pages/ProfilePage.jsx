@@ -66,7 +66,7 @@ const ProfilePage = () => {
       <Col span={16}>
         <Flex align="center" flex={1} gap={16}>
           <Avatar
-            src={user.avatar_url}
+            src={user?.avatar_url}
             size={156}
             style={{ display: "block", margin: "0 auto", marginTop: 20 }}
           />
@@ -74,10 +74,10 @@ const ProfilePage = () => {
             <Flex align="center" justify="space-between">
               <div>
                 <h1 style={{ textAlign: "center", marginTop: 20 }}>
-                  {user.full_name}
+                  {user?.full_name}
                 </h1>
                 <Typography.Text type="secondary" style={{ fontSize: 18 }}>
-                  {user.followers || 0} follower
+                  {user?.followers || 0} follower
                 </Typography.Text>
               </div>
               <Flex align="center">
@@ -85,7 +85,7 @@ const ProfilePage = () => {
                 <Button type="primary">Nhắn tin</Button>
               </Flex>
             </Flex>
-            <p style={{ marginTop: 16, width: "100%" }}>{user.bio}</p>
+            <p style={{ marginTop: 16, width: "100%" }}>{user?.bio}</p>
           </Flex>
         </Flex>
         <Tabs defaultActiveKey="1" items={tabItems} style={{ marginTop: 16 }} />

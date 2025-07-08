@@ -1,5 +1,5 @@
 import { CommentOutlined, LikeOutlined, LikeFilled } from "@ant-design/icons";
-import { Button, Flex, Typography } from "antd";
+import { Button, Divider, Flex, Typography } from "antd";
 import { useState, useEffect } from "react";
 import useLikePostAction from "../../hooks/useLikePostAction";
 
@@ -45,6 +45,7 @@ const ActionButtons = ({ postId, likeCount, isLiked, commentCount }) => {
           {localLikeCount}
         </Typography.Text>
       </Button>
+      <Divider type="vertical" style={{ height: 16 }} />
       <Button type="text">
         <Typography.Text type="secondary">
           <CommentOutlined style={{ marginRight: 4 }} /> {commentCount}
