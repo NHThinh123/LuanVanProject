@@ -45,13 +45,37 @@ const authentication = (req, res, next) => {
   // Chuẩn hóa URL bằng cách loại bỏ `/api` và query params
   const normalizedUrl = req.originalUrl.split("?")[0].replace("/api", "");
 
-  // Kiểm tra xem đường dẫn hiện tại có thuộc danh sách trắng hay không
+  // Kiểm tra authorization header
+  const authHeader = req.headers.authorization;
+
+  // Nếu là endpoint công khai (trong white_lists)
   if (isWhiteListed(normalizedUrl)) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = {
+          _id: decoded._id,
+          email: decoded.email,
+          role: decoded.role,
+          bio: decoded.bio,
+          full_name: decoded.full_name,
+          start_year: decoded.start_year,
+          major_id: decoded.major_id,
+          university_id: decoded.university_id,
+          avatar_url: decoded.avatar_url,
+        };
+      } catch (error) {
+        console.log("Token không hợp lệ hoặc đã hết hạn:", error.message);
+        req.user = null; // Token không hợp lệ, gán req.user = null
+      }
+    } else {
+      req.user = null; // Không có token, gán req.user = null
+    }
     return next();
   }
 
-  // Kiểm tra authorization header
-  const authHeader = req.headers.authorization;
+  // Nếu không phải endpoint công khai, yêu cầu token hợp lệ
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
       message: "Không có token hoặc token không đúng định dạng",
