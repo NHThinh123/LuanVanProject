@@ -21,18 +21,13 @@ import { Link, useLocation } from "react-router-dom"; // Add useLocation
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { searchHistory } from "../mockups/mockup";
-import {
-  BookCopy,
-  Braces,
-  Clock,
-  LogOut,
-  PenLine,
-  UserRoundPen,
-} from "lucide-react";
+import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
-const { Header, Content, Footer, Sider } = Layout;
+import FooterCustom from "../components/molecules/Footer";
+
+const { Header, Content, Sider } = Layout;
 
 export const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -265,14 +260,7 @@ export const MainLayout = ({ children }) => {
           >
             {children}
           </Content>
-          <Footer
-            style={{
-              textAlign: "center",
-              background: "#fff",
-            }}
-          >
-            © 2025 Knowee
-          </Footer>
+          <FooterCustom />
         </Layout>
       </Layout>
     </Layout>

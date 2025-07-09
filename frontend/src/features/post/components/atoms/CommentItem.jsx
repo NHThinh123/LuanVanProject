@@ -1,8 +1,8 @@
 import { Button, Col, Flex, Input, List, Row, Typography } from "antd";
 import { useState } from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
-import ActionButtons from "./ActionButtons";
-import { CommentOutlined, LikeOutlined } from "@ant-design/icons";
+
+import { CommentOutlined, HeartOutlined } from "@ant-design/icons";
 import CommentList from "../templates/CommentList";
 import { postDetail } from "../../../../mockups/mockup";
 const CommentItem = ({ comment }) => {
@@ -28,7 +28,7 @@ const CommentItem = ({ comment }) => {
             <Flex align="center" gap={8}>
               <Button type="text">
                 <Typography.Text type="secondary">
-                  <LikeOutlined style={{ marginRight: 4 }} />{" "}
+                  <HeartOutlined style={{ marginRight: 4 }} />{" "}
                   {comment.likeCounts}
                 </Typography.Text>
               </Button>

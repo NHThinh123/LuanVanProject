@@ -57,8 +57,6 @@ const getPosts = async (req, res) => {
 
   const current_user_id = req.user?._id;
 
-  console.log(current_user_id);
-
   const result = await getPostsService({
     user_id,
     course_id,
@@ -73,7 +71,7 @@ const getPosts = async (req, res) => {
 
 const getPostById = async (req, res) => {
   const { post_id } = req.params;
-  const current_user_id = req.user ? req.user._id : null;
+  const current_user_id = req.user?._id;
 
   const result = await getPostByIdService(post_id, current_user_id);
   return res

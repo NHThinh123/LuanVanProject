@@ -60,9 +60,9 @@ export const useMajor = () => {
     setIsModalVisible(true);
   };
 
-  const handleModalOk = () => {
-    if (newMajor.trim()) {
-      createMajorMutation.mutate(newMajor.trim());
+  const handleModalOk = (newMajorName) => {
+    if (newMajorName?.trim()) {
+      createMajorMutation.mutate(newMajorName.trim());
     }
   };
 
@@ -85,6 +85,6 @@ export const useMajor = () => {
     showModal,
     handleModalOk,
     handleModalCancel,
-    createMajorLoading: createMajorMutation.isLoading,
+    createMajorLoading: createMajorMutation.isPending,
   };
 };

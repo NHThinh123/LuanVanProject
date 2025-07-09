@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
-
 import { Link } from "react-router-dom";
 import { Divider, Form, Layout, notification, Row, Typography } from "antd";
 import logo from "../assets/Logo/Logo.png";
@@ -20,10 +19,10 @@ const InformationPage = () => {
   } = useAuth();
   const {
     university,
+    setUniversity,
     universities,
     universitiesLoading,
     isModalVisible: isUniversityModalVisible,
-    newUniversity,
     setNewUniversity,
     onSelect: onSelectUniversity,
     onSearch: onSearchUniversity,
@@ -35,10 +34,10 @@ const InformationPage = () => {
   } = useUniversity();
   const {
     major,
+    setMajor,
     majors,
     majorsLoading,
     isModalVisible: isMajorModalVisible,
-    newMajor,
     setNewMajor,
     onSelect: onSelectMajor,
     onSearch: onSearchMajor,
@@ -97,6 +96,24 @@ const InformationPage = () => {
       start_year:
         values.startYear === "Khác" ? null : parseInt(values.startYear),
     });
+  };
+
+  const onUniversityModalOk = (values) => {
+    if (values.name?.trim()) {
+      setNewUniversity(values.name);
+      handleUniversityModalOk(values.name); // Truyền trực tiếp values.name
+      form.setFieldsValue({ university: values.name });
+      setUniversity(values.name);
+    }
+  };
+
+  const onMajorModalOk = (values) => {
+    if (values.name?.trim()) {
+      setNewMajor(values.name);
+      handleMajorModalOk(values.name); // Truyền trực tiếp values.name
+      form.setFieldsValue({ major: values.name });
+      setMajor(values.name);
+    }
   };
 
   if (authLoading || universitiesLoading || majorsLoading) {
@@ -158,22 +175,22 @@ const InformationPage = () => {
       <AddNewModal
         title="Thêm trường học mới"
         visible={isUniversityModalVisible}
-        onOk={handleUniversityModalOk}
+        onOk={onUniversityModalOk}
         onCancel={handleUniversityModalCancel}
-        value={newUniversity}
-        onChange={(e) => setNewUniversity(e.target.value)}
         loading={createUniversityLoading}
-        placeholder="Nhập tên trường học mới"
+        fields={[{ name: "name", label: "Tên trường học", required: true }]}
+        minLength={3}
+        maxLength={100}
       />
       <AddNewModal
         title="Thêm ngành học mới"
         visible={isMajorModalVisible}
-        onOk={handleMajorModalOk}
+        onOk={onMajorModalOk}
         onCancel={handleMajorModalCancel}
-        value={newMajor}
-        onChange={(e) => setNewMajor(e.target.value)}
         loading={createMajorLoading}
-        placeholder="Nhập tên ngành học mới"
+        fields={[{ name: "name", label: "Tên ngành học", required: true }]}
+        minLength={3}
+        maxLength={100}
       />
     </Layout>
   );

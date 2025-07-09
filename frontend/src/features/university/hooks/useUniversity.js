@@ -63,9 +63,9 @@ export const useUniversity = () => {
     setIsModalVisible(true);
   };
 
-  const handleModalOk = () => {
-    if (newUniversity.trim()) {
-      createUniversityMutation.mutate(newUniversity.trim());
+  const handleModalOk = (newUniversityName) => {
+    if (newUniversityName?.trim()) {
+      createUniversityMutation.mutate(newUniversityName.trim());
     }
   };
 
@@ -88,6 +88,6 @@ export const useUniversity = () => {
     showModal,
     handleModalOk,
     handleModalCancel,
-    createUniversityLoading: createUniversityMutation.isLoading,
+    createUniversityLoading: createUniversityMutation.isPending,
   };
 };

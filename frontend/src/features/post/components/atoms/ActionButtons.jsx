@@ -1,4 +1,4 @@
-import { CommentOutlined, LikeOutlined, LikeFilled } from "@ant-design/icons";
+import { CommentOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { Button, Divider, Flex, Typography } from "antd";
 import { useState, useEffect } from "react";
 import useLikePostAction from "../../hooks/useLikePostAction";
@@ -39,9 +39,18 @@ const ActionButtons = ({ postId, likeCount, isLiked, commentCount }) => {
         type="text"
         onClick={onToggleLike}
         loading={isLoading}
-        icon={localIsLiked ? <LikeFilled /> : <LikeOutlined />}
+        icon={
+          localIsLiked ? (
+            <HeartFilled style={{ color: "#fc3468" }} />
+          ) : (
+            <HeartOutlined />
+          )
+        }
       >
-        <Typography.Text type={localIsLiked ? "primary" : "secondary"}>
+        <Typography.Text
+          type={localIsLiked ? "primary" : "secondary"}
+          style={{ color: localIsLiked ? "#fc3468" : "inherit" }}
+        >
           {localLikeCount}
         </Typography.Text>
       </Button>

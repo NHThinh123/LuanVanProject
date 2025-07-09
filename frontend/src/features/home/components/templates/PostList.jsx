@@ -58,12 +58,18 @@ const PostList = ({ posts = [], isLoading }) => {
             )
           }
         >
-          <AvatarCustom
-            src={item.user_id?.avatar_url || ""}
-            name={item.user_id?.full_name || "Unknown"}
-            size={36}
-            color={"#000"}
-          ></AvatarCustom>
+          <Flex justify="space-between" align="center">
+            <AvatarCustom
+              src={item.user_id?.avatar_url || ""}
+              name={item.user_id?.full_name || "Unknown"}
+              size={36}
+              color={"#000"}
+            ></AvatarCustom>
+            <div>
+              <Tag color="blue">{item?.course_id?.course_name}</Tag>
+              <Tag color="green"> {item?.category_id?.category_name}</Tag>
+            </div>
+          </Flex>
 
           <List.Item.Meta
             style={{ minHeight: 80, margin: 0 }}

@@ -17,6 +17,7 @@ import {
   message,
 } from "antd";
 import AddNewModal from "../components/organisms/AddNewModal";
+import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 
@@ -33,7 +34,7 @@ const PostCreatePage = () => {
   const [searchValue, setSearchValue] = useState("");
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
-
+  const navigate = useNavigate();
   // Initialize Quill editor
   useEffect(() => {
     quillRef.current = new Quill(editorRef.current, {
@@ -147,6 +148,7 @@ const PostCreatePage = () => {
           quillRef.current.root.innerHTML = "";
           setSearchValue("");
           setSelectedTags([]);
+          navigate("/");
         },
         onError: (error) => {
           message.error(
@@ -199,6 +201,7 @@ const PostCreatePage = () => {
             <Input.TextArea
               placeholder="Nhập tiêu đề bài viết"
               size="large"
+              variant="underlined"
               style={{
                 fontSize: "24px",
                 borderRadius: "4px",
@@ -241,7 +244,7 @@ const PostCreatePage = () => {
                 setSearchValue(value);
               }}
               onSearch={(value) => setSearchValue(value)}
-              dropdownRender={dropdownRender}
+              popupRender={dropdownRender}
               style={{ width: "100%" }}
             />
           </Form.Item>

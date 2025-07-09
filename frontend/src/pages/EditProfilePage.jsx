@@ -122,7 +122,7 @@ const EditProfilePage = () => {
   const onUniversityModalOk = (values) => {
     if (values.name.trim()) {
       setNewUniversity(values.name); // Cập nhật newUniversity để hook xử lý
-      handleUniversityModalOk(); // Gọi hàm từ hook để tạo university
+      handleUniversityModalOk(values.name); // Gọi hàm từ hook để tạo university
       form.setFieldsValue({ university: values.name }); // Cập nhật form
       setUniversity(values.name); // Cập nhật state university
     }
@@ -131,7 +131,7 @@ const EditProfilePage = () => {
   const onMajorModalOk = (values) => {
     if (values.name.trim()) {
       setNewMajor(values.name); // Cập nhật newMajor để hook xử lý
-      handleMajorModalOk(); // Gọi hàm từ hook để tạo major
+      handleMajorModalOk(values.name); // Gọi hàm từ hook để tạo major
       form.setFieldsValue({ major: values.name }); // Cập nhật form
       setMajor(values.name); // Cập nhật state major
     }

@@ -21,6 +21,6 @@ router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // 
 
 // Endpoint công khai
 router.get("/", authentication, getPosts); // Lấy danh sách bài viết
-router.get("/:post_id", getPostById); // Lấy chi tiết bài viết
+router.get("/:post_id", authentication, getPostById); // Lấy chi tiết bài viết
 
 module.exports = router;

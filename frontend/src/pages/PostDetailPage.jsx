@@ -54,9 +54,13 @@ const PostDetailPage = () => {
       <Col style={{ width: "100%", maxWidth: 800 }}>
         {/* Tiêu đề bài viết */}
 
-        <Typography.Title level={1} style={{ fontSize: 36, marginBottom: 20 }}>
+        <Typography.Title level={1} style={{ fontSize: 36, marginBottom: 10 }}>
           {post.title || "Tiêu đề bài viết"}
         </Typography.Title>
+        <Flex style={{ marginBottom: 16 }} gap={8}>
+          <Tag color="blue">{post.course_id?.course_name}</Tag>
+          <Tag color="green">{post.category_id?.category_name}</Tag>
+        </Flex>
 
         <Flex align="center" gap={16}>
           <AvatarCustom
