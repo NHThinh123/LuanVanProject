@@ -102,7 +102,7 @@ const getCommentsByPostService = async (post_id, query) => {
       .select("user_id content createdAt parent_comment_id")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(parseInt(limit));
 
     // Lấy tổng số bình luận cấp 1
     const total = await Comment.countDocuments({
@@ -110,14 +110,13 @@ const getCommentsByPostService = async (post_id, query) => {
       parent_comment_id: null,
     });
 
-    // Lấy bình luận con cho mỗi bình luận cấp 1
-    const commentsWithReplies = await Promise.all(
+    // Đếm số phản hồi cho mỗi bình luận cấp 1
+    const commentsWithReplyCount = await Promise.all(
       comments.map(async (comment) => {
-        const replies = await Comment.find({ parent_comment_id: comment._id })
-          .populate("user_id", "full_name avatar_url")
-          .select("user_id content createdAt parent_comment_id")
-          .sort({ createdAt: 1 });
-        return { ...comment._doc, replies };
+        const replyCount = await Comment.countDocuments({
+          parent_comment_id: comment._id,
+        });
+        return { ...comment._doc, replyCount };
       })
     );
 
@@ -125,10 +124,10 @@ const getCommentsByPostService = async (post_id, query) => {
       message: "Lấy danh sách bình luận thành công",
       EC: 0,
       data: {
-        comments: commentsWithReplies,
+        comments: commentsWithReplyCount,
         pagination: {
-          page,
-          limit,
+          page: parseInt(page),
+          limit: parseInt(limit),
           total,
           totalPages: Math.ceil(total / limit),
         },
@@ -151,19 +150,71 @@ const getCommentByIdService = async (comment_id) => {
       return { message: "Bình luận không tồn tại", EC: 1 };
     }
 
-    // Lấy bình luận con nếu có
-    const replies = await Comment.find({ parent_comment_id: comment_id })
-      .populate("user_id", "full_name avatar_url")
-      .select("user_id content createdAt parent_comment_id")
-      .sort({ createdAt: 1 });
+    // Đếm số phản hồi
+    const replyCount = await Comment.countDocuments({
+      parent_comment_id: comment_id,
+    });
 
     return {
       message: "Lấy thông tin bình luận thành công",
       EC: 0,
-      data: { ...comment._doc, replies },
+      data: { ...comment._doc, replyCount },
     };
   } catch (error) {
     console.error("Error in getCommentByIdService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
+const getRepliesByCommentService = async (comment_id, query) => {
+  try {
+    // Kiểm tra bình luận cha có tồn tại không
+    const parentComment = await Comment.findById(comment_id);
+    if (!parentComment) {
+      return { message: "Bình luận cha không tồn tại", EC: 1 };
+    }
+
+    const { page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    // Lấy danh sách phản hồi (bình luận con) của bình luận cha
+    const comments = await Comment.find({ parent_comment_id: comment_id })
+      .populate("user_id", "full_name avatar_url")
+      .select("user_id content createdAt parent_comment_id")
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Lấy tổng số phản hồi
+    const total = await Comment.countDocuments({
+      parent_comment_id: comment_id,
+    });
+
+    // Đếm số phản hồi con cho mỗi phản hồi
+    const commentsWithReplyCount = await Promise.all(
+      comments.map(async (comment) => {
+        const replyCount = await Comment.countDocuments({
+          parent_comment_id: comment._id,
+        });
+        return { ...comment._doc, replyCount };
+      })
+    );
+
+    return {
+      message: "Lấy danh sách phản hồi thành công",
+      EC: 0,
+      data: {
+        comments: commentsWithReplyCount,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getRepliesByCommentService:", error);
     return { message: "Lỗi server", EC: -1 };
   }
 };
@@ -173,4 +224,5 @@ module.exports = {
   deleteCommentService,
   getCommentsByPostService,
   getCommentByIdService,
+  getRepliesByCommentService,
 };

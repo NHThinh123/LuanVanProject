@@ -3,6 +3,7 @@ const {
   deleteCommentService,
   getCommentsByPostService,
   getCommentByIdService,
+  getRepliesByCommentService,
 } = require("../services/comment.service");
 
 const createComment = async (req, res) => {
@@ -55,9 +56,20 @@ const getCommentById = async (req, res) => {
     .json(result);
 };
 
+const getRepliesByComment = async (req, res) => {
+  const { comment_id } = req.params;
+  const { page, limit } = req.query;
+
+  const result = await getRepliesByCommentService(comment_id, { page, limit });
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
+    .json(result);
+};
+
 module.exports = {
   createComment,
   deleteComment,
   getCommentsByPost,
   getCommentById,
+  getRepliesByComment,
 };

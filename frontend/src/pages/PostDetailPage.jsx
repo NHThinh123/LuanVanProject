@@ -8,25 +8,34 @@ import {
   Tag,
   Typography,
 } from "antd";
-
 import AvatarCustom from "../components/molecules/AvatarCustom";
-import { postDetail, posts } from "../mockups/mockup";
 import ActionButtons from "../features/post/components/atoms/ActionButtons";
 import CommentForm from "../features/post/components/atoms/CommentForm";
-
 import CommentList from "../features/post/components/templates/CommentList";
 import SuggestedPostList from "../features/post/components/templates/SuggestedPostList";
 import { usePostById } from "../features/post/hooks/usePostById";
+
 import { useParams } from "react-router-dom";
 import { formatDate } from "../constants/formatDate";
 import "quill/dist/quill.snow.css";
 import { useAuthContext } from "../contexts/auth.context";
+import { posts } from "../mockups/mockup";
+import { useComment } from "../features/post/hooks/useComment";
+
 const PostDetailPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const post_id = useParams().id;
-  const { post, isLoading: postsLoading } = usePostById(post_id);
+  const { post, isLoading: postsLoading } = usePostById(post_id, user?._id);
+  const {
+    comments,
+    // pagination,
+    isLoading: commentsLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+  } = useComment(post_id);
 
-  if (authLoading || postsLoading) {
+  if (authLoading || postsLoading || commentsLoading) {
     return (
       <Row justify={"center"}>
         <Col style={{ width: "100%", maxWidth: 800 }}>
@@ -49,11 +58,20 @@ const PostDetailPage = () => {
       </Row>
     );
   }
+
+  if (error) {
+    return (
+      <Row justify="center">
+        <Col style={{ width: "100%", maxWidth: 800 }}>
+          <Typography.Text type="danger">Lỗi: {error.message}</Typography.Text>
+        </Col>
+      </Row>
+    );
+  }
+
   return (
     <Row justify="center">
       <Col style={{ width: "100%", maxWidth: 800 }}>
-        {/* Tiêu đề bài viết */}
-
         <Typography.Title level={1} style={{ fontSize: 36, marginBottom: 10 }}>
           {post.title || "Tiêu đề bài viết"}
         </Typography.Title>
@@ -94,18 +112,14 @@ const PostDetailPage = () => {
                 #{tag}
               </Tag>
             ))}
-
             <Divider style={{ margin: "16px 0" }} />
           </>
         )}
-
-        {/* Nội dung bài viết */}
 
         <div
           style={{
             fontSize: 16,
             lineHeight: 1.6,
-
             marginBottom: 20,
           }}
         >
@@ -122,22 +136,25 @@ const PostDetailPage = () => {
           postId={post._id}
         />
         <Divider style={{ margin: "16px 0" }} />
-        {/* Bình luận */}
         <Typography.Title level={2} style={{ marginBottom: 16 }}>
           Bình luận ({post.commentCount})
         </Typography.Title>
-        <CommentForm author={user} />
+        <CommentForm author={user} post_id={post_id} />
         <Divider />
-
-        <CommentList comments={postDetail.comments} />
+        <CommentList comments={comments} post_id={post_id} />
         <Divider />
-
-        <Button variant="outlined" color="primary" block>
-          Xem thêm bình luận
-        </Button>
+        {hasNextPage && (
+          <Button
+            variant="outlined"
+            color="primary"
+            block
+            onClick={() => fetchNextPage()}
+            disabled={commentsLoading}
+          >
+            Xem thêm bình luận
+          </Button>
+        )}
         <Divider />
-        {/* Bài viết đề xuất */}
-
         <Typography.Title level={1} style={{ margin: "16px 0" }}>
           Bài viết đề xuất
         </Typography.Title>
