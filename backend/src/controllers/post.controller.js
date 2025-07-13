@@ -5,11 +5,12 @@ const {
   getPostsService,
   getPostByIdService,
   updatePostStatusService,
+  getRecommendedPostsService,
 } = require("../services/post.service");
 
 const createPost = async (req, res) => {
   const { course_id, category_id, title, content } = req.body;
-  const user_id = req.user._id; // Lấy từ middleware authentication
+  const user_id = req.user._id;
 
   if (!title || !content) {
     return res.status(400).json({ message: "Thiếu title hoặc content", EC: 1 });
@@ -54,7 +55,6 @@ const deletePost = async (req, res) => {
 
 const getPosts = async (req, res) => {
   const { user_id, course_id, category_id, status, page, limit } = req.query;
-
   const current_user_id = req.user?._id;
 
   const result = await getPostsService({
@@ -94,6 +94,19 @@ const updatePostStatus = async (req, res) => {
     .json(result);
 };
 
+const getRecommendedPosts = async (req, res) => {
+  const { page, limit } = req.query;
+  const user_id = req.user._id;
+
+  const result = await getRecommendedPostsService({
+    user_id,
+    page,
+    limit,
+    current_user_id: user_id,
+  });
+  return res.status(result.EC === 0 ? 200 : 500).json(result);
+};
+
 module.exports = {
   createPost,
   updatePost,
@@ -101,4 +114,5 @@ module.exports = {
   getPosts,
   getPostById,
   updatePostStatus,
+  getRecommendedPosts,
 };

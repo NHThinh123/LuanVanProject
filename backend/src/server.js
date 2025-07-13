@@ -3,7 +3,7 @@ const express = require("express");
 const configViewEngine = require("./config/viewEngine");
 const connection = require("./config/database");
 const cors = require("cors");
-
+const axios = require("axios");
 const userRoutes = require("./routes/user.route");
 const postRoutes = require("./routes/post.route");
 const commentRoutes = require("./routes/comment.route");
@@ -56,6 +56,12 @@ app.use("/api/categories", categoryRoutes);
 (async () => {
   try {
     await connection();
+    try {
+      await axios.post("http://localhost:8000/train/surprise");
+      console.log("Surprise model trained successfully on server startup");
+    } catch (error) {
+      console.error("Error training Surprise model on server startup:");
+    }
 
     app.listen(port, () => {
       console.log(`Backend Nodejs App listening on port ${port}`);

@@ -3,21 +3,21 @@ const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const Category = require("../models/category.model");
 const User_Like_Post = require("../models/user_like_post.model");
+const SearchHistory = require("../models/search_history.model");
 const { getDocumentsByPostService } = require("./document.service");
 const { getCommentsByPostService } = require("./comment.service");
 const { getTagsByPostService } = require("./post_tag.service");
+const axios = require("axios");
 
 const createPostService = async (user_id, postData) => {
   try {
     const { course_id, category_id, title, content } = postData;
 
-    // Kiểm tra người dùng có tồn tại không
     const user = await User.findById(user_id);
     if (!user) {
       return { message: "Người dùng không tồn tại", EC: 1 };
     }
 
-    // Kiểm tra khóa học nếu có
     if (course_id) {
       const course = await Course.findById(course_id);
       if (!course) {
@@ -25,7 +25,6 @@ const createPostService = async (user_id, postData) => {
       }
     }
 
-    // Kiểm tra danh mục nếu có
     if (category_id) {
       const category = await Category.findById(category_id);
       if (!category) {
@@ -33,7 +32,6 @@ const createPostService = async (user_id, postData) => {
       }
     }
 
-    // Tạo bài viết mới
     const post = await Post.create({
       user_id,
       course_id,
@@ -58,7 +56,6 @@ const updatePostService = async (user_id, post_id, postData) => {
   try {
     const { course_id, category_id, title, content } = postData;
 
-    // Kiểm tra bài viết có tồn tại không
     const post = await Post.findOne({ _id: post_id, user_id });
     if (!post) {
       return {
@@ -67,7 +64,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       };
     }
 
-    // Chỉ cho phép cập nhật nếu bài viết đang ở trạng thái pending
     if (post.status !== "pending") {
       return {
         message: "Không thể cập nhật bài viết đã được duyệt hoặc từ chối",
@@ -75,7 +71,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       };
     }
 
-    // Kiểm tra khóa học nếu có
     if (course_id) {
       const course = await Course.findById(course_id);
       if (!course) {
@@ -83,7 +78,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    // Kiểm tra danh mục nếu có
     if (category_id) {
       const category = await Category.findById(category_id);
       if (!category) {
@@ -91,7 +85,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    // Cập nhật bài viết
     post.course_id = course_id || post.course_id;
     post.category_id = category_id || post.category_id;
     post.title = title || post.title;
@@ -111,7 +104,6 @@ const updatePostService = async (user_id, post_id, postData) => {
 
 const deletePostService = async (user_id, post_id) => {
   try {
-    // Kiểm tra bài viết có tồn tại không
     const post = await Post.findOneAndDelete({ _id: post_id, user_id });
     if (!post) {
       return {
@@ -139,7 +131,8 @@ const getPostsService = async (query) => {
       status,
       page = 1,
       limit = 10,
-      current_user_id, // Thêm current_user_id để kiểm tra trạng thái thích
+      current_user_id,
+      $or,
     } = query;
     const filter = {};
 
@@ -147,6 +140,7 @@ const getPostsService = async (query) => {
     if (course_id) filter.course_id = course_id;
     if (category_id) filter.category_id = category_id;
     if (status) filter.status = status;
+    if ($or) filter.$or = $or;
 
     const skip = (page - 1) * limit;
 
@@ -160,7 +154,6 @@ const getPostsService = async (query) => {
 
     const total = await Post.countDocuments(filter);
 
-    // Lấy thêm thông tin documents, tags, likeCount, commentCount, và isLiked cho mỗi bài viết
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
         const [
@@ -172,14 +165,14 @@ const getPostsService = async (query) => {
         ] = await Promise.all([
           getDocumentsByPostService(post._id),
           getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }), // Lấy danh sách lượt thích
+          User_Like_Post.find({ post_id: post._id }),
           getCommentsByPostService(post._id, { page: 1, limit: 0 }),
           current_user_id
             ? User_Like_Post.findOne({
                 user_id: current_user_id,
                 post_id: post._id,
               })
-            : null, // Kiểm tra trạng thái thích
+            : null,
         ]);
         const image =
           documentsResult.EC === 0 && documentsResult.data.length > 0
@@ -196,7 +189,7 @@ const getPostsService = async (query) => {
               ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
               : [],
           likeCount: likesResult.length,
-          isLiked: current_user_id ? !!likeStatus : false, // Trạng thái thích của người dùng hiện tại
+          isLiked: current_user_id ? !!likeStatus : false,
           commentCount:
             commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
         };
@@ -233,7 +226,6 @@ const getPostByIdService = async (post_id, current_user_id) => {
       return { message: "Bài viết không tồn tại", EC: 1 };
     }
 
-    // Lấy thêm thông tin documents, tags, likeCount, commentCount, và isLiked
     const [
       documentsResult,
       tagsResult,
@@ -274,24 +266,20 @@ const getPostByIdService = async (post_id, current_user_id) => {
 
 const updatePostStatusService = async (post_id, status, admin_id) => {
   try {
-    // Kiểm tra admin có tồn tại không
     const admin = await User.findById(admin_id);
     if (!admin || admin.role !== "admin") {
       return { message: "Không có quyền thực hiện hành động này", EC: 1 };
     }
 
-    // Kiểm tra bài viết có tồn tại không
     const post = await Post.findById(post_id);
     if (!post) {
       return { message: "Bài viết không tồn tại", EC: 1 };
     }
 
-    // Kiểm tra trạng thái hợp lệ
     if (!["accepted", "rejected"].includes(status)) {
       return { message: "Trạng thái không hợp lệ", EC: 1 };
     }
 
-    // Cập nhật trạng thái
     post.status = status;
     await post.save();
 
@@ -306,6 +294,106 @@ const updatePostStatusService = async (post_id, status, admin_id) => {
   }
 };
 
+const getRecommendedPostsService = async (query) => {
+  try {
+    const { user_id, page = 1, limit = 10, current_user_id } = query;
+
+    // Gọi API Python để lấy danh sách đề xuất
+    const response = await axios.get(
+      `http://localhost:8000/recommendations/surprise/${user_id}?n=${limit}`
+    );
+    const recommendations = response.data.recommendations;
+
+    if (recommendations.length === 0) {
+      // Cold start: lấy bài viết dựa trên lịch sử tìm kiếm
+      const searchHistory = await SearchHistory.find({ user_id })
+        .sort({ createdAt: -1 })
+        .limit(5);
+      if (searchHistory.length > 0) {
+        const keywords = searchHistory.map((item) => item.keyword);
+        const postsResult = await getPostsService({
+          status: "pending",
+          page,
+          limit,
+          current_user_id,
+          $or: [
+            { title: { $regex: keywords.join("|"), $options: "i" } },
+            { content: { $regex: keywords.join("|"), $options: "i" } },
+          ],
+        });
+        const result = postsResult.data.posts.map((post) => ({
+          ...post,
+          score: null,
+        }));
+        return {
+          message:
+            "Lấy danh sách bài viết dựa trên lịch sử tìm kiếm thành công",
+          EC: 0,
+          data: {
+            posts: result,
+            pagination: postsResult.data.pagination,
+          },
+        };
+      }
+
+      // Nếu không có lịch sử tìm kiếm, lấy bài viết phổ biến
+      const popularPosts = await getPostsService({
+        status: "pending",
+        page,
+        limit,
+        current_user_id,
+      });
+      const result = popularPosts.data.posts.map((post) => ({
+        ...post,
+        score: null,
+      }));
+      return {
+        message: "Lấy danh sách bài viết phổ biến thành công",
+        EC: 0,
+        data: {
+          posts: result,
+          pagination: popularPosts.data.pagination,
+        },
+      };
+    }
+
+    // Lấy chi tiết bài viết từ MongoDB
+    const postIds = recommendations.map((item) => item.post_id);
+    const postsResult = await getPostsService({
+      post_id: { $in: postIds },
+      status: "pending",
+      current_user_id,
+    });
+
+    // Kết hợp điểm số với chi tiết bài viết
+    const postsWithScores = recommendations
+      .map((item) => {
+        const post = postsResult.data.posts.find(
+          (p) => p._id.toString() === item.post_id
+        );
+        return post ? { ...post, score: item.score } : null;
+      })
+      .filter((post) => post !== null);
+
+    return {
+      message: "Lấy danh sách bài viết đề xuất thành công",
+      EC: 0,
+      data: {
+        posts: postsWithScores,
+        pagination: {
+          page,
+          limit,
+          total: postsWithScores.length,
+          totalPages: Math.ceil(postsWithScores.length / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getRecommendedPostsService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
 module.exports = {
   createPostService,
   updatePostService,
@@ -313,4 +401,5 @@ module.exports = {
   getPostsService,
   getPostByIdService,
   updatePostStatusService,
+  getRecommendedPostsService,
 };
