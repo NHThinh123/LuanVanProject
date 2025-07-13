@@ -62,7 +62,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <Row style={{ height: "100vh" }} justify="center" gutter={[24, 24]}>
+    <Row justify="center" gutter={[24, 24]}>
       <Col span={16}>
         <Flex align="center" flex={1} gap={16}>
           <Avatar

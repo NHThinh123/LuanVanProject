@@ -19,13 +19,15 @@ import { useParams } from "react-router-dom";
 import { formatDate } from "../constants/formatDate";
 import "quill/dist/quill.snow.css";
 import { useAuthContext } from "../contexts/auth.context";
-import { posts } from "../mockups/mockup";
+
 import { useComment } from "../features/post/hooks/useComment";
+import { usePosts } from "../features/post/hooks/usePost";
 
 const PostDetailPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const post_id = useParams().id;
   const { post, isLoading: postsLoading } = usePostById(post_id, user?._id);
+  const { posts, isLoading: isPostsLoading } = usePosts({ status: "pending" });
   const {
     comments,
     // pagination,
@@ -35,7 +37,7 @@ const PostDetailPage = () => {
     hasNextPage,
   } = useComment(post_id);
 
-  if (authLoading || postsLoading || commentsLoading) {
+  if (authLoading || postsLoading || commentsLoading || isPostsLoading) {
     return (
       <Row justify={"center"}>
         <Col style={{ width: "100%", maxWidth: 800 }}>

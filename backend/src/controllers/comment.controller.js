@@ -8,7 +8,7 @@ const {
 
 const createComment = async (req, res) => {
   const { post_id, content, parent_comment_id } = req.body;
-  const user_id = req.user._id; // Lấy từ middleware authentication
+  const user_id = req.user._id;
 
   if (!post_id || !content) {
     return res
@@ -40,8 +40,13 @@ const deleteComment = async (req, res) => {
 const getCommentsByPost = async (req, res) => {
   const { post_id } = req.params;
   const { page, limit } = req.query;
+  const user_id = req.user?._id;
 
-  const result = await getCommentsByPostService(post_id, { page, limit });
+  const result = await getCommentsByPostService(
+    post_id,
+    { page, limit },
+    user_id
+  );
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
     .json(result);
@@ -49,8 +54,9 @@ const getCommentsByPost = async (req, res) => {
 
 const getCommentById = async (req, res) => {
   const { comment_id } = req.params;
+  const user_id = req.user?._id;
 
-  const result = await getCommentByIdService(comment_id);
+  const result = await getCommentByIdService(comment_id, user_id);
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
     .json(result);
@@ -59,8 +65,13 @@ const getCommentById = async (req, res) => {
 const getRepliesByComment = async (req, res) => {
   const { comment_id } = req.params;
   const { page, limit } = req.query;
+  const user_id = req.user?._id;
 
-  const result = await getRepliesByCommentService(comment_id, { page, limit });
+  const result = await getRepliesByCommentService(
+    comment_id,
+    { page, limit },
+    user_id
+  );
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
     .json(result);

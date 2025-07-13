@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {
   useInfiniteQuery,
   useMutation,
@@ -8,11 +9,15 @@ import {
   getCommentsByPost,
   getRepliesByComment,
   deleteComment,
+  likeComment,
+  unlikeComment,
 } from "../services/comment.service";
 import { notification } from "antd";
+import { useAuthContext } from "../../../contexts/auth.context";
 
 export const useComment = (post_id, comment_id = null) => {
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
 
   // Truy vấn danh sách bình luận hoặc phản hồi
   const commentsQuery = useInfiniteQuery({
@@ -42,6 +47,51 @@ export const useComment = (post_id, comment_id = null) => {
   // Mutation để tạo bình luận
   const createCommentMutation = useMutation({
     mutationFn: (commentData) => createComment(commentData),
+    onMutate: async (commentData) => {
+      await queryClient.cancelQueries(["comments", post_id]);
+      if (comment_id) {
+        await queryClient.cancelQueries(["replies", comment_id]);
+      }
+      const previousComments = queryClient.getQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id]
+      );
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        (old) => ({
+          ...old,
+          pages: old.pages.map((page, index) =>
+            index === 0
+              ? {
+                  ...page,
+                  data: {
+                    ...page.data,
+                    comments: [
+                      {
+                        _id: "temp-id",
+                        content: commentData.content,
+                        user_id: {
+                          _id: user._id,
+                          full_name: user.full_name,
+                          avatar_url: user.avatar_url,
+                        },
+                        post_id: commentData.post_id,
+                        parent_comment_id:
+                          commentData.parent_comment_id || null,
+                        createdAt: new Date().toISOString(),
+                        replyCount: 0,
+                        likeCount: 0,
+                        isLiked: false,
+                      },
+                      ...page.comments,
+                    ],
+                  },
+                }
+              : page
+          ),
+        })
+      );
+      return { previousComments };
+    },
     onSuccess: (response) => {
       notification.success({
         message: response.message || "Bình luận đã được gửi",
@@ -51,10 +101,14 @@ export const useComment = (post_id, comment_id = null) => {
         queryClient.invalidateQueries(["replies", comment_id]);
       }
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
       notification.error({
         message: error.message || "Tạo bình luận thất bại",
       });
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        context.previousComments
+      );
     },
   });
 
@@ -77,6 +131,114 @@ export const useComment = (post_id, comment_id = null) => {
     },
   });
 
+  // Mutation để thích bình luận
+  const likeCommentMutation = useMutation({
+    mutationFn: (comment_id) => likeComment(comment_id),
+    onMutate: async (comment_id) => {
+      await queryClient.cancelQueries(["comments", post_id]);
+      if (comment_id) {
+        await queryClient.cancelQueries(["replies", comment_id]);
+      }
+      const previousComments = queryClient.getQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id]
+      );
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        (old) => ({
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: {
+              ...page.data,
+              comments: page.comments.map((comment) =>
+                comment._id === comment_id
+                  ? {
+                      ...comment,
+                      likeCount: comment.likeCount + 1,
+                      isLiked: true,
+                    }
+                  : comment
+              ),
+            },
+          })),
+        })
+      );
+      return { previousComments };
+    },
+    onSuccess: (response) => {
+      // notification.success({
+      //   message: response.message || "Thích bình luận thành công",
+      // });
+      queryClient.invalidateQueries(["comments", post_id]);
+      if (comment_id) {
+        queryClient.invalidateQueries(["replies", comment_id]);
+      }
+    },
+    onError: (error, _, context) => {
+      notification.error({
+        message: error.message || "Thích bình luận thất bại",
+      });
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        context.previousComments
+      );
+    },
+  });
+
+  // Mutation để bỏ thích bình luận
+  const unlikeCommentMutation = useMutation({
+    mutationFn: (comment_id) => unlikeComment(comment_id),
+    onMutate: async (comment_id) => {
+      await queryClient.cancelQueries(["comments", post_id]);
+      if (comment_id) {
+        await queryClient.cancelQueries(["replies", comment_id]);
+      }
+      const previousComments = queryClient.getQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id]
+      );
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        (old) => ({
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: {
+              ...page.data,
+              comments: page.comments.map((comment) =>
+                comment._id === comment_id
+                  ? {
+                      ...comment,
+                      likeCount: comment.likeCount - 1,
+                      isLiked: false,
+                    }
+                  : comment
+              ),
+            },
+          })),
+        })
+      );
+      return { previousComments };
+    },
+    onSuccess: (response) => {
+      // notification.success({
+      //   message: response.message || "Bỏ thích bình luận thành công",
+      // });
+      queryClient.invalidateQueries(["comments", post_id]);
+      if (comment_id) {
+        queryClient.invalidateQueries(["replies", comment_id]);
+      }
+    },
+    onError: (error, _, context) => {
+      notification.error({
+        message: error.message || "Bỏ thích bình luận thất bại",
+      });
+      queryClient.setQueryData(
+        comment_id ? ["replies", comment_id] : ["comments", post_id],
+        context.previousComments
+      );
+    },
+  });
+
   return {
     comments:
       commentsQuery.data?.pages.flatMap((page) => page?.comments || []) || [],
@@ -89,5 +251,9 @@ export const useComment = (post_id, comment_id = null) => {
     createCommentMutation,
     createCommentLoading: createCommentMutation.isPending,
     deleteComment: deleteCommentMutation.mutate,
+    likeComment: likeCommentMutation.mutate,
+    unlikeComment: unlikeCommentMutation.mutate,
+    likeCommentLoading: likeCommentMutation.isPending,
+    unlikeCommentLoading: unlikeCommentMutation.isPending,
   };
 };

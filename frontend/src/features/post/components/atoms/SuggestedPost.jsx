@@ -1,7 +1,7 @@
 import { Card, Flex, List, Typography } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { CommentOutlined, LikeOutlined } from "@ant-design/icons";
-
+import { formatDate } from "../../../../constants/formatDate";
 const SuggestedPost = ({ post }) => (
   <List.Item>
     <Card
@@ -15,8 +15,8 @@ const SuggestedPost = ({ post }) => (
       style={{ width: "100%" }}
     >
       <AvatarCustom
-        src={post.author.avatar}
-        name={post.author.name}
+        src={post.user_id.avatar_url}
+        name={post.user_id.full_name}
         size={24}
         style={{ fontSize: 14 }}
         color="#000"
@@ -25,26 +25,23 @@ const SuggestedPost = ({ post }) => (
         title={post.title}
         description={
           <Flex vertical gap={8}>
-            <p
+            <div
               style={{
                 display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
                 WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
                 overflow: "hidden",
-                textOverflow: "ellipsis",
-                minHeight: 50,
               }}
-            >
-              {post.content}
-            </p>
+              dangerouslySetInnerHTML={{ __html: post?.content || "" }}
+            />
             <Flex align="center" gap={16}>
               <span>
-                <LikeOutlined /> {post.likeCounts}
+                <LikeOutlined /> {post.likeCount}
               </span>
               <span>
-                <CommentOutlined /> {post.commentCounts}
+                <CommentOutlined /> {post.commentCount}
               </span>
-              <span>{post.date}</span>
+              <span>{formatDate(post.createdAt)}</span>
             </Flex>
           </Flex>
         }

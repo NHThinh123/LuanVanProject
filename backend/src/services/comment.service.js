@@ -1,6 +1,7 @@
 const Comment = require("../models/comment.model");
 const Post = require("../models/post.model");
 const User = require("../models/user.model");
+const User_Like_Comment = require("../models/user_like_comment.model");
 
 const createCommentService = async (
   user_id,
@@ -51,7 +52,7 @@ const createCommentService = async (
     return {
       message: "Tạo bình luận thành công",
       EC: 0,
-      data: comment,
+      data: { ...comment._doc, likeCount: 0, isLiked: false },
     };
   } catch (error) {
     console.error("Error in createCommentService:", error);
@@ -75,6 +76,9 @@ const deleteCommentService = async (user_id, comment_id) => {
       $or: [{ _id: comment_id }, { parent_comment_id: comment_id }],
     });
 
+    // Xóa các lượt thích liên quan
+    await User_Like_Comment.deleteMany({ comment_id });
+
     return {
       message: "Xóa bình luận thành công",
       EC: 0,
@@ -85,7 +89,7 @@ const deleteCommentService = async (user_id, comment_id) => {
   }
 };
 
-const getCommentsByPostService = async (post_id, query) => {
+const getCommentsByPostService = async (post_id, query, user_id) => {
   try {
     // Kiểm tra bài viết có tồn tại không
     const post = await Post.findById(post_id);
@@ -96,7 +100,7 @@ const getCommentsByPostService = async (post_id, query) => {
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    // Lấy danh sách bình luận cấp 1 (không có parent_comment_id)
+    // Lấy danh sách bình luận cấp 1
     const comments = await Comment.find({ post_id, parent_comment_id: null })
       .populate("user_id", "full_name avatar_url")
       .select("user_id content createdAt parent_comment_id")
@@ -110,13 +114,22 @@ const getCommentsByPostService = async (post_id, query) => {
       parent_comment_id: null,
     });
 
-    // Đếm số phản hồi cho mỗi bình luận cấp 1
-    const commentsWithReplyCount = await Promise.all(
+    // Thêm likeCount và isLiked cho mỗi bình luận
+    const commentsWithDetails = await Promise.all(
       comments.map(async (comment) => {
+        const likeCount = await User_Like_Comment.countDocuments({
+          comment_id: comment._id,
+        });
+        const isLiked = user_id
+          ? !!(await User_Like_Comment.findOne({
+              user_id,
+              comment_id: comment._id,
+            }))
+          : false;
         const replyCount = await Comment.countDocuments({
           parent_comment_id: comment._id,
         });
-        return { ...comment._doc, replyCount };
+        return { ...comment._doc, likeCount, isLiked, replyCount };
       })
     );
 
@@ -124,7 +137,7 @@ const getCommentsByPostService = async (post_id, query) => {
       message: "Lấy danh sách bình luận thành công",
       EC: 0,
       data: {
-        comments: commentsWithReplyCount,
+        comments: commentsWithDetails,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -139,7 +152,7 @@ const getCommentsByPostService = async (post_id, query) => {
   }
 };
 
-const getCommentByIdService = async (comment_id) => {
+const getCommentByIdService = async (comment_id, user_id) => {
   try {
     // Lấy chi tiết bình luận
     const comment = await Comment.findById(comment_id)
@@ -150,7 +163,13 @@ const getCommentByIdService = async (comment_id) => {
       return { message: "Bình luận không tồn tại", EC: 1 };
     }
 
-    // Đếm số phản hồi
+    // Đếm số lượt thích và kiểm tra trạng thái thích
+    const likeCount = await User_Like_Comment.countDocuments({
+      comment_id,
+    });
+    const isLiked = user_id
+      ? !!(await User_Like_Comment.findOne({ user_id, comment_id }))
+      : false;
     const replyCount = await Comment.countDocuments({
       parent_comment_id: comment_id,
     });
@@ -158,7 +177,7 @@ const getCommentByIdService = async (comment_id) => {
     return {
       message: "Lấy thông tin bình luận thành công",
       EC: 0,
-      data: { ...comment._doc, replyCount },
+      data: { ...comment._doc, likeCount, isLiked, replyCount },
     };
   } catch (error) {
     console.error("Error in getCommentByIdService:", error);
@@ -166,7 +185,7 @@ const getCommentByIdService = async (comment_id) => {
   }
 };
 
-const getRepliesByCommentService = async (comment_id, query) => {
+const getRepliesByCommentService = async (comment_id, query, user_id) => {
   try {
     // Kiểm tra bình luận cha có tồn tại không
     const parentComment = await Comment.findById(comment_id);
@@ -177,7 +196,7 @@ const getRepliesByCommentService = async (comment_id, query) => {
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    // Lấy danh sách phản hồi (bình luận con) của bình luận cha
+    // Lấy danh sách phản hồi
     const comments = await Comment.find({ parent_comment_id: comment_id })
       .populate("user_id", "full_name avatar_url")
       .select("user_id content createdAt parent_comment_id")
@@ -190,13 +209,22 @@ const getRepliesByCommentService = async (comment_id, query) => {
       parent_comment_id: comment_id,
     });
 
-    // Đếm số phản hồi con cho mỗi phản hồi
-    const commentsWithReplyCount = await Promise.all(
+    // Thêm likeCount và isLiked cho mỗi phản hồi
+    const commentsWithDetails = await Promise.all(
       comments.map(async (comment) => {
+        const likeCount = await User_Like_Comment.countDocuments({
+          comment_id: comment._id,
+        });
+        const isLiked = user_id
+          ? !!(await User_Like_Comment.findOne({
+              user_id,
+              comment_id: comment._id,
+            }))
+          : false;
         const replyCount = await Comment.countDocuments({
           parent_comment_id: comment._id,
         });
-        return { ...comment._doc, replyCount };
+        return { ...comment._doc, likeCount, isLiked, replyCount };
       })
     );
 
@@ -204,7 +232,7 @@ const getRepliesByCommentService = async (comment_id, query) => {
       message: "Lấy danh sách phản hồi thành công",
       EC: 0,
       data: {
-        comments: commentsWithReplyCount,
+        comments: commentsWithDetails,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

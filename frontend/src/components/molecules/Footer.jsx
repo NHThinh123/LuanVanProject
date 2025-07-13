@@ -31,14 +31,23 @@ const FooterCustom = () => {
           </Flex>
         </Col>
         <Col xs={24} sm={8}>
-          <Flex gap={16} align="end">
-            <Link to="/" style={{ color: "#595959", fontSize: 14 }}>
+          <Flex gap={36} align="end">
+            <Link
+              to="/"
+              style={{ color: "#595959", fontSize: 14, fontWeight: "bold" }}
+            >
               Về chúng tôi
             </Link>
-            <Link to="/" style={{ color: "#595959", fontSize: 14 }}>
+            <Link
+              to="/"
+              style={{ color: "#595959", fontSize: 14, fontWeight: "bold" }}
+            >
               Điều khoản sử dụng
             </Link>
-            <Link to="/" style={{ color: "#595959", fontSize: 14 }}>
+            <Link
+              to="/"
+              style={{ color: "#595959", fontSize: 14, fontWeight: "bold" }}
+            >
               Chính sách bảo mật
             </Link>
           </Flex>

@@ -1,6 +1,7 @@
 import {
   Button,
   Col,
+  Divider,
   Flex,
   Input,
   List,
@@ -11,10 +12,14 @@ import {
 } from "antd";
 import { useState } from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
-import { CommentOutlined } from "@ant-design/icons";
+import {
+  CommentOutlined,
+  HeartFilled,
+  HeartOutlined,
+  LikeOutlined,
+} from "@ant-design/icons";
 import CommentList from "../templates/CommentList";
 import { useAuthContext } from "../../../../contexts/auth.context";
-
 import { formatDate } from "../../../../constants/formatDate";
 import { useComment } from "../../hooks/useComment";
 
@@ -26,10 +31,15 @@ const CommentItem = ({ comment, post_id }) => {
     createCommentMutation,
     isLoading,
     createCommentLoading,
+    likeComment,
+    unlikeComment,
   } = useComment(post_id, comment._id);
   const [showReply, setShowReply] = useState(false);
   const [showReplyList, setShowReplyList] = useState(false);
   const [replyContent, setReplyContent] = useState("");
+
+  const [localLikeCount, setLocalLikeCount] = useState(comment.likeCount || 0); // State để cập nhật giao diện likeCount
+  const [localIsLiked, setLocalIsLiked] = useState(comment.isLiked); // State để cập nhật giao diện isLiked
 
   // Truy vấn phản hồi chỉ khi showReplyList là true
   const {
@@ -59,12 +69,13 @@ const CommentItem = ({ comment, post_id }) => {
         onSuccess: () => {
           setReplyContent("");
           setShowReply(false);
-          setShowReplyList(true); // Mở danh sách phản hồi sau khi gửi
+          setShowReplyList(true);
         },
       }
     );
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleDelete = () => {
     if (!user) {
       notification.error({
@@ -78,17 +89,45 @@ const CommentItem = ({ comment, post_id }) => {
   const handleToggleReplies = () => {
     setShowReplyList(!showReplyList);
   };
+
+  const handleLike = () => {
+    if (!user) {
+      notification.error({
+        message: "Vui lòng đăng nhập để thích bình luận",
+      });
+      return;
+    }
+
+    setLocalIsLiked(!localIsLiked); // Cập nhật giao diện ngay lập tức
+    setLocalLikeCount(localIsLiked ? localLikeCount - 1 : localLikeCount + 1); // Cập nhật số lượt like ngay lập tức
+
+    if (localIsLiked) {
+      unlikeComment(comment._id, {
+        onError: () => {
+          setLocalIsLiked(true); // Hoàn nguyên trạng thái nếu lỗi
+          setLocalLikeCount(localLikeCount + 1); // Hoàn nguyên số lượt like
+          notification.error({
+            message: "Bỏ thích bình luận thất bại",
+          });
+        },
+      });
+    } else {
+      likeComment(comment._id, {
+        onError: () => {
+          setLocalIsLiked(false); // Hoàn nguyên trạng thái nếu lỗi
+          setLocalLikeCount(localLikeCount - 1); // Hoàn nguyên số lượt like
+          notification.error({
+            message: "Thích bình luận thất bại",
+          });
+        },
+      });
+    }
+  };
+
   if (isLoading || repliesLoading) {
-    return (
-      <List.Item>
-        <Row style={{ width: "100%" }}>
-          <Col span={24}>
-            <Skeleton active paragraph={{ rows: 2 }} />
-          </Col>
-        </Row>
-      </List.Item>
-    );
+    return <Skeleton active paragraph={{ rows: 2 }} />;
   }
+
   return (
     <List.Item>
       <Row style={{ width: "100%" }}>
@@ -105,12 +144,29 @@ const CommentItem = ({ comment, post_id }) => {
           <Typography.Paragraph style={{ margin: 0 }}>
             {comment.content}
           </Typography.Paragraph>
+          <Divider style={{ margin: "8px 0" }} />
           <Flex align="center" gap={8} style={{ marginTop: 8 }}>
             <Flex align="center" gap={8}>
+              <Button type="text" onClick={handleLike}>
+                <Typography.Text
+                  type={localIsLiked ? "primary" : "secondary"}
+                  style={{
+                    color: localIsLiked ? "#fc3468" : undefined,
+                    display: "flex",
+                  }}
+                >
+                  {localIsLiked ? (
+                    <HeartFilled style={{ color: "#fc3468" }} />
+                  ) : (
+                    <HeartOutlined />
+                  )}
+                  <div style={{ marginLeft: 8 }}>{localLikeCount}</div>
+                </Typography.Text>
+              </Button>
               <Button type="text" onClick={handleToggleReplies}>
                 <Typography.Text type="secondary">
                   <CommentOutlined style={{ marginRight: 4 }} />
-                  {comment.replyCount || 0} Phản hồi
+                  {showReplyList ? `Ẩn` : `${comment.replyCount || 0}`}
                 </Typography.Text>
               </Button>
             </Flex>
@@ -181,7 +237,7 @@ const CommentItem = ({ comment, post_id }) => {
                 <CommentList
                   comments={replies}
                   post_id={post_id}
-                  isLoading={createCommentLoading}
+                  isLoading={createCommentLoading || repliesLoading}
                 />
                 {hasNextPage && (
                   <Button
