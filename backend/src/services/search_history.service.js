@@ -3,18 +3,34 @@ const User = require("../models/user.model");
 
 const addSearchHistoryService = async (user_id, keyword) => {
   try {
-    // Kiểm tra người dùng có tồn tại không
     const user = await User.findById(user_id);
     if (!user) {
       return { message: "Người dùng không tồn tại", EC: 1 };
     }
 
-    // Kiểm tra keyword có hợp lệ không
     if (!keyword || keyword.trim().length === 0) {
       return { message: "Từ khóa tìm kiếm không hợp lệ", EC: 1 };
     }
 
-    // Thêm lịch sử tìm kiếm
+    // Kiểm tra từ khóa đã tồn tại trong 10 mục mới nhất
+    const recentSearch = await SearchHistory.findOne({
+      user_id,
+      keyword,
+    })
+      .sort({ createdAt: -1 })
+      .limit(1);
+
+    if (recentSearch) {
+      // Cập nhật thời gian của từ khóa trùng
+      recentSearch.createdAt = new Date();
+      await recentSearch.save();
+      return {
+        message: "Cập nhật lịch sử tìm kiếm thành công",
+        EC: 0,
+        data: recentSearch,
+      };
+    }
+
     const searchHistory = await SearchHistory.create({ user_id, keyword });
     return {
       message: "Thêm lịch sử tìm kiếm thành công",

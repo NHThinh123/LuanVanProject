@@ -21,7 +21,7 @@ import { useUsers } from "../features/user/hooks/useUsers";
 const ProfilePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const { posts, isLoading } = usePosts({
-    status: "pending",
+    status: "accepted",
     user_id: user?._id,
   });
   const { users, isLoading: isUserLoading } = useUsers({});

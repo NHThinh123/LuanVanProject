@@ -12,7 +12,7 @@ const { Title } = Typography;
 
 const HomePage = () => {
   // Sử dụng hook usePosts để lấy danh sách bài viết
-  const { posts, isLoading: isPostsLoading } = usePosts({ status: "pending" });
+  const { posts, isLoading: isPostsLoading } = usePosts({ status: "accepted" });
   const { users, isLoading: isUserLoading } = useUsers({});
 
   if (isPostsLoading || isUserLoading) {

@@ -28,11 +28,26 @@ export const getPosts = async (queryParams = {}) => {
       },
     });
 
-    return response.data.posts; // Trả về danh sách bài viết
+    return response.data; // Trả về danh sách bài viết
   } catch (error) {
     throw new Error(error.message || "Lỗi server");
   }
 };
+
+export const searchPosts = async (queryParams = {}) => {
+  try {
+    const response = await axios.get("/posts/search", {
+      params: {
+        ...queryParams,
+      },
+    });
+
+    return response.data; // Trả về danh sách bài viết tìm kiếm
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi tìm kiếm bài viết");
+  }
+};
+
 export const getPostById = async (post_id, user_id) => {
   try {
     const response = await axios.get(`/posts/${post_id}`, {

@@ -8,6 +8,7 @@ const {
   getPostById,
   updatePostStatus,
   getRecommendedPosts,
+  searchPosts,
 } = require("../controllers/post.controller");
 const authentication = require("../middleware/authentication");
 const isAdmin = require("../middleware/isAdmin");
@@ -23,6 +24,7 @@ router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // 
 // Endpoint công khai
 router.get("/", authentication, getPosts); // Lấy danh sách bài viết
 router.get("/recommend", authentication, getRecommendedPosts); // Lấy danh sách bài viết đề xuất
+router.get("/search", authentication, searchPosts);
 router.get("/:post_id", authentication, getPostById); // Lấy chi tiết bài viết
 
 module.exports = router;

@@ -16,6 +16,6 @@ const searchHistorySchema = new mongoose.Schema(
 
 searchHistorySchema.index({ user_id: 1, createdAt: -1 });
 
-const SearchHistory = mongoose.model("SearchHistory", searchHistorySchema);
+const SearchHistory = mongoose.model("Search_History", searchHistorySchema);
 
 module.exports = SearchHistory;

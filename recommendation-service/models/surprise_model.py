@@ -38,45 +38,55 @@ def get_surprise_recommendations(user_id, n=10):
     df = get_user_post_interactions()
     post_metadata = get_post_metadata()
 
-    all_posts = df["post_id"].unique()
+    # Lấy tất cả bài viết có status="accepted"
+    all_posts = post_metadata["post_id"].tolist()
+    print("All accepted posts:", all_posts)  # Debug log
 
     keywords = get_search_history(user_id, limit=5)
+    print("Search history keywords for user", user_id, ":", keywords)  # Debug log
 
-    surprise_scores = [(post_id, model.predict(user_id, post_id).est) for post_id in all_posts]
+    # Tính điểm Surprise cho bài viết
+    surprise_scores = []
+    for post_id in all_posts:
+        if post_id in df["post_id"].unique():
+            score = model.predict(user_id, post_id).est
+        else:
+            score = 0.5  # Điểm mặc định cho bài viết không có tương tác
+        surprise_scores.append((post_id, score))
 
+    # Tính điểm từ khóa
     keyword_scores = [(post_id, calculate_keyword_relevance(post_id, keywords, post_metadata)) for post_id in all_posts]
 
+    # Kết hợp điểm
     combined_scores = []
     for post_id in all_posts:
         surprise_score = next((score for pid, score in surprise_scores if pid == post_id), 0.0)
         keyword_score = next((score for pid, score in keyword_scores if pid == post_id), 0.0)
         combined_score = 0.7 * surprise_score + 0.3 * keyword_score
-        combined_scores.append((post_id, combined_score))
+        combined_scores.append({
+            "post_id": post_id,
+            "surprise_score": float(surprise_score),
+            "keyword_score": float(keyword_score),
+            "combined_score": float(combined_score)
+        })
 
-    combined_scores.sort(key=lambda x: x[1], reverse=True)
+    # Sắp xếp theo combined_score giảm dần
+    combined_scores.sort(key=lambda x: x["combined_score"], reverse=True)
 
-    top_n = min(n, len(combined_scores))
-    half_n = top_n // 2
+    # Lấy top n bài viết
+    result = combined_scores[:min(n, len(combined_scores))]
 
-    surprise_top = [(post_id, score) for post_id, score in surprise_scores]
-    surprise_top.sort(key=lambda x: x[1], reverse=True)
-    surprise_top = surprise_top[:half_n]
+    # Tạo debug_info
+    debug_info = {
+        "all_posts": all_posts,
+        "keywords": keywords
+    }
 
-    keyword_top = [(post_id, score) for post_id, score in keyword_scores]
-    keyword_top.sort(key=lambda x: x[1], reverse=True)
-    keyword_top = [item for item in keyword_top if item[0] not in [x[0] for x in surprise_top]]
-    keyword_top = keyword_top[:top_n - half_n]
+    print("Final recommendations for user", user_id, ":", result)  # Debug log
+    print("Debug info:", debug_info)  # Debug log
 
-    final_recommendations = []
-    for i in range(max(len(surprise_top), len(keyword_top))):
-        if i < len(surprise_top):
-            final_recommendations.append(surprise_top[i])
-        if i < len(keyword_top):
-            final_recommendations.append(keyword_top[i])
-
-    result = []
-    for post_id, _ in final_recommendations[:top_n]:
-        combined_score = next((score for pid, score in combined_scores if pid == post_id), 0.0)
-        result.append({"post_id": post_id, "score": float(combined_score)})
-
-    return result
+    return {
+        "user_id": user_id,
+        "recommendations": result,
+        "debug_info": debug_info
+    }

@@ -17,15 +17,13 @@ import {
   MenuOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation } from "react-router-dom"; // Add useLocation
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/Logo/Logo.png";
-import { searchHistory } from "../mockups/mockup";
 import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
-
-import FooterCustom from "../components/molecules/Footer";
+import { useSearchHistory } from "../features/searching/hooks/useSearchHistory";
 
 const { Header, Content, Sider } = Layout;
 
@@ -34,7 +32,13 @@ export const MainLayout = ({ children }) => {
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
-  const location = useLocation(); // Get current URL
+  const {
+    searchHistory,
+    loading: searchHistoryLoading,
+    addSearchHistory,
+  } = useSearchHistory();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const dropdownItems = [
     {
@@ -80,16 +84,36 @@ export const MainLayout = ({ children }) => {
     setCollapsed(!collapsed);
   };
 
-  // Xử lý khi chọn một mục trong lịch sử tìm kiếm
-  const handleSelect = (value) => {
-    setSearchValue(value);
-    console.log("Đã chọn từ khóa tìm kiếm:", value);
+  // Handle search and save to history
+  const handleSearch = async (value) => {
+    if (!value.trim()) return; // Ignore empty searches
+    try {
+      await addSearchHistory(value); // Use mutation to save search history
+      setSearchValue(""); // Clear search input
+      navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Redirect to search page
+    } catch (error) {
+      console.error("Lỗi khi lưu lịch sử tìm kiếm:", error);
+      navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Still redirect even if saving fails
+    }
   };
 
-  // Chuyển đổi searchHistory thành định dạng options cho AutoComplete
+  // Handle selecting a search history item or pressing Enter
+  const handleSelect = (value) => {
+    setSearchValue(value);
+    handleSearch(value); // Trigger search when selecting an item
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch(searchValue);
+    }
+  };
+
+  // Convert search history to AutoComplete options
   const searchOptions = searchHistory.map((item) => ({
-    value: item,
-    label: item,
+    value: item.keyword,
+    label: item.keyword,
   }));
 
   // Map URL paths to menu keys
@@ -98,8 +122,8 @@ export const MainLayout = ({ children }) => {
     if (path === "/") return "home";
     if (path.startsWith("/posts")) return "post";
     if (path.startsWith("/profile")) return "profile";
-    if (path === "/searching") return "searching";
-    return "home"; // Default to home if no match
+    if (path.startsWith("/searching")) return "searching";
+    return "home";
   };
 
   // Handle logo click to reload page
@@ -160,10 +184,13 @@ export const MainLayout = ({ children }) => {
                   )
               }
             >
-              <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm..." />
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Tìm kiếm..."
+                onKeyPress={handleKeyPress} // Handle Enter key
+              />
             </AutoComplete>
           </Col>
-
           <Col span={3}>
             <Flex justify="end">
               <Button variant="outlined" color="primary" href="/posts/create">
@@ -215,7 +242,7 @@ export const MainLayout = ({ children }) => {
         >
           <Menu
             mode="inline"
-            selectedKeys={[getSelectedKey()]} // Dynamically set selected key
+            selectedKeys={[getSelectedKey()]}
             style={{ height: "100%" }}
             items={[
               {
@@ -260,7 +287,6 @@ export const MainLayout = ({ children }) => {
           >
             {children}
           </Content>
-          <FooterCustom />
         </Layout>
       </Layout>
     </Layout>

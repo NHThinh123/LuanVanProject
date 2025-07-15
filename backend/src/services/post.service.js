@@ -38,7 +38,7 @@ const createPostService = async (user_id, postData) => {
       category_id,
       title,
       content,
-      status: "pending",
+      status: "accepted", // Mặc định trạng thái là accepted
     });
 
     return {
@@ -60,13 +60,6 @@ const updatePostService = async (user_id, post_id, postData) => {
     if (!post) {
       return {
         message: "Bài viết không tồn tại hoặc không thuộc về bạn",
-        EC: 1,
-      };
-    }
-
-    if (post.status !== "pending") {
-      return {
-        message: "Không thể cập nhật bài viết đã được duyệt hoặc từ chối",
         EC: 1,
       };
     }
@@ -302,7 +295,22 @@ const getRecommendedPostsService = async (query) => {
     const response = await axios.get(
       `http://localhost:8000/recommendations/surprise/${user_id}?n=${limit}`
     );
-    const recommendations = response.data.recommendations;
+    const {
+      user_id: response_user_id,
+      recommendations,
+      debug_info,
+    } = response.data;
+    console.log("User ID from Python:", response_user_id);
+    console.log("Recommendations from Python:", recommendations);
+    console.log("Debug info from Python:", debug_info);
+
+    // Kiểm tra user_id có khớp không
+    if (response_user_id !== user_id) {
+      console.error(
+        `User ID mismatch: requested=${user_id}, received=${response_user_id}`
+      );
+      return { message: "User ID không khớp", EC: -1 };
+    }
 
     if (recommendations.length === 0) {
       // Cold start: lấy bài viết dựa trên lịch sử tìm kiếm
@@ -311,8 +319,9 @@ const getRecommendedPostsService = async (query) => {
         .limit(5);
       if (searchHistory.length > 0) {
         const keywords = searchHistory.map((item) => item.keyword);
+        console.log("Search history keywords:", keywords);
         const postsResult = await getPostsService({
-          status: "pending",
+          status: "accepted",
           page,
           limit,
           current_user_id,
@@ -333,37 +342,67 @@ const getRecommendedPostsService = async (query) => {
             posts: result,
             pagination: postsResult.data.pagination,
           },
+          debug_info: {
+            all_posts: [],
+            keywords,
+          },
         };
       }
 
-      // Nếu không có lịch sử tìm kiếm, lấy bài viết phổ biến
+      // Nếu không có lịch sử tìm kiếm, lấy bài viết phổ biến hoặc ngẫu nhiên
       const popularPosts = await getPostsService({
-        status: "pending",
+        status: "accepted",
         page,
-        limit,
+        limit: Math.ceil(limit / 2),
         current_user_id,
       });
-      const result = popularPosts.data.posts.map((post) => ({
-        ...post,
-        score: null,
-      }));
+
+      const randomPosts = await Post.aggregate([
+        { $match: { status: "accepted" } },
+        { $sample: { size: Math.floor(limit / 2) } },
+      ]);
+      const randomPostsResult = await getPostsService({
+        post_id: { $in: randomPosts.map((p) => p._id) },
+        status: "accepted",
+        current_user_id,
+      });
+
+      const result = [
+        ...popularPosts.data.posts.map((post) => ({ ...post, score: null })),
+        ...randomPostsResult.data.posts.map((post) => ({
+          ...post,
+          score: null,
+        })),
+      ].slice(0, limit);
+
       return {
-        message: "Lấy danh sách bài viết phổ biến thành công",
+        message: "Lấy danh sách bài viết phổ biến và ngẫu nhiên thành công",
         EC: 0,
         data: {
           posts: result,
-          pagination: popularPosts.data.pagination,
+          pagination: {
+            page,
+            limit,
+            total: result.length,
+            totalPages: Math.ceil(result.length / limit),
+          },
+        },
+        debug_info: {
+          all_posts: [],
+          keywords: [],
         },
       };
     }
 
     // Lấy chi tiết bài viết từ MongoDB
     const postIds = recommendations.map((item) => item.post_id);
+    console.log("Post IDs requested:", postIds);
     const postsResult = await getPostsService({
       post_id: { $in: postIds },
-      status: "pending",
+      status: "accepted",
       current_user_id,
     });
+    console.log("Posts fetched from MongoDB:", postsResult.data.posts);
 
     // Kết hợp điểm số với chi tiết bài viết
     const postsWithScores = recommendations
@@ -371,7 +410,16 @@ const getRecommendedPostsService = async (query) => {
         const post = postsResult.data.posts.find(
           (p) => p._id.toString() === item.post_id
         );
-        return post ? { ...post, score: item.score } : null;
+        if (!post) {
+          console.log(`Post not found or not accepted: ${item.post_id}`);
+          return null;
+        }
+        return {
+          ...post,
+          score: item.combined_score,
+          surprise_score: item.surprise_score,
+          keyword_score: item.keyword_score,
+        };
       })
       .filter((post) => post !== null);
 
@@ -387,9 +435,102 @@ const getRecommendedPostsService = async (query) => {
           totalPages: Math.ceil(postsWithScores.length / limit),
         },
       },
+      user_id,
+      debug_info,
     };
   } catch (error) {
     console.error("Error in getRecommendedPostsService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
+const searchPostsService = async ({
+  keyword,
+  page = 1,
+  limit = 10,
+  current_user_id,
+}) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const posts = await Post.find({
+      $or: [
+        { title: { $regex: keyword, $options: "i" } },
+        { content: { $regex: keyword, $options: "i" } },
+      ],
+      status: "accepted", // Chỉ lấy bài viết đã được duyệt
+    })
+      .populate("user_id", "full_name avatar_url")
+      .populate("course_id", "course_name course_code")
+      .populate("category_id", "category_name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Post.countDocuments({
+      $or: [
+        { title: { $regex: keyword, $options: "i" } },
+        { content: { $regex: keyword, $options: "i" } },
+      ],
+      status: "accepted", // Chỉ đếm bài viết đã được duyệt
+    });
+
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const [
+          documentsResult,
+          tagsResult,
+          likesResult,
+          commentsResult,
+          likeStatus,
+        ] = await Promise.all([
+          getDocumentsByPostService(post._id),
+          getTagsByPostService(post._id),
+          User_Like_Post.find({ post_id: post._id }),
+          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
+          current_user_id
+            ? User_Like_Post.findOne({
+                user_id: current_user_id,
+                post_id: post._id,
+              })
+            : null,
+        ]);
+        const image =
+          documentsResult.EC === 0 && documentsResult.data.length > 0
+            ? documentsResult.data.find((doc) => doc.type === "image")
+                ?.document_url
+            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+        return {
+          ...post._doc,
+          image,
+          tags:
+            tagsResult.EC === 0
+              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              : [],
+          likeCount: likesResult.length,
+          isLiked: current_user_id ? !!likeStatus : false,
+          commentCount:
+            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        };
+      })
+    );
+
+    return {
+      message: "Tìm kiếm bài viết thành công",
+      EC: 0,
+      data: {
+        posts: postsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in searchPostsService:", error);
     return { message: "Lỗi server", EC: -1 };
   }
 };
@@ -402,4 +543,5 @@ module.exports = {
   getPostByIdService,
   updatePostStatusService,
   getRecommendedPostsService,
+  searchPostsService,
 };

@@ -56,7 +56,7 @@ const ActionButtons = ({ postId, likeCount, isLiked, commentCount }) => {
       </Button>
       <Divider type="vertical" style={{ height: 16 }} />
       <Button type="text">
-        <Typography.Text type="secondary">
+        <Typography.Text>
           <CommentOutlined style={{ marginRight: 4 }} /> {commentCount}
         </Typography.Text>
       </Button>

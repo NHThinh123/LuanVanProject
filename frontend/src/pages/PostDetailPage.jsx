@@ -27,7 +27,7 @@ const PostDetailPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const post_id = useParams().id;
   const { post, isLoading: postsLoading } = usePostById(post_id, user?._id);
-  const { posts, isLoading: isPostsLoading } = usePosts({ status: "pending" });
+  const { posts, isLoading: isPostsLoading } = usePosts({ status: "accepted" });
   const {
     comments,
     // pagination,

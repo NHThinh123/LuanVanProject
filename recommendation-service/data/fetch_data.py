@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pymongo import MongoClient
 import pandas as pd
 from dotenv import load_dotenv
@@ -24,10 +25,11 @@ def get_user_post_interactions():
 def get_search_history(user_id, limit=5):
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client.get_database()
-    collection = db["search_history"]
+    collection = db["search_histories"]
+
 
     # Lấy lịch sử tìm kiếm gần nhất
-    history = collection.find({"user_id": user_id}).sort("createdAt", -1).limit(limit)
+    history = collection.find({"user_id": ObjectId(user_id)}).sort("createdAt", -1).limit(limit)
     keywords = [item["keyword"] for item in history]
     return keywords
 
@@ -38,7 +40,7 @@ def get_post_metadata():
     collection = db["posts"]
 
     # Lấy tiêu đề và nội dung bài viết
-    posts = collection.find({}, {"_id": 1, "title": 1, "content": 1})
+    posts = collection.find({"status": "accepted"}, {"_id": 1, "title": 1, "content": 1})
     data = [(str(post["_id"]), post["title"], post["content"]) for post in posts]
 
     # Chuyển thành DataFrame
