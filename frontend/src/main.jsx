@@ -108,6 +108,7 @@ createRoot(document.getElementById("root")).render(
             activeOutlineColor: "none",
             borderRadiusLG: 20,
             borderRadius: 20,
+            optionSelectedColor: "#ffffff",
           },
           Radio: {
             dotSize: 0,

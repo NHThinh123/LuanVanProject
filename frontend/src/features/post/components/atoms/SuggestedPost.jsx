@@ -1,6 +1,6 @@
 import { Card, Flex, List, Typography } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
-import { CommentOutlined, LikeOutlined } from "@ant-design/icons";
+import { CommentOutlined, HeartOutlined } from "@ant-design/icons";
 import { formatDate } from "../../../../constants/formatDate";
 const SuggestedPost = ({ post }) => (
   <List.Item>
@@ -36,7 +36,7 @@ const SuggestedPost = ({ post }) => (
             />
             <Flex align="center" gap={16}>
               <span>
-                <LikeOutlined /> {post.likeCount}
+                <HeartOutlined /> {post.likeCount}
               </span>
               <span>
                 <CommentOutlined /> {post.commentCount}

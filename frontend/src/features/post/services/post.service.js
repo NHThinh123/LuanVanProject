@@ -83,3 +83,16 @@ export const unlikePost = async (postId) => {
     throw new Error(error.message || "Lỗi khi bỏ thích bài viết");
   }
 };
+
+export const getRecommendedPosts = async (queryParams = {}) => {
+  try {
+    const response = await axios.get("/posts/recommend", {
+      params: {
+        ...queryParams,
+      },
+    });
+    return response.data; // Trả về danh sách bài viết đề xuất
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi lấy danh sách bài viết đề xuất");
+  }
+};

@@ -300,9 +300,6 @@ const getRecommendedPostsService = async (query) => {
       recommendations,
       debug_info,
     } = response.data;
-    console.log("User ID from Python:", response_user_id);
-    console.log("Recommendations from Python:", recommendations);
-    console.log("Debug info from Python:", debug_info);
 
     // Kiểm tra user_id có khớp không
     if (response_user_id !== user_id) {
@@ -319,7 +316,7 @@ const getRecommendedPostsService = async (query) => {
         .limit(5);
       if (searchHistory.length > 0) {
         const keywords = searchHistory.map((item) => item.keyword);
-        console.log("Search history keywords:", keywords);
+
         const postsResult = await getPostsService({
           status: "accepted",
           page,
@@ -396,13 +393,12 @@ const getRecommendedPostsService = async (query) => {
 
     // Lấy chi tiết bài viết từ MongoDB
     const postIds = recommendations.map((item) => item.post_id);
-    console.log("Post IDs requested:", postIds);
+
     const postsResult = await getPostsService({
       post_id: { $in: postIds },
       status: "accepted",
       current_user_id,
     });
-    console.log("Posts fetched from MongoDB:", postsResult.data.posts);
 
     // Kết hợp điểm số với chi tiết bài viết
     const postsWithScores = recommendations
@@ -411,7 +407,6 @@ const getRecommendedPostsService = async (query) => {
           (p) => p._id.toString() === item.post_id
         );
         if (!post) {
-          console.log(`Post not found or not accepted: ${item.post_id}`);
           return null;
         }
         return {

@@ -1,21 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Row, Col, Typography, Tabs, Divider, Skeleton } from "antd";
-
 import PostList from "../features/home/components/templates/PostList";
 import PostPopularList from "../features/home/components/templates/PostPopularList";
 import UserList from "../features/home/components/templates/UserList";
-import { topics } from "../mockups/mockup";
 import { usePosts } from "../features/post/hooks/usePost";
+import { useCategories } from "../features/category/hooks/useCategories";
 import { useUsers } from "../features/user/hooks/useUsers";
 
 const { Title } = Typography;
 
 const HomePage = () => {
-  // Sử dụng hook usePosts để lấy danh sách bài viết
-  const { posts, isLoading: isPostsLoading } = usePosts({ status: "accepted" });
+  const { categories, loading: isCategoriesLoading } = useCategories();
   const { users, isLoading: isUserLoading } = useUsers({});
+  const [activeTab, setActiveTab] = useState("recommended");
 
-  if (isPostsLoading || isUserLoading) {
+  // Chỉ gọi usePosts cho tab hiện tại
+  const {
+    posts,
+    isLoading: isPostsLoading,
+    // pagination,
+  } = usePosts({
+    recommend: activeTab === "recommended",
+    category_id: activeTab !== "recommended" ? activeTab : undefined,
+    status: "accepted",
+    page: 1,
+    limit: 10,
+  });
+
+  if (isCategoriesLoading || isUserLoading) {
     return (
       <Row justify="center" gutter={[16, 16]}>
         <Col span={16} style={{ padding: "0px 24px" }}>
@@ -45,17 +57,27 @@ const HomePage = () => {
     );
   }
 
-  // Chuyển đổi topics thành items cho Tabs
-  const tabItems = topics.map((topic, index) => ({
-    label: topic,
-    key: `${index + 1}`,
-    children: <PostList posts={posts} isLoading={isPostsLoading} />,
-  }));
+  const tabItems = [
+    {
+      label: "Dành cho bạn",
+      key: "recommended",
+      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+    },
+    ...categories.map((category) => ({
+      label: category.category_name,
+      key: category._id,
+      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+    })),
+  ];
 
   return (
     <Row gutter={16}>
       <Col span={16} style={{ padding: "0px 24px" }}>
-        <Tabs defaultActiveKey="1" items={tabItems} />
+        <Tabs
+          defaultActiveKey="recommended"
+          items={tabItems}
+          onChange={(key) => setActiveTab(key)} // Cập nhật tab hiện tại
+        />
       </Col>
       <Col
         span={8}

@@ -1,17 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
-import { getPosts, searchPosts } from "../services/post.service";
+import {
+  getPosts,
+  searchPosts,
+  getRecommendedPosts,
+} from "../services/post.service";
 import { notification } from "antd";
 
 export const usePosts = (queryParams = {}) => {
-  const { keyword, status, page = 1, limit = 10 } = queryParams;
+  const {
+    keyword,
+    status,
+    category_id,
+    page = 1,
+    limit = 10,
+    recommend = false,
+  } = queryParams;
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["posts", status, keyword, page, limit],
+    queryKey: ["posts", status, keyword, category_id, page, limit, recommend],
     queryFn: () => {
-      if (keyword) {
-        return searchPosts({ keyword, page, limit }); // Use search endpoint if keyword is provided
+      if (recommend) {
+        return getRecommendedPosts({ page, limit }); // Lấy bài viết đề xuất
       }
-      return getPosts({ status, page, limit }); // Use regular posts endpoint otherwise
+      if (keyword) {
+        return searchPosts({ keyword, page, limit }); // Tìm kiếm bài viết
+      }
+      return getPosts({ status, category_id, page, limit }); // Lấy bài viết theo danh mục hoặc trạng thái
     },
     onError: (error) => {
       notification.error({
@@ -21,8 +35,8 @@ export const usePosts = (queryParams = {}) => {
   });
 
   return {
-    posts: data?.posts || [], // Adjust based on response structure
-    pagination: data?.pagination || {}, // Include pagination data
+    posts: data?.posts || [], // Điều chỉnh theo cấu trúc response từ backend
+    pagination: data?.pagination || {},
     isLoading,
     error,
   };
