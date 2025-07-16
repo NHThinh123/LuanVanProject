@@ -6,6 +6,14 @@ const chatRoomSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
+    name: {
+      type: String,
+    },
+    type: {
+      type: String,
+      enum: ["group", "private"],
+      default: "private",
+    },
   },
   {
     timestamps: true,

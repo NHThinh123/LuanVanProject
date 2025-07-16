@@ -268,6 +268,11 @@ export const MainLayout = ({ children }) => {
                 icon: <SearchOutlined />,
                 label: <Link to="/searching">Tìm kiếm</Link>,
               },
+              {
+                key: "messages",
+                icon: <CommentOutlined />,
+                label: <Link to="/messages">Tin nhắn</Link>,
+              },
             ]}
           />
         </Sider>
