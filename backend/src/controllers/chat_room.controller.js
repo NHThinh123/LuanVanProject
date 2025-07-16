@@ -6,20 +6,14 @@ const {
 } = require("../services/chat_room.service");
 
 const createChatRoom = async (req, res) => {
-  const { name, type, member_ids } = req.body;
-  const user_id = req.user._id; // Lấy từ middleware authentication
+  const { member_id } = req.body;
+  const user_id = req.user._id;
 
-  if (!type || !member_ids) {
-    return res
-      .status(400)
-      .json({ message: "Thiếu type hoặc member_ids", EC: 1 });
+  if (!member_id) {
+    return res.status(400).json({ message: "Thiếu member_id", EC: 1 });
   }
 
-  const result = await createChatRoomService(user_id, {
-    name,
-    type,
-    member_ids,
-  });
+  const result = await createChatRoomService(user_id, { member_id });
   return res
     .status(result.EC === 0 ? 201 : result.EC === 1 ? 400 : 500)
     .json(result);

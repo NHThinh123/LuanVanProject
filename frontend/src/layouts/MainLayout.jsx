@@ -18,7 +18,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
@@ -33,13 +33,14 @@ export const MainLayout = ({ children }) => {
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
-  const {
-    searchHistory,
-
-    addSearchHistory,
-  } = useSearchHistory();
+  const { searchHistory, addSearchHistory } = useSearchHistory();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Cuộn lên đầu trang khi đường dẫn thay đổi
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname]);
 
   const dropdownItems = [
     {
@@ -124,6 +125,7 @@ export const MainLayout = ({ children }) => {
     if (path.startsWith("/posts")) return "post";
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/searching")) return "searching";
+    if (path.startsWith("/messages")) return "messages";
     return "home";
   };
 

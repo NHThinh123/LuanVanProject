@@ -50,7 +50,7 @@ const SearchingPage = () => {
   }
 
   return (
-    <Row justify="center" style={{ height: "100vh" }}>
+    <Row justify="center" style={{}}>
       <Col span={16}>
         <h1>Kết quả tìm kiếm cho "{keyword || "Không có từ khóa"}"</h1>
         <Tabs defaultActiveKey="1" items={tabItems} style={{ marginTop: 16 }} />

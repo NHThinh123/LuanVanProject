@@ -6,12 +6,21 @@ const chatRoomSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
-    name: {
-      type: String,
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+    ],
     type: {
       type: String,
-      enum: ["group", "private"],
+      enum: ["private"],
       default: "private",
     },
   },
@@ -21,6 +30,8 @@ const chatRoomSchema = new mongoose.Schema(
 );
 chatRoomSchema.index({ created_by: 1, createdAt: -1 });
 chatRoomSchema.index({ last_message_id: 1 });
+chatRoomSchema.index({ members: 1 });
+
 const Chat_Room = mongoose.model("Chat_Room", chatRoomSchema);
 
 module.exports = Chat_Room;
