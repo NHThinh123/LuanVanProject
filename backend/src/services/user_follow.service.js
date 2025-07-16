@@ -65,7 +65,7 @@ const unfollowUserService = async (user_id, user_follow_id) => {
   }
 };
 
-const getFollowersService = async (user_id) => {
+const getFollowersService = async (user_id, current_user_id) => {
   try {
     // Kiểm tra người dùng có tồn tại không
     const user = await User.findById(user_id);
@@ -75,13 +75,44 @@ const getFollowersService = async (user_id) => {
 
     // Lấy danh sách người theo dõi
     const followers = await UserFollow.find({ user_follow_id: user_id })
-      .populate("user_id", "full_name avatar_url")
-      .select("user_id createdAt");
+      .populate({
+        path: "user_id",
+        select: "email role bio full_name start_year avatar_url",
+        populate: [
+          { path: "university_id", select: "university_name" },
+          { path: "major_id", select: "major_name" },
+        ],
+      })
+      .select("user_id");
+
+    // Chuyển đổi danh sách thành cấu trúc phẳng và thêm followers_count, isFollowing
+    const followersWithDetails = await Promise.all(
+      followers.map(async (follow) => {
+        const userData = follow.user_id;
+        const followersCount = await UserFollow.countDocuments({
+          user_follow_id: userData._id,
+        });
+        let isFollowing = false;
+        if (current_user_id && userData._id.toString() !== current_user_id) {
+          const followStatus = await checkUserFollowService(
+            current_user_id,
+            userData._id
+          );
+          isFollowing =
+            followStatus.EC === 0 ? followStatus.data.following : false;
+        }
+        return {
+          ...userData._doc,
+          followers_count: followersCount,
+          isFollowing,
+        };
+      })
+    );
 
     return {
       message: "Lấy danh sách người theo dõi thành công",
       EC: 0,
-      data: followers,
+      data: followersWithDetails,
     };
   } catch (error) {
     console.error("Error in getFollowersService:", error);
@@ -89,7 +120,7 @@ const getFollowersService = async (user_id) => {
   }
 };
 
-const getFollowingService = async (user_id) => {
+const getFollowingService = async (user_id, current_user_id) => {
   try {
     // Kiểm tra người dùng có tồn tại không
     const user = await User.findById(user_id);
@@ -99,13 +130,44 @@ const getFollowingService = async (user_id) => {
 
     // Lấy danh sách người đang theo dõi
     const following = await UserFollow.find({ user_id })
-      .populate("user_follow_id", "full_name avatar_url")
-      .select("user_follow_id createdAt");
+      .populate({
+        path: "user_follow_id",
+        select: "email role bio full_name start_year avatar_url",
+        populate: [
+          { path: "university_id", select: "university_name" },
+          { path: "major_id", select: "major_name" },
+        ],
+      })
+      .select("user_follow_id");
+
+    // Chuyển đổi danh sách thành cấu trúc phẳng và thêm followers_count, isFollowing
+    const followingWithDetails = await Promise.all(
+      following.map(async (follow) => {
+        const userData = follow.user_follow_id;
+        const followersCount = await UserFollow.countDocuments({
+          user_follow_id: userData._id,
+        });
+        let isFollowing = false;
+        if (current_user_id && userData._id.toString() !== current_user_id) {
+          const followStatus = await checkUserFollowService(
+            current_user_id,
+            userData._id
+          );
+          isFollowing =
+            followStatus.EC === 0 ? followStatus.data.following : false;
+        }
+        return {
+          ...userData._doc,
+          followers_count: followersCount,
+          isFollowing,
+        };
+      })
+    );
 
     return {
       message: "Lấy danh sách người đang theo dõi thành công",
       EC: 0,
-      data: following,
+      data: followingWithDetails,
     };
   } catch (error) {
     console.error("Error in getFollowingService:", error);

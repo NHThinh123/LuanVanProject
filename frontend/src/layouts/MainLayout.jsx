@@ -24,6 +24,7 @@ import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useSearchHistory } from "../features/searching/hooks/useSearchHistory";
+import FooterCustom from "../components/molecules/Footer";
 
 const { Header, Content, Sider } = Layout;
 
@@ -34,7 +35,7 @@ export const MainLayout = ({ children }) => {
   const { handleLogout } = useAuth();
   const {
     searchHistory,
-    loading: searchHistoryLoading,
+
     addSearchHistory,
   } = useSearchHistory();
   const location = useLocation();
@@ -287,6 +288,7 @@ export const MainLayout = ({ children }) => {
           >
             {children}
           </Content>
+          <FooterCustom />
         </Layout>
       </Layout>
     </Layout>

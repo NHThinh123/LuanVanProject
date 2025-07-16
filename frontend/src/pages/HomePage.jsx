@@ -6,10 +6,13 @@ import UserList from "../features/home/components/templates/UserList";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useCategories } from "../features/category/hooks/useCategories";
 import { useUsers } from "../features/user/hooks/useUsers";
+import { useAuthContext } from "../contexts/auth.context";
 
 const { Title } = Typography;
 
 const HomePage = () => {
+  const { user, isLoading: authLoading } = useAuthContext();
+  const current_user_id = user?._id; // Lấy ID người dùng hiện tại
   const { categories, loading: isCategoriesLoading } = useCategories();
   const { users, isLoading: isUserLoading } = useUsers({});
   const [activeTab, setActiveTab] = useState("recommended");
@@ -27,7 +30,7 @@ const HomePage = () => {
     limit: 10,
   });
 
-  if (isCategoriesLoading || isUserLoading) {
+  if (isCategoriesLoading || isUserLoading || authLoading) {
     return (
       <Row justify="center" gutter={[16, 16]}>
         <Col span={16} style={{ padding: "0px 24px" }}>
@@ -56,6 +59,11 @@ const HomePage = () => {
       </Row>
     );
   }
+
+  // Lọc danh sách người dùng để loại bỏ người dùng hiện tại
+  const filteredUsers = current_user_id
+    ? users.filter((user) => user._id !== current_user_id)
+    : users;
 
   const tabItems = [
     {
@@ -98,7 +106,7 @@ const HomePage = () => {
         <Title level={4} style={{ marginBottom: 28 }}>
           Người dùng nổi bật
         </Title>
-        <UserList users={users?.slice(0, 3)} loading={isUserLoading} />
+        <UserList users={filteredUsers?.slice(0, 3)} loading={isUserLoading} />
       </Col>
     </Row>
   );

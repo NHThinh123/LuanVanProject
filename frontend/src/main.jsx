@@ -18,6 +18,7 @@ import SearchingPage from "./pages/SearchingPage.jsx";
 import { AuthProvider } from "./contexts/auth.context.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 import PostCreatePage from "./pages/PostCreatePage.jsx";
+import UserProfilePage from "./pages/UserProfilePage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -73,6 +74,10 @@ const router = createBrowserRouter([
       {
         path: "/test",
         element: <TestPage />,
+      },
+      {
+        path: "/user/:id",
+        element: <UserProfilePage />,
       },
     ],
   },

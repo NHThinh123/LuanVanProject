@@ -59,12 +59,14 @@ const handleLogin = async (req, res) => {
 };
 
 const getUsers = async (req, res) => {
-  const data = await getUsersService(req.query);
+  const current_user_id = req.user?._id; // Lấy từ middleware authentication
+  const data = await getUsersService(req.query, current_user_id);
   return res.status(data.EC === 0 ? 200 : data.EC === 1 ? 400 : 500).json(data);
 };
 
 const getUserById = async (req, res) => {
-  const data = await getUserByIdService(req.params.id);
+  const current_user_id = req.user?._id; // Lấy từ middleware authentication
+  const data = await getUserByIdService(req.params.id, current_user_id);
   return res.status(data.EC === 0 ? 200 : data.EC === 1 ? 400 : 500).json(data);
 };
 

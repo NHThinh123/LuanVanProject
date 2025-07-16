@@ -12,22 +12,28 @@ import {
 import ProfilePostList from "../features/profile/components/templates/ProfilePostList";
 import ProfileAbout from "../features/profile/components/templates/ProfileAbout";
 import UserList from "../features/home/components/templates/UserList";
-import { useAuthContext } from "../contexts/auth.context";
+
 import { usePosts } from "../features/post/hooks/usePost";
 import { useUsers } from "../features/user/hooks/useUsers";
+import { useParams } from "react-router-dom";
+import { useUserById } from "../features/user/hooks/useUserById";
+import { useAuthContext } from "../contexts/auth.context";
 
-const ProfilePage = () => {
-  const { user, isLoading: authLoading } = useAuthContext();
+const UserProfilePage = () => {
+  const { id: user_id } = useParams();
+
+  const { user: current_user, isLoading: authLoading } = useAuthContext();
+  const { user, isLoading: userLoading } = useUserById(user_id);
   const { posts, isLoading: isPostsLoading } = usePosts({
     status: "accepted",
-    user_id: user?._id,
+    user_id: user_id,
   });
   const {
     followers,
     following,
     isLoading: isUserLoading,
-  } = useUsers({}, user?._id);
-
+  } = useUsers({}, user_id);
+  const { follow, unfollow, isFollowLoading } = useUsers();
   const tabItems = [
     {
       key: "1",
@@ -46,7 +52,7 @@ const ProfilePage = () => {
     },
   ];
 
-  if (authLoading || isPostsLoading || isUserLoading) {
+  if (authLoading || isPostsLoading || isUserLoading || userLoading) {
     return (
       <Row style={{ height: "100vh" }} justify="center" gutter={[24, 24]}>
         <Col span={16} style={{ marginTop: 20 }}>
@@ -88,6 +94,23 @@ const ProfilePage = () => {
                   {followers?.length || 0} người theo dõi
                 </Typography.Text>
               </div>
+              <Flex align="center" gap={8}>
+                {user_id !== current_user?._id && (
+                  <Button
+                    variant="outlined"
+                    color={user.isFollowing ? "default" : "primary"}
+                    onClick={() =>
+                      user.isFollowing
+                        ? unfollow({ user_follow_id: user._id })
+                        : follow({ user_follow_id: user._id })
+                    }
+                    disabled={isFollowLoading}
+                  >
+                    {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                  </Button>
+                )}
+                <Button type="primary">Nhắn tin</Button>
+              </Flex>
             </Flex>
             <p style={{ marginTop: 16, width: "100%" }}>{user?.bio}</p>
           </Flex>
@@ -111,4 +134,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default UserProfilePage;

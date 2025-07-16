@@ -2,7 +2,7 @@ import { Col, Divider, Flex, Row, Typography } from "antd";
 
 import { useAuthContext } from "../../../../contexts/auth.context";
 import "quill/dist/quill.snow.css";
-const ProfileAbout = () => {
+const ProfileAbout = ({ followers, following }) => {
   const { user, isLoading: authLoading } = useAuthContext();
   if (authLoading) {
     return <div>Loading...</div>;
@@ -25,7 +25,7 @@ const ProfileAbout = () => {
               fontWeight: "bold",
             }}
           >
-            {user.followers || 0} người theo dõi
+            {followers || 0} người theo dõi
           </a>
           <a
             style={{
@@ -34,7 +34,7 @@ const ProfileAbout = () => {
               fontWeight: "bold",
             }}
           >
-            {user.following || 0} người đang theo dõi
+            {following || 0} người đang theo dõi
           </a>
         </Flex>
       </Col>

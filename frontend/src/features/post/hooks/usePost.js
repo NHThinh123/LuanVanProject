@@ -11,13 +11,23 @@ export const usePosts = (queryParams = {}) => {
     keyword,
     status,
     category_id,
+    user_id,
     page = 1,
     limit = 10,
     recommend = false,
   } = queryParams;
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["posts", status, keyword, category_id, page, limit, recommend],
+    queryKey: [
+      "posts",
+      status,
+      keyword,
+      category_id,
+      user_id,
+      page,
+      limit,
+      recommend,
+    ],
     queryFn: () => {
       if (recommend) {
         return getRecommendedPosts({ page, limit }); // Lấy bài viết đề xuất
@@ -25,7 +35,7 @@ export const usePosts = (queryParams = {}) => {
       if (keyword) {
         return searchPosts({ keyword, page, limit }); // Tìm kiếm bài viết
       }
-      return getPosts({ status, category_id, page, limit }); // Lấy bài viết theo danh mục hoặc trạng thái
+      return getPosts({ status, category_id, user_id, page, limit }); // Lấy bài viết theo danh mục hoặc trạng thái
     },
     onError: (error) => {
       notification.error({

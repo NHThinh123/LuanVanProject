@@ -1,10 +1,22 @@
-import { Avatar, Button, Divider, Flex, List, Skeleton } from "antd";
-import Title from "antd/es/skeleton/Title";
+import {
+  Avatar,
+  Button,
+  Divider,
+  Flex,
+  List,
+  Skeleton,
+  Typography,
+} from "antd";
 import React from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
+import { useUsers } from "../../../user/hooks/useUsers";
+import { useAuthContext } from "../../../../contexts/auth.context";
 
 const UserList = ({ users, loading }) => {
-  if (loading)
+  const { user: curent_user, isLoading: authLoading } = useAuthContext();
+  const { follow, unfollow, isFollowLoading } = useUsers();
+
+  if (loading || authLoading) {
     return (
       <>
         <Skeleton active paragraph={{ rows: 2 }} />
@@ -12,6 +24,16 @@ const UserList = ({ users, loading }) => {
         <Skeleton active paragraph={{ rows: 2 }} />
       </>
     );
+  }
+
+  if (!users || users.length === 0) {
+    return (
+      <Typography.Text type="secondary" style={{ textAlign: "center" }}>
+        Chưa có người dùng nào
+      </Typography.Text>
+    );
+  }
+
   return (
     <div>
       <List
@@ -26,12 +48,25 @@ const UserList = ({ users, loading }) => {
                   name={user.full_name}
                   size={40}
                   color={"#000"}
-                  // style={{ fontWeight: "bold" }}
+                  follower={user.followers_count}
+                  user_id={user._id}
+                  isFollowing={user.isFollowing}
                 />
               </div>
-              <Button variant="outlined" color="primary">
-                Theo dõi
-              </Button>
+              {user._id !== curent_user?._id && (
+                <Button
+                  variant="outlined"
+                  color={user.isFollowing ? "default" : "primary"}
+                  onClick={() =>
+                    user.isFollowing
+                      ? unfollow({ user_follow_id: user._id })
+                      : follow({ user_follow_id: user._id })
+                  }
+                  disabled={isFollowLoading}
+                >
+                  {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                </Button>
+              )}
             </Flex>
           </List.Item>
         )}

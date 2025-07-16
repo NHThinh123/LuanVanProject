@@ -8,7 +8,7 @@ const {
 
 const followUser = async (req, res) => {
   const { user_follow_id } = req.body;
-  const user_id = req.user._id; // Lấy từ middleware authentication
+  const user_id = req.user._id;
 
   if (!user_follow_id) {
     return res.status(400).json({ message: "Thiếu user_follow_id", EC: 1 });
@@ -36,8 +36,9 @@ const unfollowUser = async (req, res) => {
 
 const getFollowers = async (req, res) => {
   const { user_id } = req.params;
+  const current_user_id = req.user?._id; // Lấy từ middleware authentication
 
-  const result = await getFollowersService(user_id);
+  const result = await getFollowersService(user_id, current_user_id);
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
     .json(result);
@@ -45,8 +46,9 @@ const getFollowers = async (req, res) => {
 
 const getFollowing = async (req, res) => {
   const { user_id } = req.params;
+  const current_user_id = req.user?._id; // Lấy từ middleware authentication
 
-  const result = await getFollowingService(user_id);
+  const result = await getFollowingService(user_id, current_user_id);
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
     .json(result);

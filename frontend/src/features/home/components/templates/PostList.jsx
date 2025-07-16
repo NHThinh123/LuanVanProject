@@ -23,6 +23,15 @@ const PostList = ({ posts = [], isLoading }) => {
   if (isLoading) {
     return <SkeletonLoading />;
   }
+  if (!posts || posts.length === 0) {
+    return (
+      <Row justify="center" style={{ marginTop: 20 }}>
+        <Col>
+          <Text type="secondary">Chưa có bài viết nào</Text>
+        </Col>
+      </Row>
+    );
+  }
 
   return (
     <List
@@ -64,6 +73,8 @@ const PostList = ({ posts = [], isLoading }) => {
               name={item.user_id?.full_name || "Unknown"}
               size={36}
               color={"#000"}
+              user_id={item.user_id?._id}
+              isFollowing={item.user_id?.isFollowing || false}
             ></AvatarCustom>
             <div>
               <Tag color="blue">{item?.course_id?.course_name}</Tag>

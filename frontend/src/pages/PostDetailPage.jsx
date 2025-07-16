@@ -117,6 +117,26 @@ const PostDetailPage = () => {
             <Divider style={{ margin: "16px 0" }} />
           </>
         )}
+        {post.summary && (
+          <div
+            style={{
+              border: "1px solid #0616f6ff",
+              backgroundColor: "#f0f5ff",
+              margin: "8px",
+              padding: 16,
+              borderRadius: 24,
+              fontStyle: "italic",
+              textAlign: "justify",
+            }}
+          >
+            <Typography.Title level={4} style={{ marginBottom: 16 }}>
+              Tóm tắt bài viết tự động
+            </Typography.Title>
+            <Typography.Paragraph style={{ fontSize: 16, lineHeight: 1.6 }}>
+              {post.summary || "Bài viết này chưa có tóm tắt."}
+            </Typography.Paragraph>
+          </div>
+        )}
 
         <div
           style={{

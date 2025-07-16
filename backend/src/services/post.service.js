@@ -1,13 +1,20 @@
+require("dotenv").config();
 const Post = require("../models/post.model");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const Category = require("../models/category.model");
 const User_Like_Post = require("../models/user_like_post.model");
+const UserFollow = require("../models/user_follow.model");
 const SearchHistory = require("../models/search_history.model");
 const { getDocumentsByPostService } = require("./document.service");
 const { getCommentsByPostService } = require("./comment.service");
 const { getTagsByPostService } = require("./post_tag.service");
+const { checkUserFollowService } = require("./user_follow.service");
 const axios = require("axios");
+const { GoogleGenAI } = require("@google/genai");
+
+// Initialize Gemini API
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const createPostService = async (user_id, postData) => {
   try {
@@ -32,13 +39,47 @@ const createPostService = async (user_id, postData) => {
       }
     }
 
+    // Count words in content
+    const wordCount = content.split(/\s+/).length;
+    let summary = "";
+    let status = "pending";
+
+    // Generate summary if content is longer than 100 words
+    if (wordCount > 100) {
+      const summaryResult = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `Tóm tắt bài viết sau thành 50-60 từ để review ngắn gọn nội dung bài viết để người dùng xem trước, kết qảu trả về là tiếng Việt :\nTiêu đề: ${title}\nNội dung: ${content}`,
+      });
+      summary = summaryResult.text;
+    }
+
+    // Check content against community standards
+
+    const moderationResult = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+      Kiểm tra bài viết sau và xác định xem nội dung có phù hợp với tiêu chuẩn cộng đồng không. 
+      Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
+      Trả về chỉ một từ: "accepted" nếu phù hợp, hoặc "pending" nếu không phù hợp.
+      Tiêu đề: ${title}
+      Nội dung: ${content}`,
+    });
+    status = moderationResult.text;
+    console.log("Moderation Result:", moderationResult.text);
+
+    // Validate status
+    if (!["accepted", "pending"].includes(status)) {
+      status = "pending"; // Default to pending if moderation result is invalid
+    }
+
     const post = await Post.create({
       user_id,
       course_id,
       category_id,
       title,
       content,
-      status: "accepted", // Mặc định trạng thái là accepted
+      summary, // Store the summary
+      status, // Set status based on moderation
     });
 
     return {
@@ -75,6 +116,34 @@ const updatePostService = async (user_id, post_id, postData) => {
       const category = await Category.findById(category_id);
       if (!category) {
         return { message: "Danh mục không tồn tại", EC: 1 };
+      }
+    }
+
+    // Update summary and status if content or title is updated
+    if (title || content) {
+      const wordCount = (content || post.content).split(/\s+/).length;
+      if (wordCount > 100) {
+        const summaryPrompt = `Tóm tắt bài viết sau thành 30-40 từ:\nTiêu đề: ${
+          title || post.title
+        }\nNội dung: ${content || post.content}`;
+        const summaryResult = await model.generateContent(summaryPrompt);
+        post.summary = summaryResult.response.text().trim();
+      } else {
+        post.summary = "";
+      }
+
+      const moderationPrompt = `
+        Kiểm tra bài viết sau và xác định xem nội dung có phù hợp với tiêu chuẩn cộng đồng không. 
+        Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
+        Trả về chỉ một từ: "accepted" nếu phù hợp, hoặc "pending" nếu không phù hợp.
+        Tiêu đề: ${title || post.title}
+        Nội dung: ${content || post.content}
+      `;
+      const moderationResult = await model.generateContent(moderationPrompt);
+      post.status = moderationResult.response.text().trim();
+
+      if (!["accepted", "pending"].includes(post.status)) {
+        post.status = "pending";
       }
     }
 
@@ -138,7 +207,10 @@ const getPostsService = async (query) => {
     const skip = (page - 1) * limit;
 
     const posts = await Post.find(filter)
-      .populate("user_id", "full_name avatar_url")
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
       .sort({ createdAt: -1 })
@@ -155,6 +227,8 @@ const getPostsService = async (query) => {
           likesResult,
           commentsResult,
           likeStatus,
+          followersCount,
+          followStatus,
         ] = await Promise.all([
           getDocumentsByPostService(post._id),
           getTagsByPostService(post._id),
@@ -166,6 +240,10 @@ const getPostsService = async (query) => {
                 post_id: post._id,
               })
             : null,
+          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+          current_user_id && current_user_id !== post.user_id._id.toString()
+            ? checkUserFollowService(current_user_id, post.user_id._id)
+            : null,
         ]);
         const image =
           documentsResult.EC === 0 && documentsResult.data.length > 0
@@ -176,6 +254,16 @@ const getPostsService = async (query) => {
 
         return {
           ...post._doc,
+          user_id: {
+            ...post.user_id._doc,
+            followers_count: followersCount,
+            isFollowing:
+              current_user_id && current_user_id !== post.user_id._id.toString()
+                ? followStatus.EC === 0
+                  ? followStatus.data.following
+                  : false
+                : false,
+          },
           image,
           tags:
             tagsResult.EC === 0
@@ -211,7 +299,10 @@ const getPostsService = async (query) => {
 const getPostByIdService = async (post_id, current_user_id) => {
   try {
     const post = await Post.findById(post_id)
-      .populate("user_id", "full_name avatar_url")
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name");
 
@@ -225,6 +316,8 @@ const getPostByIdService = async (post_id, current_user_id) => {
       likesResult,
       commentsResult,
       likeStatus,
+      followersCount,
+      followStatus,
     ] = await Promise.all([
       getDocumentsByPostService(post_id),
       getTagsByPostService(post_id),
@@ -233,6 +326,10 @@ const getPostByIdService = async (post_id, current_user_id) => {
       current_user_id
         ? User_Like_Post.findOne({ user_id: current_user_id, post_id })
         : null,
+      UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+      current_user_id && current_user_id !== post.user_id._id.toString()
+        ? checkUserFollowService(current_user_id, post.user_id._id)
+        : null,
     ]);
 
     return {
@@ -240,6 +337,16 @@ const getPostByIdService = async (post_id, current_user_id) => {
       EC: 0,
       data: {
         ...post._doc,
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? followStatus.EC === 0
+                ? followStatus.data.following
+                : false
+              : false,
+        },
         documents: documentsResult.EC === 0 ? documentsResult.data : [],
         tags:
           tagsResult.EC === 0
@@ -453,9 +560,12 @@ const searchPostsService = async ({
         { title: { $regex: keyword, $options: "i" } },
         { content: { $regex: keyword, $options: "i" } },
       ],
-      status: "accepted", // Chỉ lấy bài viết đã được duyệt
+      status: "accepted",
     })
-      .populate("user_id", "full_name avatar_url")
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
       .sort({ createdAt: -1 })
@@ -467,7 +577,7 @@ const searchPostsService = async ({
         { title: { $regex: keyword, $options: "i" } },
         { content: { $regex: keyword, $options: "i" } },
       ],
-      status: "accepted", // Chỉ đếm bài viết đã được duyệt
+      status: "accepted",
     });
 
     const postsWithDetails = await Promise.all(
@@ -478,6 +588,8 @@ const searchPostsService = async ({
           likesResult,
           commentsResult,
           likeStatus,
+          followersCount,
+          followStatus,
         ] = await Promise.all([
           getDocumentsByPostService(post._id),
           getTagsByPostService(post._id),
@@ -489,6 +601,10 @@ const searchPostsService = async ({
                 post_id: post._id,
               })
             : null,
+          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+          current_user_id && current_user_id !== post.user_id._id.toString()
+            ? checkUserFollowService(current_user_id, post.user_id._id)
+            : null,
         ]);
         const image =
           documentsResult.EC === 0 && documentsResult.data.length > 0
@@ -498,6 +614,16 @@ const searchPostsService = async ({
 
         return {
           ...post._doc,
+          user_id: {
+            ...post.user_id._doc,
+            followers_count: followersCount,
+            isFollowing:
+              current_user_id && current_user_id !== post.user_id._id.toString()
+                ? followStatus.EC === 0
+                  ? followStatus.data.following
+                  : false
+                : false,
+          },
           image,
           tags:
             tagsResult.EC === 0

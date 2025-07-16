@@ -15,7 +15,7 @@ router.delete("/unfollow", authentication, unfollowUser); // Bỏ theo dõi ngư
 router.get("/check", authentication, checkUserFollow); // Kiểm tra trạng thái theo dõi
 
 // Endpoint công khai
-router.get("/followers/:user_id", getFollowers); // Lấy danh sách người theo dõi
-router.get("/following/:user_id", getFollowing); // Lấy danh sách người đang theo dõi
+router.get("/followers/:user_id", authentication, getFollowers); // Lấy danh sách người theo dõi
+router.get("/following/:user_id", authentication, getFollowing); // Lấy danh sách người đang theo dõi
 
 module.exports = router;

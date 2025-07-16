@@ -3,7 +3,9 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
+const UserFollow = require("../models/user_follow.model"); // Thêm để đếm followers
 const cloudinary = require("../config/cloudinary");
+const { checkUserFollowService } = require("./user_follow.service");
 
 const createUserService = async (
   email,
@@ -73,7 +75,7 @@ const createUserService = async (
       message: "Tạo tài khoản thành công",
       EC: 0,
       data: result,
-      access_token, // Trả về token
+      access_token,
     };
   } catch (error) {
     console.error(error);
@@ -81,22 +83,22 @@ const createUserService = async (
   }
 };
 
-const getUsersService = async (query) => {
+const getUsersService = async (query, current_user_id) => {
   try {
     const { email, role, university_id, major_id, full_name } = query;
     const filter = {};
 
-    if (email) filter.email = { $regex: email, $options: "i" }; // Tìm kiếm không phân biệt hoa thường
+    if (email) filter.email = { $regex: email, $options: "i" };
     if (role) filter.role = role;
     if (university_id) filter.university_id = university_id;
     if (major_id) filter.major_id = major_id;
     if (full_name) filter.full_name = { $regex: full_name, $options: "i" };
 
-    const result = await User.find(filter)
+    const users = await User.find(filter)
       .populate("university_id", "university_name")
       .populate("major_id", "major_name");
 
-    if (!result || result.length === 0) {
+    if (!users || users.length === 0) {
       return {
         message: "Không tìm thấy người dùng nào",
         EC: 1,
@@ -104,10 +106,33 @@ const getUsersService = async (query) => {
       };
     }
 
+    // Kiểm tra trạng thái theo dõi và đếm số lượng người theo dõi
+    const usersWithFollowStatus = await Promise.all(
+      users.map(async (user) => {
+        let isFollowing = false;
+        const followersCount = await UserFollow.countDocuments({
+          user_follow_id: user._id,
+        });
+        if (current_user_id && user._id.toString() !== current_user_id) {
+          const followStatus = await checkUserFollowService(
+            current_user_id,
+            user._id
+          );
+          isFollowing =
+            followStatus.EC === 0 ? followStatus.data.following : false;
+        }
+        return {
+          ...user._doc,
+          isFollowing,
+          followers_count: followersCount,
+        };
+      })
+    );
+
     return {
       message: "Lấy danh sách người dùng thành công",
       EC: 0,
-      data: result,
+      data: usersWithFollowStatus,
     };
   } catch (error) {
     console.error(error);
@@ -115,7 +140,7 @@ const getUsersService = async (query) => {
   }
 };
 
-const getUserByIdService = async (id) => {
+const getUserByIdService = async (id, current_user_id) => {
   try {
     let result = await User.findById(id)
       .populate("university_id", "university_name")
@@ -126,10 +151,25 @@ const getUserByIdService = async (id) => {
         EC: 1,
       };
     }
+
+    // Đếm số lượng người theo dõi
+    const followersCount = await UserFollow.countDocuments({
+      user_follow_id: id,
+    });
+    let isFollowing = false;
+    if (current_user_id && id.toString() !== current_user_id) {
+      const followStatus = await checkUserFollowService(current_user_id, id);
+      isFollowing = followStatus.EC === 0 ? followStatus.data.following : false;
+    }
+
     return {
       message: "Lấy thông tin người dùng thành công",
       EC: 0,
-      data: result,
+      data: {
+        ...result._doc,
+        followers_count: followersCount,
+        isFollowing,
+      },
     };
   } catch (error) {
     console.error(error);
