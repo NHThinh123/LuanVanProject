@@ -9,6 +9,7 @@ const {
   updatePostStatus,
   getRecommendedPosts,
   searchPosts,
+  getPostsByTag,
 } = require("../controllers/post.controller");
 const authentication = require("../middleware/authentication");
 const isAdmin = require("../middleware/isAdmin");
@@ -26,5 +27,6 @@ router.get("/", authentication, getPosts); // Lấy danh sách bài viết
 router.get("/recommend", authentication, getRecommendedPosts); // Lấy danh sách bài viết đề xuất
 router.get("/search", authentication, searchPosts);
 router.get("/:post_id", authentication, getPostById); // Lấy chi tiết bài viết
+router.get("/tag/:tag_id", authentication, getPostsByTag);
 
 module.exports = router;

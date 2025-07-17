@@ -29,6 +29,11 @@ const postSchema = new mongoose.Schema(
   }
 );
 
+// Thêm text index với trọng số: title (10), content (5)
+postSchema.index(
+  { title: "text", content: "text" },
+  { weights: { title: 10, content: 5 } }
+);
 postSchema.index({ user_id: 1, createdAt: -1 });
 postSchema.index({ course_id: 1 });
 postSchema.index({ category_id: 1 });

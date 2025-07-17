@@ -1,34 +1,55 @@
-import { Col, Divider, Row, Skeleton, Tabs, Typography } from "antd";
-import { useSearchParams } from "react-router-dom"; // Add useSearchParams
+import {
+  Button,
+  Col,
+  Divider,
+  Flex,
+  Row,
+  Skeleton,
+  Tabs,
+  Typography,
+} from "antd";
+import { useSearchParams } from "react-router-dom";
+import { useState } from "react"; // Thêm useState
 import SearchingPostList from "../features/searching/components/templates/SearchingPostList";
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
+import SearchingTagList from "../features/searching/components/templates/SearchingTagList";
 import UserList from "../features/home/components/templates/UserList";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useUsers } from "../features/user/hooks/useUsers";
+import { useTag } from "../features/tag/hooks/useTag";
 
 const SearchingPage = () => {
-  const [searchParams] = useSearchParams(); // Get query parameters
-  const keyword = searchParams.get("keyword") || ""; // Get keyword from URL
+  const [searchParams] = useSearchParams();
+  const keyword = searchParams.get("keyword") || "";
   const { posts, isLoading: isPostsLoading } = usePosts({
-    status: "accepted", // Ensure only accepted posts are fetched
+    status: "accepted",
     keyword,
-  }); // Add keyword to usePosts
-  const { users, isLoading: isUsersLoading } = useUsers({ keyword }); // Add keyword to useUsers
+  });
+  const { users, isLoading: isUsersLoading } = useUsers({ keyword });
+  const { tags, tagsLoading: isTagsLoading } = useTag({ keyword });
+
+  // Quản lý trạng thái tab active
+  const [activeTab, setActiveTab] = useState("1");
 
   const tabItems = [
     {
       key: "1",
-      label: "Bài viết",
+      label: `Bài viết (${posts?.length || 0})`,
       children: <SearchingPostList posts={posts} />,
     },
     {
       key: "2",
-      label: "Người dùng",
-      children: <SearchingUserList />,
+      label: `Người dùng (${users?.length || 0})`,
+      children: <SearchingUserList users={users} />,
+    },
+    {
+      key: "3",
+      label: `Thẻ (${tags?.length || 0})`,
+      children: <SearchingTagList tags={tags} keyword={keyword} />,
     },
   ];
 
-  if (isPostsLoading || isUsersLoading) {
+  if (isPostsLoading || isUsersLoading || isTagsLoading) {
     return (
       <Row justify="center" gutter={[24, 24]}>
         <Col span={16}>
@@ -53,7 +74,12 @@ const SearchingPage = () => {
     <Row justify="center" style={{}}>
       <Col span={16}>
         <h1>Kết quả tìm kiếm cho "{keyword || "Không có từ khóa"}"</h1>
-        <Tabs defaultActiveKey="1" items={tabItems} style={{ marginTop: 16 }} />
+        <Tabs
+          activeKey={activeTab} // Sử dụng activeKey để điều khiển tab
+          onChange={setActiveTab} // Cập nhật tab khi người dùng chuyển tab
+          items={tabItems}
+          style={{ marginTop: 16 }}
+        />
       </Col>
       <Col span={6}>
         <div style={{ position: "sticky", top: 80, padding: "0px 16px" }}>
@@ -61,7 +87,60 @@ const SearchingPage = () => {
             <Typography.Title level={4}>
               Người dùng phù hợp với "{keyword || "Không có từ khóa"}"
             </Typography.Title>
-            <UserList users={users} loading={isUsersLoading} />
+            <UserList users={users?.slice(0, 4)} loading={isUsersLoading} />
+            <p
+              style={{
+                textAlign: "center",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+              onClick={() => setActiveTab("2")} // Chuyển sang tab Người dùng
+            >
+              Xem thêm
+            </p>
+          </div>
+          <Divider />
+          <div style={{ marginTop: 24 }}>
+            <Typography.Title level={4}>
+              Thẻ phù hợp với "{keyword || "Không có từ khóa"}"
+            </Typography.Title>
+            {tags && tags.length > 0 ? (
+              <>
+                <Flex wrap="wrap" gap={8}>
+                  {tags.slice(0, 4).map((tag) => (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      key={tag._id}
+                      style={{
+                        margin: 4,
+                        padding: "6px 12px",
+                        fontSize: 16,
+                        borderRadius: 24,
+                      }}
+                      href={`/posts/tag/${tag._id}?keyword=${keyword}`}
+                    >
+                      {tag.tag_name} ({tag.post_count || 0})
+                    </Button>
+                  ))}
+                </Flex>
+                <p
+                  style={{
+                    textAlign: "center",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                    marginTop: 8,
+                  }}
+                  onClick={() => setActiveTab("3")} // Chuyển sang tab Thẻ
+                >
+                  Xem thêm
+                </p>
+              </>
+            ) : (
+              <Typography.Text type="secondary">
+                Không có thẻ phù hợp
+              </Typography.Text>
+            )}
           </div>
         </div>
       </Col>

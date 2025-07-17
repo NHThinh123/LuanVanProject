@@ -6,6 +6,7 @@ const Category = require("../models/category.model");
 const User_Like_Post = require("../models/user_like_post.model");
 const UserFollow = require("../models/user_follow.model");
 const SearchHistory = require("../models/search_history.model");
+const Post_Tag = require("../models/post_tag.model");
 const { getDocumentsByPostService } = require("./document.service");
 const { getCommentsByPostService } = require("./comment.service");
 const { getTagsByPostService } = require("./post_tag.service");
@@ -48,13 +49,12 @@ const createPostService = async (user_id, postData) => {
     if (wordCount > 100) {
       const summaryResult = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `Tóm tắt bài viết sau thành 50-60 từ để review ngắn gọn nội dung bài viết để người dùng xem trước, kết qảu trả về là tiếng Việt :\nTiêu đề: ${title}\nNội dung: ${content}`,
+        contents: `Tóm tắt bài viết sau thành 50-60 từ để review ngắn gọn nội dung bài viết để người dùng xem trước, kết quả trả về là tiếng Việt :\nTiêu đề: ${title}\nNội dung: ${content}`,
       });
       summary = summaryResult.text;
     }
 
     // Check content against community standards
-
     const moderationResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `
@@ -126,8 +126,8 @@ const updatePostService = async (user_id, post_id, postData) => {
         const summaryPrompt = `Tóm tắt bài viết sau thành 30-40 từ:\nTiêu đề: ${
           title || post.title
         }\nNội dung: ${content || post.content}`;
-        const summaryResult = await model.generateContent(summaryPrompt);
-        post.summary = summaryResult.response.text().trim();
+        const summaryResult = await ai.models.generateContent(summaryPrompt);
+        post.summary = summaryResult.text;
       } else {
         post.summary = "";
       }
@@ -139,8 +139,10 @@ const updatePostService = async (user_id, post_id, postData) => {
         Tiêu đề: ${title || post.title}
         Nội dung: ${content || post.content}
       `;
-      const moderationResult = await model.generateContent(moderationPrompt);
-      post.status = moderationResult.response.text().trim();
+      const moderationResult = await ai.models.generateContent(
+        moderationPrompt
+      );
+      post.status = moderationResult.text;
 
       if (!["accepted", "pending"].includes(post.status)) {
         post.status = "pending";
@@ -555,28 +557,26 @@ const searchPostsService = async ({
   try {
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find({
-      $or: [
-        { title: { $regex: keyword, $options: "i" } },
-        { content: { $regex: keyword, $options: "i" } },
-      ],
-      status: "accepted",
-    })
+    // Sử dụng $text search để ưu tiên tiêu đề
+    const posts = await Post.find(
+      {
+        $text: { $search: keyword },
+        status: "accepted",
+      },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" }, createdAt: -1 })
       .populate({
         path: "user_id",
         select: "full_name avatar_url",
       })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
-      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
     const total = await Post.countDocuments({
-      $or: [
-        { title: { $regex: keyword, $options: "i" } },
-        { content: { $regex: keyword, $options: "i" } },
-      ],
+      $text: { $search: keyword },
       status: "accepted",
     });
 
@@ -656,6 +656,128 @@ const searchPostsService = async ({
   }
 };
 
+const getPostsByTagService = async ({
+  tag_id,
+  page = 1,
+  limit = 10,
+  current_user_id,
+}) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Tìm các post_id liên kết với tag_id trong Post_Tag
+    const postTags = await Post_Tag.find({ tag_id }).skip(skip).limit(limit);
+
+    if (!postTags || postTags.length === 0) {
+      return {
+        message: "Không tìm thấy bài viết nào cho thẻ này",
+        EC: 1,
+        data: {
+          posts: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+          },
+        },
+      };
+    }
+
+    const postIds = postTags.map((pt) => pt.post_id);
+
+    // Lấy bài viết từ Post với trạng thái "accepted"
+    const posts = await Post.find({
+      _id: { $in: postIds },
+      status: "accepted",
+    })
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
+      .populate("course_id", "course_name course_code")
+      .populate("category_id", "category_name")
+      .sort({ createdAt: -1 });
+
+    const total = await Post_Tag.countDocuments({ tag_id });
+
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const [
+          documentsResult,
+          tagsResult,
+          likesResult,
+          commentsResult,
+          likeStatus,
+          followersCount,
+          followStatus,
+        ] = await Promise.all([
+          getDocumentsByPostService(post._id),
+          getTagsByPostService(post._id),
+          User_Like_Post.find({ post_id: post._id }),
+          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
+          current_user_id
+            ? User_Like_Post.findOne({
+                user_id: current_user_id,
+                post_id: post._id,
+              })
+            : null,
+          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+          current_user_id && current_user_id !== post.user_id._id.toString()
+            ? checkUserFollowService(current_user_id, post.user_id._id)
+            : null,
+        ]);
+        const image =
+          documentsResult.EC === 0 && documentsResult.data.length > 0
+            ? documentsResult.data.find((doc) => doc.type === "image")
+                ?.document_url ||
+              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+        return {
+          ...post._doc,
+          user_id: {
+            ...post.user_id._doc,
+            followers_count: followersCount,
+            isFollowing:
+              current_user_id && current_user_id !== post.user_id._id.toString()
+                ? followStatus.EC === 0
+                  ? followStatus.data.following
+                  : false
+                : false,
+          },
+          image,
+          tags:
+            tagsResult.EC === 0
+              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              : [],
+          likeCount: likesResult.length,
+          isLiked: current_user_id ? !!likeStatus : false,
+          commentCount:
+            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        };
+      })
+    );
+
+    return {
+      message: "Lấy danh sách bài viết theo thẻ thành công",
+      EC: 0,
+      data: {
+        posts: postsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getPostsByTagService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
 module.exports = {
   createPostService,
   updatePostService,
@@ -665,4 +787,5 @@ module.exports = {
   updatePostStatusService,
   getRecommendedPostsService,
   searchPostsService,
+  getPostsByTagService,
 };

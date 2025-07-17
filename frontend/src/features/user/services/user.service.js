@@ -17,7 +17,7 @@ export const getUsers = async (queryParams = {}) => {
 export const getUserById = async (id) => {
   try {
     const response = await axios.get(`/users/${id}`);
-    return response.data; // Trả về thông tin người dùng chi tiết
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi lấy thông tin người dùng");
   }
@@ -57,7 +57,7 @@ export const checkUserFollow = async ({ user_follow_id }) => {
 export const getFollowers = async (user_id) => {
   try {
     const response = await axios.get(`/follows/followers/${user_id}`);
-    return response.data; // Trả về danh sách người dùng với followers_count, isFollowing
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi lấy danh sách người theo dõi");
   }
@@ -66,7 +66,7 @@ export const getFollowers = async (user_id) => {
 export const getFollowing = async (user_id) => {
   try {
     const response = await axios.get(`/follows/following/${user_id}`);
-    return response.data; // Trả về danh sách người dùng với followers_count, isFollowing
+    return response.data;
   } catch (error) {
     throw new Error(
       error.message || "Lỗi khi lấy danh sách người đang theo dõi"

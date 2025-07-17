@@ -7,6 +7,7 @@ const {
   updatePostStatusService,
   getRecommendedPostsService,
   searchPostsService,
+  getPostsByTagService,
 } = require("../services/post.service");
 const {
   addSearchHistoryService,
@@ -123,7 +124,6 @@ const searchPosts = async (req, res) => {
   const searchHistoryResult = await addSearchHistoryService(user_id, keyword);
   if (searchHistoryResult.EC !== 0) {
     console.error("Lỗi khi lưu lịch sử tìm kiếm:", searchHistoryResult.message);
-    // Tiếp tục xử lý tìm kiếm ngay cả khi lưu lịch sử thất bại
   }
 
   // Tìm kiếm bài viết
@@ -132,6 +132,22 @@ const searchPosts = async (req, res) => {
     page,
     limit,
     current_user_id: user_id,
+  });
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
+    .json(result);
+};
+
+const getPostsByTag = async (req, res) => {
+  const { tag_id } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  const current_user_id = req.user?._id;
+
+  const result = await getPostsByTagService({
+    tag_id,
+    page,
+    limit,
+    current_user_id,
   });
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
@@ -147,4 +163,5 @@ module.exports = {
   updatePostStatus,
   getRecommendedPosts,
   searchPosts,
+  getPostsByTag,
 };

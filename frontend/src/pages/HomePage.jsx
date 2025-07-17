@@ -106,7 +106,10 @@ const HomePage = () => {
         <Title level={4} style={{ marginBottom: 28 }}>
           Người dùng nổi bật
         </Title>
-        <UserList users={filteredUsers?.slice(0, 3)} loading={isUserLoading} />
+        <UserList
+          users={filteredUsers?.slice(0, 3)}
+          loading={isUserLoading || isPostsLoading}
+        />
       </Col>
     </Row>
   );

@@ -26,3 +26,17 @@
   text-align: justify !important;
   /* text-indent: 2em !important; */
 }
+
+.swiper-button-prev,
+.swiper-button-next {
+  color: #000;
+  background: #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ccc;
+}
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  font-size: 20px;
+}

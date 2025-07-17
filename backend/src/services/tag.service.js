@@ -1,4 +1,5 @@
 const Tag = require("../models/tag.model");
+const Post_Tag = require("../models/post_tag.model");
 
 const createTagService = async (tag_name) => {
   try {
@@ -61,6 +62,9 @@ const deleteTagService = async (id) => {
       return { message: "Thẻ không tồn tại", EC: 1 };
     }
 
+    // Xóa tất cả liên kết trong Post_Tag liên quan đến tag này
+    await Post_Tag.deleteMany({ tag_id: id });
+
     return {
       message: "Xóa thẻ thành công",
       EC: 0,
@@ -71,13 +75,39 @@ const deleteTagService = async (id) => {
   }
 };
 
-const getAllTagsService = async () => {
+const getAllTagsService = async (query) => {
   try {
-    const tags = await Tag.find().sort({ createdAt: -1 });
+    const { keyword } = query || {};
+    const filter = {};
+
+    if (keyword) {
+      filter.$text = { $search: keyword };
+    }
+
+    const tags = await Tag.find(
+      filter,
+      keyword ? { score: { $meta: "textScore" } } : {}
+    ).sort(
+      keyword
+        ? { score: { $meta: "textScore" }, createdAt: -1 }
+        : { createdAt: -1 }
+    );
+
+    // Đếm số lượng bài viết cho mỗi tag
+    const tagsWithPostCount = await Promise.all(
+      tags.map(async (tag) => {
+        const postCount = await Post_Tag.countDocuments({ tag_id: tag._id });
+        return {
+          ...tag._doc,
+          post_count: postCount,
+        };
+      })
+    );
+
     return {
       message: "Lấy danh sách thẻ thành công",
       EC: 0,
-      data: tags,
+      data: tagsWithPostCount,
     };
   } catch (error) {
     console.error("Error in getAllTagsService:", error);
@@ -92,10 +122,16 @@ const getTagByIdService = async (id) => {
       return { message: "Thẻ không tồn tại", EC: 1 };
     }
 
+    // Đếm số lượng bài viết cho tag
+    const postCount = await Post_Tag.countDocuments({ tag_id: id });
+
     return {
       message: "Lấy thông tin thẻ thành công",
       EC: 0,
-      data: tag,
+      data: {
+        ...tag._doc,
+        post_count: postCount,
+      },
     };
   } catch (error) {
     console.error("Error in getTagByIdService:", error);

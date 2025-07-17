@@ -13,13 +13,13 @@ import SignupPage from "./pages/SignupPage.jsx";
 import InformationPage from "./pages/InformationPage.jsx";
 import TestPage from "./pages/TestPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-import Search from "antd/es/transfer/search.js";
 import SearchingPage from "./pages/SearchingPage.jsx";
 import { AuthProvider } from "./contexts/auth.context.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 import PostCreatePage from "./pages/PostCreatePage.jsx";
 import UserProfilePage from "./pages/UserProfilePage.jsx";
 import MessagePage from "./pages/MessagePage.jsx";
+import PostFilterByTagPage from "./pages/PostFilterByTagPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -52,6 +52,10 @@ const router = createBrowserRouter([
           {
             path: "create",
             element: <PostCreatePage />,
+          },
+          {
+            path: "tag/:tag_id",
+            element: <PostFilterByTagPage />,
           },
         ],
       },

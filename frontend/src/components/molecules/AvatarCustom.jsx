@@ -1,7 +1,8 @@
 import { Avatar, Button, Col, Flex, Popover, Row, Typography } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUsers } from "../../features/user/hooks/useUsers";
 import { useAuthContext } from "../../contexts/auth.context";
+import { useChatRoom } from "../../features/chat/hooks/useChatRoom";
 
 const AvatarCustom = ({
   style,
@@ -13,16 +14,51 @@ const AvatarCustom = ({
   follower,
   bio,
   isHover = true,
-  user_id, // Thêm prop user_id
-  isFollowing, // Thêm prop isFollowing
+  user_id,
+  isFollowing,
 }) => {
   const { user } = useAuthContext();
   const { follow, unfollow, isFollowLoading } = useUsers();
+  const { chatRooms, createChatRoom, createChatRoomLoading } = useChatRoom(
+    1,
+    10
+  );
+  const navigate = useNavigate();
+
+  const handleMessageClick = async () => {
+    if (!user?._id || !user_id || user._id === user_id) return;
+
+    try {
+      // Tìm phòng chat private hiện có
+      const existingRoom = chatRooms.find(
+        (room) =>
+          room.type === "private" &&
+          room.members.some((member) => member._id === user._id) &&
+          room.members.some((member) => member._id === user_id)
+      );
+
+      if (existingRoom) {
+        // Nếu phòng chat đã tồn tại, chuyển hướng với chat_room_id
+        navigate("/messages", { state: { chat_room_id: existingRoom._id } });
+      } else {
+        // Tạo phòng chat mới
+        const result = await createChatRoom({ member_id: user_id });
+
+        if (result?._id) {
+          navigate("/messages", { state: { chat_room_id: result._id } });
+        } else {
+          console.error("Không thể tạo phòng chat");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error.message);
+    }
+  };
 
   return (
     <Popover
       content={
-        <Row gutter={16} align={"middle"} style={{ width: 300 }}>
+        <Row gutter={16} align="middle" style={{ width: 300 }}>
           <Col span={14}>
             <Flex align="center" gap={16}>
               <Avatar src={src} shape="circle" size={size || 64} />
@@ -51,14 +87,19 @@ const AvatarCustom = ({
                 >
                   {isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
                 </Button>
-                <Button variant="solid" color="primary" block>
+                <Button
+                  variant="solid"
+                  color="primary"
+                  block
+                  onClick={handleMessageClick}
+                  loading={createChatRoomLoading}
+                >
                   Nhắn tin
                 </Button>
               </>
             ) : (
               <Button variant="outlined" href="/profile" block>
-                {" "}
-                Trang cá nhân{" "}
+                Trang cá nhân
               </Button>
             )}
           </Col>
@@ -119,7 +160,6 @@ const AvatarCustom = ({
             {name}
           </Link>
         )}
-
         {children}
       </div>
     </Popover>

@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
-const UserFollow = require("../models/user_follow.model"); // Thêm để đếm followers
+const UserFollow = require("../models/user_follow.model");
 const cloudinary = require("../config/cloudinary");
 const { checkUserFollowService } = require("./user_follow.service");
 
@@ -85,18 +85,26 @@ const createUserService = async (
 
 const getUsersService = async (query, current_user_id) => {
   try {
-    const { email, role, university_id, major_id, full_name } = query;
+    const { email, role, university_id, major_id, full_name, keyword } = query;
     const filter = {};
 
     if (email) filter.email = { $regex: email, $options: "i" };
     if (role) filter.role = role;
     if (university_id) filter.university_id = university_id;
     if (major_id) filter.major_id = major_id;
-    if (full_name) filter.full_name = { $regex: full_name, $options: "i" };
+    if (keyword) filter.$text = { $search: keyword }; // Sử dụng $text search cho keyword
 
-    const users = await User.find(filter)
+    const users = await User.find(
+      filter,
+      keyword ? { score: { $meta: "textScore" } } : {}
+    )
       .populate("university_id", "university_name")
-      .populate("major_id", "major_name");
+      .populate("major_id", "major_name")
+      .sort(
+        keyword
+          ? { score: { $meta: "textScore" }, createdAt: -1 }
+          : { createdAt: -1 }
+      );
 
     if (!users || users.length === 0) {
       return {

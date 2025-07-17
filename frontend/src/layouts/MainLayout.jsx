@@ -39,7 +39,7 @@ export const MainLayout = ({ children }) => {
 
   // Cuộn lên đầu trang khi đường dẫn thay đổi
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
 
   const dropdownItems = [

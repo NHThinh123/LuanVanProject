@@ -28,8 +28,8 @@ const UserList = ({ users, loading }) => {
 
   if (!users || users.length === 0) {
     return (
-      <Typography.Text type="secondary" style={{ textAlign: "center" }}>
-        Chưa có người dùng nào
+      <Typography.Text style={{ textAlign: "center" }}>
+        Chưa có người dùng phù hợp
       </Typography.Text>
     );
   }
@@ -70,7 +70,6 @@ const UserList = ({ users, loading }) => {
             </Flex>
           </List.Item>
         )}
-        style={{ marginBottom: 16 }}
       />
     </div>
   );

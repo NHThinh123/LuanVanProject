@@ -15,6 +15,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useChatRoom } from "../features/chat/hooks/useChatRoom";
 import { useMessages } from "../features/chat/hooks/useMessages";
 import { useAuthContext } from "../contexts/auth.context";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const { Text, Title } = Typography;
 
@@ -23,8 +24,11 @@ const MessagePage = () => {
   const { chatRooms, loading, error } = useChatRoom(1, 10);
   const [selectedChatRoom, setSelectedChatRoom] = useState(null);
   const [messageContent, setMessageContent] = useState("");
+  const [isStateProcessed, setIsStateProcessed] = useState(false); // Theo dõi state đã xử lý
   const messageContainerRef = useRef(null);
   const inputRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const {
     messages,
@@ -37,12 +41,26 @@ const MessagePage = () => {
     markMessageAsReadLoading,
   } = useMessages(selectedChatRoom?._id, 1, 20);
 
-  // Tự động chọn phòng chat đầu tiên khi danh sách phòng chat được tải
+  // Xử lý chat_room_id từ state
   useEffect(() => {
-    if (chatRooms.length > 0 && !selectedChatRoom) {
-      setSelectedChatRoom(chatRooms[0]);
+    if (chatRooms.length > 0 && !isStateProcessed) {
+      const chatRoomIdFromState = location.state?.chat_room_id;
+      if (chatRoomIdFromState) {
+        const targetRoom = chatRooms.find(
+          (room) => room._id === chatRoomIdFromState
+        );
+        if (targetRoom) {
+          setSelectedChatRoom(targetRoom);
+          setIsStateProcessed(true); // Đánh dấu state đã được xử lý
+          // Xóa state để tránh tái sử dụng
+          navigate("/messages", { state: {}, replace: true });
+        }
+      } else if (!selectedChatRoom) {
+        setSelectedChatRoom(chatRooms[0]);
+        setIsStateProcessed(true); // Đánh dấu để không xử lý lại
+      }
     }
-  }, [chatRooms, selectedChatRoom]);
+  }, [chatRooms, location.state, selectedChatRoom, isStateProcessed, navigate]);
 
   // Cuộn xuống dưới cùng khi tin nhắn hoặc phòng chat thay đổi
   useEffect(() => {
@@ -54,7 +72,6 @@ const MessagePage = () => {
         });
       };
       scrollToBottom();
-      // Quan sát thay đổi trong container để đảm bảo cuộn khi có nội dung mới
       const observer = new MutationObserver(scrollToBottom);
       observer.observe(messageContainerRef.current, {
         childList: true,
@@ -185,7 +202,10 @@ const MessagePage = () => {
             const unreadCount = chatRoom.unread_count || 0;
             return (
               <List.Item
-                onClick={() => setSelectedChatRoom(chatRoom)}
+                onClick={() => {
+                  setSelectedChatRoom(chatRoom);
+                  setIsStateProcessed(true); // Đánh dấu để bỏ qua state khi chọn thủ công
+                }}
                 style={{
                   padding: "10px 20px",
                   cursor: "pointer",
@@ -199,13 +219,20 @@ const MessagePage = () => {
               >
                 <List.Item.Meta
                   avatar={
-                    <Avatar
-                      src={
-                        otherMember.avatar_url ||
-                        "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg"
-                      }
-                      size={40}
-                    />
+                    <Flex
+                      flex={1}
+                      align="center"
+                      gap={8}
+                      style={{ marginTop: 8 }}
+                    >
+                      <Avatar
+                        src={
+                          otherMember.avatar_url ||
+                          "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg"
+                        }
+                        size={50}
+                      />
+                    </Flex>
                   }
                   title={<Text strong>{otherMember.full_name}</Text>}
                   description={
@@ -239,7 +266,7 @@ const MessagePage = () => {
                     <Badge
                       count={unreadCount}
                       style={{
-                        backgroundColor: "#0084ff",
+                        backgroundColor: "#ff4d4f",
                         color: "#fff",
                         fontSize: "10px",
                       }}
@@ -277,7 +304,7 @@ const MessagePage = () => {
                 getOtherMember(selectedChatRoom).avatar_url ||
                 "https://res.cloudinary.com/luanvan/image/upload/v1750690348/avatar-vo-tri-thu-vi_o4jsb8.jpg"
               }
-              size={32}
+              size={50}
             />
           )}
           <Title level={4} style={{ margin: 0 }}>
@@ -336,10 +363,9 @@ const MessagePage = () => {
                         ? "#d9efff"
                         : "#f0f0f0",
                     color:
-                      message.user_send_id._id === user._id ? "#fff" : "#000",
+                      message.user_send_id._id === user._id ? "#000" : "#000",
                     borderRadius: "12px",
                     margin: "5px 0",
-
                     wordBreak: "break-word",
                     border:
                       message.user_send_id._id === user._id
@@ -416,11 +442,16 @@ const MessagePage = () => {
           <SendOutlined
             style={{
               marginLeft: "10px",
-              cursor: "pointer",
-              color: "#0084ff",
+              cursor:
+                sendMessageLoading || !messageContent.trim()
+                  ? "not-allowed"
+                  : "pointer",
+              color:
+                sendMessageLoading || !messageContent.trim()
+                  ? "#d9d9d9"
+                  : "#0084ff",
             }}
             onClick={handleSendMessage}
-            disabled={sendMessageLoading || !messageContent.trim()}
           />
         </Flex>
       </Col>

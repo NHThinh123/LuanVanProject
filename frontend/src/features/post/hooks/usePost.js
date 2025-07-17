@@ -3,6 +3,7 @@ import {
   getPosts,
   searchPosts,
   getRecommendedPosts,
+  getPostsByTag,
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -12,6 +13,7 @@ export const usePosts = (queryParams = {}) => {
     status,
     category_id,
     user_id,
+    tag_id,
     page = 1,
     limit = 10,
     recommend = false,
@@ -24,6 +26,7 @@ export const usePosts = (queryParams = {}) => {
       keyword,
       category_id,
       user_id,
+      tag_id,
       page,
       limit,
       recommend,
@@ -34,6 +37,9 @@ export const usePosts = (queryParams = {}) => {
       }
       if (keyword) {
         return searchPosts({ keyword, page, limit }); // Tìm kiếm bài viết
+      }
+      if (tag_id) {
+        return getPostsByTag({ tag_id, page, limit }); // Lấy bài viết theo tag
       }
       return getPosts({ status, category_id, user_id, page, limit }); // Lấy bài viết theo danh mục hoặc trạng thái
     },

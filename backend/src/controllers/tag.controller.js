@@ -43,7 +43,7 @@ const deleteTag = async (req, res) => {
 };
 
 const getAllTags = async (req, res) => {
-  const result = await getAllTagsService();
+  const result = await getAllTagsService(req.query);
   return res.status(result.EC === 0 ? 200 : 500).json(result);
 };
 
