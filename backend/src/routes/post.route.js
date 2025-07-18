@@ -10,6 +10,7 @@ const {
   getRecommendedPosts,
   searchPosts,
   getPostsByTag,
+  getFollowingPosts, // Thêm hàm mới
 } = require("../controllers/post.controller");
 const authentication = require("../middleware/authentication");
 const isAdmin = require("../middleware/isAdmin");
@@ -26,6 +27,7 @@ router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // 
 router.get("/", authentication, getPosts); // Lấy danh sách bài viết
 router.get("/recommend", authentication, getRecommendedPosts); // Lấy danh sách bài viết đề xuất
 router.get("/search", authentication, searchPosts);
+router.get("/following", authentication, getFollowingPosts); // Thêm route mới để lấy bài viết từ người dùng đang theo dõi
 router.get("/:post_id", authentication, getPostById); // Lấy chi tiết bài viết
 router.get("/tag/:tag_id", authentication, getPostsByTag);
 

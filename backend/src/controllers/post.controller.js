@@ -8,6 +8,7 @@ const {
   getRecommendedPostsService,
   searchPostsService,
   getPostsByTagService,
+  getFollowingPostsService, // Thêm hàm mới
 } = require("../services/post.service");
 const {
   addSearchHistoryService,
@@ -120,13 +121,11 @@ const searchPosts = async (req, res) => {
     return res.status(400).json({ message: "Thiếu từ khóa tìm kiếm", EC: 1 });
   }
 
-  // Lưu từ khóa vào lịch sử tìm kiếm
   const searchHistoryResult = await addSearchHistoryService(user_id, keyword);
   if (searchHistoryResult.EC !== 0) {
     console.error("Lỗi khi lưu lịch sử tìm kiếm:", searchHistoryResult.message);
   }
 
-  // Tìm kiếm bài viết
   const result = await searchPostsService({
     keyword,
     page,
@@ -154,6 +153,20 @@ const getPostsByTag = async (req, res) => {
     .json(result);
 };
 
+const getFollowingPosts = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const current_user_id = req.user._id;
+
+  const result = await getFollowingPostsService({
+    current_user_id,
+    page,
+    limit,
+  });
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
+    .json(result);
+};
+
 module.exports = {
   createPost,
   updatePost,
@@ -164,4 +177,5 @@ module.exports = {
   getRecommendedPosts,
   searchPosts,
   getPostsByTag,
+  getFollowingPosts,
 };

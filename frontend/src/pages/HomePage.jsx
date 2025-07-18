@@ -24,7 +24,11 @@ const HomePage = () => {
     // pagination,
   } = usePosts({
     recommend: activeTab === "recommended",
-    category_id: activeTab !== "recommended" ? activeTab : undefined,
+    following: activeTab === "following", // Thêm tham số cho tab đang theo dõi
+    category_id:
+      activeTab !== "recommended" && activeTab !== "following"
+        ? activeTab
+        : undefined,
     status: "accepted",
     page: 1,
     limit: 10,
@@ -69,6 +73,11 @@ const HomePage = () => {
     {
       label: "Dành cho bạn",
       key: "recommended",
+      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+    },
+    {
+      label: "Đang theo dõi",
+      key: "following",
       children: <PostList posts={posts} isLoading={isPostsLoading} />,
     },
     ...categories.map((category) => ({

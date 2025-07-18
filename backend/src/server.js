@@ -43,6 +43,7 @@ app.use("/api/universities", universityRoutes);
 app.use("/api/post-tags", postTagRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/majors", majorRoutes);
+app.use("/api/courses", courseRoutes);
 app.use("/api/chat-rooms", chatRoomRoutes);
 app.use("/api/categories", categoryRoutes);
 

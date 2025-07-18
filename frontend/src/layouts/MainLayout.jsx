@@ -15,7 +15,10 @@ import {
   CommentOutlined,
   HomeOutlined,
   MenuOutlined,
+  ProfileOutlined,
   SearchOutlined,
+  UsbOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -253,16 +256,10 @@ export const MainLayout = ({ children }) => {
                 icon: <HomeOutlined />,
                 label: <Link to="/">Trang chủ</Link>,
               },
-              {
-                key: "post",
-                icon: <AppstoreOutlined />,
-                label: (
-                  <Link to="/posts/685e87fef9fd8be34dad6056">Bài viết</Link>
-                ),
-              },
+
               {
                 key: "profile",
-                icon: <CommentOutlined />,
+                icon: <UserOutlined />,
                 label: <Link to="/profile">Trang cá nhân</Link>,
               },
               {

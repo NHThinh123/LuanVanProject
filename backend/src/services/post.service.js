@@ -40,12 +40,10 @@ const createPostService = async (user_id, postData) => {
       }
     }
 
-    // Count words in content
     const wordCount = content.split(/\s+/).length;
     let summary = "";
     let status = "pending";
 
-    // Generate summary if content is longer than 100 words
     if (wordCount > 100) {
       const summaryResult = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -54,7 +52,6 @@ const createPostService = async (user_id, postData) => {
       summary = summaryResult.text;
     }
 
-    // Check content against community standards
     const moderationResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `
@@ -67,9 +64,8 @@ const createPostService = async (user_id, postData) => {
     status = moderationResult.text;
     console.log("Moderation Result:", moderationResult.text);
 
-    // Validate status
     if (!["accepted", "pending"].includes(status)) {
-      status = "pending"; // Default to pending if moderation result is invalid
+      status = "pending";
     }
 
     const post = await Post.create({
@@ -78,8 +74,8 @@ const createPostService = async (user_id, postData) => {
       category_id,
       title,
       content,
-      summary, // Store the summary
-      status, // Set status based on moderation
+      summary,
+      status,
     });
 
     return {
@@ -119,7 +115,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    // Update summary and status if content or title is updated
     if (title || content) {
       const wordCount = (content || post.content).split(/\s+/).length;
       if (wordCount > 100) {
@@ -400,7 +395,6 @@ const getRecommendedPostsService = async (query) => {
   try {
     const { user_id, page = 1, limit = 10, current_user_id } = query;
 
-    // Gọi API Python để lấy danh sách đề xuất
     const response = await axios.get(
       `http://localhost:8000/recommendations/surprise/${user_id}?n=${limit}`
     );
@@ -410,7 +404,6 @@ const getRecommendedPostsService = async (query) => {
       debug_info,
     } = response.data;
 
-    // Kiểm tra user_id có khớp không
     if (response_user_id !== user_id) {
       console.error(
         `User ID mismatch: requested=${user_id}, received=${response_user_id}`
@@ -419,7 +412,6 @@ const getRecommendedPostsService = async (query) => {
     }
 
     if (recommendations.length === 0) {
-      // Cold start: lấy bài viết dựa trên lịch sử tìm kiếm
       const searchHistory = await SearchHistory.find({ user_id })
         .sort({ createdAt: -1 })
         .limit(5);
@@ -455,7 +447,6 @@ const getRecommendedPostsService = async (query) => {
         };
       }
 
-      // Nếu không có lịch sử tìm kiếm, lấy bài viết phổ biến hoặc ngẫu nhiên
       const popularPosts = await getPostsService({
         status: "accepted",
         page,
@@ -500,7 +491,6 @@ const getRecommendedPostsService = async (query) => {
       };
     }
 
-    // Lấy chi tiết bài viết từ MongoDB
     const postIds = recommendations.map((item) => item.post_id);
 
     const postsResult = await getPostsService({
@@ -509,7 +499,6 @@ const getRecommendedPostsService = async (query) => {
       current_user_id,
     });
 
-    // Kết hợp điểm số với chi tiết bài viết
     const postsWithScores = recommendations
       .map((item) => {
         const post = postsResult.data.posts.find(
@@ -557,7 +546,6 @@ const searchPostsService = async ({
   try {
     const skip = (page - 1) * limit;
 
-    // Sử dụng $text search để ưu tiên tiêu đề
     const posts = await Post.find(
       {
         $text: { $search: keyword },
@@ -665,7 +653,6 @@ const getPostsByTagService = async ({
   try {
     const skip = (page - 1) * limit;
 
-    // Tìm các post_id liên kết với tag_id trong Post_Tag
     const postTags = await Post_Tag.find({ tag_id }).skip(skip).limit(limit);
 
     if (!postTags || postTags.length === 0) {
@@ -686,7 +673,6 @@ const getPostsByTagService = async ({
 
     const postIds = postTags.map((pt) => pt.post_id);
 
-    // Lấy bài viết từ Post với trạng thái "accepted"
     const posts = await Post.find({
       _id: { $in: postIds },
       status: "accepted",
@@ -778,6 +764,134 @@ const getPostsByTagService = async ({
   }
 };
 
+const getFollowingPostsService = async ({
+  current_user_id,
+  page = 1,
+  limit = 10,
+}) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Lấy danh sách user_follow_id từ UserFollow mà user_id là current_user_id
+    const following = await UserFollow.find({
+      user_id: current_user_id,
+    }).select("user_follow_id");
+    const followingIds = following.map((f) => f.user_follow_id);
+
+    if (!followingIds || followingIds.length === 0) {
+      return {
+        message:
+          "Bạn chưa theo dõi ai hoặc không có bài viết nào từ người bạn theo dõi",
+        EC: 1,
+        data: {
+          posts: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+          },
+        },
+      };
+    }
+
+    // Lấy bài viết từ những người dùng được theo dõi
+    const posts = await Post.find({
+      user_id: { $in: followingIds },
+      status: "accepted",
+    })
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
+      .populate("course_id", "course_name course_code")
+      .populate("category_id", "category_name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Post.countDocuments({
+      user_id: { $in: followingIds },
+      status: "accepted",
+    });
+
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const [
+          documentsResult,
+          tagsResult,
+          likesResult,
+          commentsResult,
+          likeStatus,
+          followersCount,
+          followStatus,
+        ] = await Promise.all([
+          getDocumentsByPostService(post._id),
+          getTagsByPostService(post._id),
+          User_Like_Post.find({ post_id: post._id }),
+          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
+          current_user_id
+            ? User_Like_Post.findOne({
+                user_id: current_user_id,
+                post_id: post._id,
+              })
+            : null,
+          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+          current_user_id && current_user_id !== post.user_id._id.toString()
+            ? checkUserFollowService(current_user_id, post.user_id._id)
+            : null,
+        ]);
+        const image =
+          documentsResult.EC === 0 && documentsResult.data.length > 0
+            ? documentsResult.data.find((doc) => doc.type === "image")
+                ?.document_url ||
+              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+        return {
+          ...post._doc,
+          user_id: {
+            ...post.user_id._doc,
+            followers_count: followersCount,
+            isFollowing:
+              current_user_id && current_user_id !== post.user_id._id.toString()
+                ? followStatus.EC === 0
+                  ? followStatus.data.following
+                  : false
+                : false,
+          },
+          image,
+          tags:
+            tagsResult.EC === 0
+              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              : [],
+          likeCount: likesResult.length,
+          isLiked: current_user_id ? !!likeStatus : false,
+          commentCount:
+            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        };
+      })
+    );
+
+    return {
+      message: "Lấy danh sách bài viết từ người dùng đang theo dõi thành công",
+      EC: 0,
+      data: {
+        posts: postsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getFollowingPostsService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
 module.exports = {
   createPostService,
   updatePostService,
@@ -788,4 +902,5 @@ module.exports = {
   getRecommendedPostsService,
   searchPostsService,
   getPostsByTagService,
+  getFollowingPostsService, // Thêm hàm mới
 };

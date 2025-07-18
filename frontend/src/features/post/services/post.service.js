@@ -107,3 +107,17 @@ export const getPostsByTag = async ({ tag_id, page = 1, limit = 10 }) => {
     throw new Error(error.message || "Lỗi khi lấy danh sách bài viết theo thẻ");
   }
 };
+
+export const getFollowingPosts = async ({ page = 1, limit = 10 }) => {
+  try {
+    const response = await axios.get("/posts/following", {
+      params: { page, limit },
+    });
+    return response.data || [];
+  } catch (error) {
+    throw new Error(
+      error.message ||
+        "Lỗi khi lấy danh sách bài viết từ người dùng đang theo dõi"
+    );
+  }
+};

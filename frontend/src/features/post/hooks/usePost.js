@@ -4,6 +4,7 @@ import {
   searchPosts,
   getRecommendedPosts,
   getPostsByTag,
+  getFollowingPosts, // Thêm hàm mới
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -17,6 +18,7 @@ export const usePosts = (queryParams = {}) => {
     page = 1,
     limit = 10,
     recommend = false,
+    following = false, // Thêm tham số mới
   } = queryParams;
 
   const { data, isLoading, error } = useQuery({
@@ -30,10 +32,14 @@ export const usePosts = (queryParams = {}) => {
       page,
       limit,
       recommend,
+      following, // Thêm vào queryKey
     ],
     queryFn: () => {
       if (recommend) {
         return getRecommendedPosts({ page, limit }); // Lấy bài viết đề xuất
+      }
+      if (following) {
+        return getFollowingPosts({ page, limit }); // Lấy bài viết từ người dùng đang theo dõi
       }
       if (keyword) {
         return searchPosts({ keyword, page, limit }); // Tìm kiếm bài viết
