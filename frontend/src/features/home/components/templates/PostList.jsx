@@ -17,6 +17,8 @@ import "quill/dist/quill.snow.css";
 import { formatDate } from "../../../../constants/formatDate";
 import SkeletonLoading from "../../../../components/atoms/SkeletonLoading";
 import ActionButtons from "../../../post/components/atoms/ActionButtons";
+import { getAllParagraphs } from "../../../../constants/getAllParagraphs";
+
 const { Text } = Typography;
 
 const PostList = ({ posts = [], isLoading }) => {
@@ -104,7 +106,9 @@ const PostList = ({ posts = [], isLoading }) => {
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
-                dangerouslySetInnerHTML={{ __html: item?.content || "" }}
+                dangerouslySetInnerHTML={{
+                  __html: getAllParagraphs(item?.content),
+                }}
               />
             }
           />

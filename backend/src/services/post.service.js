@@ -7,19 +7,33 @@ const User_Like_Post = require("../models/user_like_post.model");
 const UserFollow = require("../models/user_follow.model");
 const SearchHistory = require("../models/search_history.model");
 const Post_Tag = require("../models/post_tag.model");
+const Document = require("../models/document.model");
 const { getDocumentsByPostService } = require("./document.service");
 const { getCommentsByPostService } = require("./comment.service");
 const { getTagsByPostService } = require("./post_tag.service");
 const { checkUserFollowService } = require("./user_follow.service");
 const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
+const cheerio = require("cheerio");
 
-// Initialize Gemini API
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Hàm loại bỏ thẻ <img> khỏi chuỗi HTML bằng cheerio
+const removeImagesFromContent = (htmlContent) => {
+  if (!htmlContent) return "";
+  try {
+    const $ = cheerio.load(htmlContent);
+    $("img").remove();
+    return $.html("body").replace(/^<body>|<\/body>$/g, "");
+  } catch (error) {
+    console.error("Lỗi khi loại bỏ thẻ <img> khỏi content:", error);
+    return htmlContent; // Trả về nội dung gốc nếu có lỗi
+  }
+};
 
 const createPostService = async (user_id, postData) => {
   try {
-    const { course_id, category_id, title, content } = postData;
+    const { course_id, category_id, title, content, imageUrls = [] } = postData;
 
     const user = await User.findById(user_id);
     if (!user) {
@@ -43,29 +57,66 @@ const createPostService = async (user_id, postData) => {
     const wordCount = content.split(/\s+/).length;
     let summary = "";
     let status = "pending";
+    let reason = "";
 
     if (wordCount > 100) {
       const summaryResult = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `Tóm tắt bài viết sau thành 50-60 từ để review ngắn gọn nội dung bài viết để người dùng xem trước, kết quả trả về là tiếng Việt :\nTiêu đề: ${title}\nNội dung: ${content}`,
+        contents: `Tóm tắt bài viết sau thành 50-60 từ để review ngắn gọn nội dung bài viết để người dùng xem trước, kết quả trả về là tiếng Việt:\nTiêu đề: ${title}\nNội dung: ${content}`,
       });
       summary = summaryResult.text;
     }
 
+    // Loại bỏ thẻ <img> khỏi content trước khi kiểm duyệt
+    const cleanedContent = removeImagesFromContent(content);
+
+    const moderationPrompt = `
+      Kiểm tra nội dung văn bản của bài viết sau và xác định xem có phù hợp với tiêu chuẩn cộng đồng không. 
+      Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết hình ảnh hoặc nội dung đa phương tiện.
+      Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
+      Trả về định dạng JSON thuần túy, không sử dụng markdown hoặc ký tự đặc biệt như \`\`\`:
+      {
+        "status": "accepted" hoặc "pending",
+        "reason": "Lý do từ chối nếu status là pending, nếu không thì để trống"
+      }
+      Tiêu đề: ${title}
+      Nội dung văn bản: ${cleanedContent}
+    `;
     const moderationResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `
-      Kiểm tra bài viết sau và xác định xem nội dung có phù hợp với tiêu chuẩn cộng đồng không. 
-      Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
-      Trả về chỉ một từ: "accepted" nếu phù hợp, hoặc "pending" nếu không phù hợp.
-      Tiêu đề: ${title}
-      Nội dung: ${content}`,
+      contents: moderationPrompt,
     });
-    status = moderationResult.text;
-    console.log("Moderation Result:", moderationResult.text);
+
+    // Debug: Log toàn bộ nội dung trả về từ API
+    console.log("Raw moderationResult.text:", moderationResult.text);
+
+    let moderationData;
+    try {
+      // Loại bỏ markdown hoặc ký tự không mong muốn
+      const cleanedText = moderationResult.text
+        .replace(/```json\n|```/g, "") // Xóa ```json và ```
+        .replace(/`/g, "") // Xóa dấu nháy ngược
+        .trim();
+      moderationData = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("Lỗi khi phân tích JSON từ moderationResult:", parseError);
+      console.error("Nội dung gốc:", moderationResult.text);
+      moderationData = {
+        status: "pending",
+        reason: "Không thể phân tích kết quả kiểm duyệt",
+      };
+    }
+
+    status = moderationData.status;
+    reason = moderationData.reason || "";
 
     if (!["accepted", "pending"].includes(status)) {
       status = "pending";
+      reason = reason || "Kết quả kiểm duyệt không hợp lệ";
+    }
+
+    if (status === "pending") {
+      console.log(`Lý do từ chối bài viết (user_id: ${user_id}): ${reason}`);
     }
 
     const post = await Post.create({
@@ -73,15 +124,29 @@ const createPostService = async (user_id, postData) => {
       course_id,
       category_id,
       title,
-      content,
+      content, // Lưu content gốc, bao gồm thẻ <img>
       summary,
       status,
     });
 
+    // Tạo các bản ghi Document cho các ảnh
+    if (imageUrls.length > 0) {
+      const documents = imageUrls.map((url) => ({
+        post_id: post._id,
+        type: "image",
+        document_url: url,
+      }));
+      await Document.insertMany(documents);
+    }
+
     return {
-      message: "Tạo bài viết thành công",
+      message:
+        status === "accepted"
+          ? "Tạo bài viết thành công"
+          : "Bài viết đã được tạo nhưng đang chờ duyệt",
       EC: 0,
       data: post,
+      ...(status === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in createPostService:", error);
@@ -127,33 +192,77 @@ const updatePostService = async (user_id, post_id, postData) => {
         post.summary = "";
       }
 
+      // Loại bỏ thẻ <img> khỏi content trước khi kiểm duyệt
+      const cleanedContent = removeImagesFromContent(content || post.content);
+
       const moderationPrompt = `
-        Kiểm tra bài viết sau và xác định xem nội dung có phù hợp với tiêu chuẩn cộng đồng không. 
+        Kiểm tra nội dung văn bản của bài viết sau và xác định xem có phù hợp với tiêu chuẩn cộng đồng không. 
+        Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết hình ảnh hoặc nội dung đa phương tiện.
         Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
-        Trả về chỉ một từ: "accepted" nếu phù hợp, hoặc "pending" nếu không phù hợp.
+        Trả về định dạng JSON thuần túy, không sử dụng markdown hoặc ký tự đặc biệt như \`\`\`:
+        {
+          "status": "accepted" hoặc "pending",
+          "reason": "Lý do từ chối nếu status là pending, nếu không thì để trống"
+        }
         Tiêu đề: ${title || post.title}
-        Nội dung: ${content || post.content}
+        Nội dung văn bản: ${cleanedContent}
       `;
       const moderationResult = await ai.models.generateContent(
         moderationPrompt
       );
-      post.status = moderationResult.text;
+
+      // Debug: Log toàn bộ nội dung trả về từ API
+      console.log("Raw moderationResult.text:", moderationResult.text);
+
+      let moderationData;
+      try {
+        // Loại bỏ markdown hoặc ký tự không mong muốn
+        const cleanedText = moderationResult.text
+          .replace(/```json\n|```/g, "") // Xóa ```json và ```
+          .replace(/`/g, "") // Xóa dấu nháy ngược
+          .trim();
+        moderationData = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error(
+          "Lỗi khi phân tích JSON từ moderationResult:",
+          parseError
+        );
+        console.error("Nội dung gốc:", moderationResult.text);
+        moderationData = {
+          status: "pending",
+          reason: "Không thể phân tích kết quả kiểm duyệt",
+        };
+      }
+
+      post.status = moderationData.status;
+      reason = moderationData.reason || "";
 
       if (!["accepted", "pending"].includes(post.status)) {
         post.status = "pending";
+        reason = reason || "Kết quả kiểm duyệt không hợp lệ";
+      }
+
+      if (post.status === "pending") {
+        console.log(
+          `Lý do từ chối bài viết (post_id: ${post_id}, user_id: ${user_id}): ${reason}`
+        );
       }
     }
 
     post.course_id = course_id || post.course_id;
     post.category_id = category_id || post.category_id;
     post.title = title || post.title;
-    post.content = content || post.content;
+    post.content = content || post.content; // Lưu content gốc, bao gồm thẻ <img>
     await post.save();
 
     return {
-      message: "Cập nhật bài viết thành công",
+      message:
+        post.status === "accepted"
+          ? "Cập nhật bài viết thành công"
+          : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
       EC: 0,
       data: post,
+      ...(post.status === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in updatePostService:", error);
@@ -772,7 +881,6 @@ const getFollowingPostsService = async ({
   try {
     const skip = (page - 1) * limit;
 
-    // Lấy danh sách user_follow_id từ UserFollow mà user_id là current_user_id
     const following = await UserFollow.find({
       user_id: current_user_id,
     }).select("user_follow_id");
@@ -795,7 +903,6 @@ const getFollowingPostsService = async ({
       };
     }
 
-    // Lấy bài viết từ những người dùng được theo dõi
     const posts = await Post.find({
       user_id: { $in: followingIds },
       status: "accepted",
@@ -902,5 +1009,5 @@ module.exports = {
   getRecommendedPostsService,
   searchPostsService,
   getPostsByTagService,
-  getFollowingPostsService, // Thêm hàm mới
+  getFollowingPostsService,
 };

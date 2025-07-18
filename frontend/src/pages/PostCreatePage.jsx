@@ -18,12 +18,14 @@ import {
 } from "antd";
 import AddNewModal from "../components/organisms/AddNewModal";
 import { useNavigate } from "react-router-dom";
+import { uploadImageToCloudinary } from "../features/post/services/upload.service";
 
 const { Title } = Typography;
 
 const PostCreatePage = () => {
   const [form] = Form.useForm();
   const [content, setContent] = useState("");
+  const [imageUrls, setImageUrls] = useState([]); // State lưu danh sách URL ảnh
   const editorRef = useRef(null);
   const quillRef = useRef(null);
   const { handleCreatePost, isLoading } = useCreatePost();
@@ -35,18 +37,47 @@ const PostCreatePage = () => {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const navigate = useNavigate();
-  // Initialize Quill editor
+
+  // Hàm upload ảnh lên Cloudinary
+
+  // Tùy chỉnh Quill để xử lý upload ảnh
   useEffect(() => {
     quillRef.current = new Quill(editorRef.current, {
       theme: "snow",
       modules: {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ["bold", "italic", "underline"],
-          ["link", "image"],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["clean"],
-        ],
+        toolbar: {
+          container: [
+            [{ header: [1, 2, 3, false] }],
+            ["bold", "italic", "underline"],
+            ["link", "image"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+          ],
+          handlers: {
+            image: async () => {
+              const input = document.createElement("input");
+              input.setAttribute("type", "file");
+              input.setAttribute("accept", "image/*");
+              input.click();
+
+              input.onchange = async () => {
+                const file = input.files[0];
+                if (file) {
+                  const imageUrl = await uploadImageToCloudinary(file);
+                  if (imageUrl) {
+                    setImageUrls((prev) => [...prev, imageUrl]);
+                    const range = quillRef.current.getSelection();
+                    quillRef.current.insertEmbed(
+                      range.index,
+                      "image",
+                      imageUrl
+                    );
+                  }
+                }
+              };
+            },
+          },
+        },
       },
       placeholder: "Nhập nội dung bài viết tại đây...",
     });
@@ -68,7 +99,6 @@ const PostCreatePage = () => {
     });
   }, [form]);
 
-  // Update filtered courses based on search value
   useEffect(() => {
     setFilteredCourses(
       courses
@@ -85,7 +115,6 @@ const PostCreatePage = () => {
   }, [searchValue, courses]);
 
   const onFinish = async (values) => {
-    // Extract course_code and course_name
     const [selectedCourseCode, selectedCourseName] = values.course_name
       .split(" - ")
       .map((str) => str.trim());
@@ -107,7 +136,6 @@ const PostCreatePage = () => {
     }
 
     try {
-      // Handle tags: Create new tags if they don't exist
       const tagIds = [];
       for (const tagName of selectedTags) {
         const normalizedTagName = tagName.trim().toLowerCase();
@@ -126,17 +154,17 @@ const PostCreatePage = () => {
         }
       }
 
-      // Create post
+      // Thêm imageUrls vào postData
       const postData = {
         course_id: selectedCourse._id,
         category_id: values.category_id,
         title: values.title,
         content,
+        imageUrls, // Gửi danh sách URL ảnh
       };
 
       handleCreatePost(postData, {
         onSuccess: async (response) => {
-          // Attach tags to the post if there are any
           if (tagIds.length > 0) {
             await addTagsToPost({
               post_id: response.data._id,
@@ -145,10 +173,11 @@ const PostCreatePage = () => {
           }
           form.resetFields();
           setContent("");
+          setImageUrls([]); // Reset danh sách URL ảnh
           quillRef.current.root.innerHTML = "";
           setSearchValue("");
           setSelectedTags([]);
-          navigate("/");
+          navigate("/profile");
         },
         onError: (error) => {
           message.error(

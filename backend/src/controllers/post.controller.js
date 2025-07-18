@@ -8,14 +8,14 @@ const {
   getRecommendedPostsService,
   searchPostsService,
   getPostsByTagService,
-  getFollowingPostsService, // Thêm hàm mới
+  getFollowingPostsService,
 } = require("../services/post.service");
 const {
   addSearchHistoryService,
 } = require("../services/search_history.service");
 
 const createPost = async (req, res) => {
-  const { course_id, category_id, title, content } = req.body;
+  const { course_id, category_id, title, content, imageUrls } = req.body;
   const user_id = req.user._id;
 
   if (!title || !content) {
@@ -27,6 +27,7 @@ const createPost = async (req, res) => {
     category_id,
     title,
     content,
+    imageUrls, // Thêm imageUrls vào dữ liệu gửi đi
   });
   return res
     .status(result.EC === 0 ? 201 : result.EC === 1 ? 400 : 500)

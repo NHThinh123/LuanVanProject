@@ -3,6 +3,8 @@ import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { CommentOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { formatDate } from "../../../../constants/formatDate";
 import { Link } from "react-router-dom";
+import { getAllParagraphs } from "../../../../constants/getAllParagraphs";
+
 const SuggestedPost = ({ post }) => (
   <List.Item>
     <Link to={`/posts/${post._id}`}>
@@ -50,7 +52,9 @@ const SuggestedPost = ({ post }) => (
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
-                dangerouslySetInnerHTML={{ __html: post?.content || "" }}
+                dangerouslySetInnerHTML={{
+                  __html: getAllParagraphs(post?.content),
+                }}
               />
               <Flex align="center" gap={16}>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>

@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { notification } from "antd";
 
 import { createPost } from "../services/post.service";
-
 import { useAuthContext } from "../../../contexts/auth.context";
 
 export const useCreatePost = () => {
@@ -45,7 +44,16 @@ export const useCreatePost = () => {
       return;
     }
 
-    createPostMutation.mutate(postData, { onSuccess });
+    createPostMutation.mutate(
+      {
+        course_id: postData.course_id,
+        category_id: postData.category_id,
+        title: postData.title,
+        content: postData.content,
+        imageUrls: postData.imageUrls || [], // Thêm imageUrls vào payload
+      },
+      { onSuccess }
+    );
   };
 
   return {

@@ -40,9 +40,9 @@ export const useTag = (query = {}) => {
   const addTagsToPostMutation = useMutation({
     mutationFn: addTagsToPost,
     onSuccess: () => {
-      notification.success({
-        message: "Gắn thẻ vào bài viết thành công",
-      });
+      // notification.success({
+      //   message: "Gắn thẻ vào bài viết thành công",
+      // });
     },
     onError: (error) => {
       notification.error({

@@ -5,6 +5,7 @@ export const createPost = async ({
   category_id,
   title,
   content,
+  imageUrls = [], // Thêm imageUrls vào tham số
 }) => {
   try {
     const response = await axios.post("/posts/", {
@@ -12,6 +13,7 @@ export const createPost = async ({
       category_id,
       title,
       content,
+      imageUrls, // Gửi danh sách URL ảnh
     });
 
     return response;
@@ -28,7 +30,7 @@ export const getPosts = async (queryParams = {}) => {
       },
     });
 
-    return response.data; // Trả về danh sách bài viết
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi server");
   }
@@ -42,7 +44,7 @@ export const searchPosts = async (queryParams = {}) => {
       },
     });
 
-    return response.data; // Trả về danh sách bài viết tìm kiếm
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi tìm kiếm bài viết");
   }
@@ -52,10 +54,10 @@ export const getPostById = async (post_id, user_id) => {
   try {
     const response = await axios.get(`/posts/${post_id}`, {
       params: {
-        current_user_id: user_id, // Truyền ID người dùng hiện tại để kiểm tra trạng thái thích bài viết
+        current_user_id: user_id,
       },
     });
-    return response.data; // Trả về bài viết chi tiết
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi lấy thông tin bài viết");
   }
@@ -91,7 +93,7 @@ export const getRecommendedPosts = async (queryParams = {}) => {
         ...queryParams,
       },
     });
-    return response.data; // Trả về danh sách bài viết đề xuất
+    return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi lấy danh sách bài viết đề xuất");
   }
