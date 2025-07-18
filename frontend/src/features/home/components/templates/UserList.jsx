@@ -13,7 +13,7 @@ import { useUsers } from "../../../user/hooks/useUsers";
 import { useAuthContext } from "../../../../contexts/auth.context";
 
 const UserList = ({ users, loading }) => {
-  const { user: curent_user, isLoading: authLoading } = useAuthContext();
+  const { user: current_user, isLoading: authLoading } = useAuthContext();
   const { follow, unfollow, isFollowLoading } = useUsers();
 
   if (loading || authLoading) {
@@ -51,12 +51,13 @@ const UserList = ({ users, loading }) => {
                   follower={user.followers_count}
                   user_id={user._id}
                   isFollowing={user.isFollowing}
+                  fontWeight="normal"
                 />
               </div>
-              {user._id !== curent_user?._id && (
+              {user._id !== current_user?._id && (
                 <Button
-                  variant="outlined"
-                  color={user.isFollowing ? "default" : "primary"}
+                  variant={user.isFollowing ? "outlined" : "solid"}
+                  color={"primary"}
                   onClick={() =>
                     user.isFollowing
                       ? unfollow({ user_follow_id: user._id })

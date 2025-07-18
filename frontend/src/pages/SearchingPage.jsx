@@ -88,16 +88,18 @@ const SearchingPage = () => {
               Người dùng phù hợp với "{keyword || "Không có từ khóa"}"
             </Typography.Title>
             <UserList users={users?.slice(0, 4)} loading={isUsersLoading} />
-            <p
-              style={{
-                textAlign: "center",
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
-              onClick={() => setActiveTab("2")} // Chuyển sang tab Người dùng
-            >
-              Xem thêm
-            </p>
+            {users?.length > 4 && (
+              <p
+                style={{
+                  textAlign: "center",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                onClick={() => setActiveTab("2")} // Chuyển sang tab Người dùng
+              >
+                Xem thêm
+              </p>
+            )}
           </div>
           <Divider />
           <div style={{ marginTop: 24 }}>
@@ -124,17 +126,19 @@ const SearchingPage = () => {
                     </Button>
                   ))}
                 </Flex>
-                <p
-                  style={{
-                    textAlign: "center",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                    marginTop: 8,
-                  }}
-                  onClick={() => setActiveTab("3")} // Chuyển sang tab Thẻ
-                >
-                  Xem thêm
-                </p>
+                {tags.length > 4 && (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                      marginTop: 8,
+                    }}
+                    onClick={() => setActiveTab("3")} // Chuyển sang tab Thẻ
+                  >
+                    Xem thêm
+                  </p>
+                )}
               </>
             ) : (
               <Typography.Text type="secondary">

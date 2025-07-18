@@ -77,6 +77,8 @@ const PostList = ({ posts = [], isLoading }) => {
               color={"#000"}
               user_id={item.user_id?._id}
               isFollowing={item.user_id?.isFollowing || false}
+              follower={item.user_id?.followers_count || 0}
+              fontWeight="normal"
             ></AvatarCustom>
             <div>
               <Tag color="blue">{item?.course_id?.course_name}</Tag>

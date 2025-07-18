@@ -1,8 +1,10 @@
 import { Button, Divider, Flex, List } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { Link } from "react-router-dom";
+import { useUsers } from "../../../user/hooks/useUsers";
 
 const SearchingUserList = ({ users }) => {
+  const { isFollowLoading } = useUsers();
   if (!users || users.length === 0) {
     return (
       <Flex justify="center" style={{ marginTop: 20 }}>
@@ -30,8 +32,12 @@ const SearchingUserList = ({ users }) => {
                     style={{ gap: 16 }}
                   />
                 </div>
-                <Button variant="outlined" color="primary">
-                  Theo dõi
+                <Button
+                  variant={user.isFollowing ? "outlined" : "solid"}
+                  color={"primary"}
+                  loading={isFollowLoading}
+                >
+                  {user.isFollowing ? "Đang theo dõi" : "Theo dõi"}
                 </Button>
               </Flex>
             </Link>

@@ -22,7 +22,14 @@ const PostPopularList = ({ postPopular, loading }) => {
           <Title level={5}>
             <a
               href={`/posts/${pick?._id}`}
-              style={{ textDecoration: "none", color: "#000" }}
+              style={{
+                textDecoration: "none",
+                color: "#000",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
               onMouseEnter={(e) =>
                 (e.target.style.textDecoration = "underline")
               }
@@ -38,6 +45,10 @@ const PostPopularList = ({ postPopular, loading }) => {
                   src={pick.user_id?.avatar_url}
                   name={pick.user_id?.full_name}
                   size={32}
+                  user_id={pick.user_id?._id}
+                  isFollowing={pick.user_id?.isFollowing || false}
+                  follower={pick.user_id?.followers_count || 0}
+                  fontWeight="normal"
                 />
               </div>
               {formatDate(pick.createdAt)}

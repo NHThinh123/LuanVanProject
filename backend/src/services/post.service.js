@@ -72,7 +72,7 @@ const createPostService = async (user_id, postData) => {
 
     const moderationPrompt = `
       Kiểm tra nội dung văn bản của bài viết sau và xác định xem có phù hợp với tiêu chuẩn cộng đồng không. 
-      Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết hình ảnh hoặc nội dung đa phương tiện.
+      Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết, liên kết hình ảnh hoặc nội dung đa phương tiện.
       Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
       Trả về định dạng JSON thuần túy, không sử dụng markdown hoặc ký tự đặc biệt như \`\`\`:
       {

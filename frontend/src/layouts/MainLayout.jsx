@@ -17,6 +17,7 @@ import {
   MenuOutlined,
   ProfileOutlined,
   SearchOutlined,
+  TeamOutlined,
   UsbOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -129,6 +130,8 @@ export const MainLayout = ({ children }) => {
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/searching")) return "searching";
     if (path.startsWith("/messages")) return "messages";
+    if (path.startsWith("/tags")) return "tags";
+    if (path.startsWith("/followers")) return "followers";
     return "home";
   };
 
@@ -261,6 +264,11 @@ export const MainLayout = ({ children }) => {
                 key: "profile",
                 icon: <UserOutlined />,
                 label: <Link to="/profile">Trang cá nhân</Link>,
+              },
+              {
+                key: "followers",
+                icon: <TeamOutlined />,
+                label: <Link to="/followers">Người theo dõi</Link>,
               },
               {
                 key: "searching",

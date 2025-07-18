@@ -20,6 +20,7 @@ import PostCreatePage from "./pages/PostCreatePage.jsx";
 import UserProfilePage from "./pages/UserProfilePage.jsx";
 import MessagePage from "./pages/MessagePage.jsx";
 import PostFilterByTagPage from "./pages/PostFilterByTagPage.jsx";
+import FollowerPage from "./pages/FollowerPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
       {
         path: "/searching",
         element: <SearchingPage />,
+      },
+      {
+        path: "followers",
+        element: <FollowerPage />,
       },
       {
         path: "/messages",

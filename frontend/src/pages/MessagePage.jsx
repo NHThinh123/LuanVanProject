@@ -68,7 +68,7 @@ const MessagePage = () => {
       const scrollToBottom = () => {
         messageContainerRef.current.scrollTo({
           top: messageContainerRef.current.scrollHeight,
-          behavior: "smooth",
+          behavior: "instant",
         });
       };
       scrollToBottom();

@@ -16,6 +16,7 @@ const AvatarCustom = ({
   isHover = true,
   user_id,
   isFollowing,
+  fontWeight = "bold",
 }) => {
   const { user } = useAuthContext();
   const { follow, unfollow, isFollowLoading } = useUsers();
@@ -153,7 +154,7 @@ const AvatarCustom = ({
         ) : (
           <Link
             to={`/user/${user_id}`}
-            style={{ margin: 0, color: "#000" }}
+            style={{ margin: 0, color: "#000", fontWeight: fontWeight }}
             onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
             onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
           >

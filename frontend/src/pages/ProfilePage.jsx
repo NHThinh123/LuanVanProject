@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Avatar,
   Button,
@@ -15,6 +16,7 @@ import UserList from "../features/home/components/templates/UserList";
 import { useAuthContext } from "../contexts/auth.context";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useUsers } from "../features/user/hooks/useUsers";
+import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
 
 const ProfilePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
@@ -27,6 +29,11 @@ const ProfilePage = () => {
     following,
     isLoading: isUserLoading,
   } = useUsers({}, user?._id);
+  const [activeTab, setActiveTab] = useState("1");
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+  };
 
   const tabItems = [
     {
@@ -43,6 +50,16 @@ const ProfilePage = () => {
           following={following?.length}
         />
       ),
+    },
+    {
+      key: "3",
+      label: "Người theo dõi",
+      children: <SearchingUserList users={followers} />,
+    },
+    {
+      key: "4",
+      label: "Đang theo dõi",
+      children: <SearchingUserList users={following} />,
     },
   ];
 
@@ -92,18 +109,49 @@ const ProfilePage = () => {
             <p style={{ marginTop: 16, width: "100%" }}>{user?.bio}</p>
           </Flex>
         </Flex>
-        <Tabs defaultActiveKey="1" items={tabItems} style={{ marginTop: 16 }} />
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          items={tabItems}
+          style={{ marginTop: 16 }}
+        />
       </Col>
       <Col span={6}>
         <div style={{ position: "sticky", top: 80, padding: "0px 16px" }}>
           <div>
             <Typography.Title level={4}>Người theo dõi</Typography.Title>
             <UserList users={followers?.slice(0, 3)} loading={isUserLoading} />
+            {followers?.length > 3 && (
+              <p
+                style={{
+                  textAlign: "center",
+                  marginTop: 8,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleTabChange("3")}
+              >
+                Xem thêm
+              </p>
+            )}
           </div>
           <Divider />
           <div>
             <Typography.Title level={4}>Đang theo dõi</Typography.Title>
             <UserList users={following?.slice(0, 3)} loading={isUserLoading} />
+            {following?.length > 3 && (
+              <p
+                style={{
+                  textAlign: "center",
+                  marginTop: 8,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleTabChange("4")}
+              >
+                Xem thêm
+              </p>
+            )}
           </div>
         </div>
       </Col>
