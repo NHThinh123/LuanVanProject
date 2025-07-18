@@ -505,7 +505,7 @@ const getRecommendedPostsService = async (query) => {
     const { user_id, page = 1, limit = 10, current_user_id } = query;
 
     const response = await axios.get(
-      `http://localhost:8000/recommendations/surprise/${user_id}?n=${limit}`
+      `http://localhost:8000/recommendations/surprise/${user_id}?n=99`
     );
     const {
       user_id: response_user_id,
@@ -876,7 +876,7 @@ const getPostsByTagService = async ({
 const getFollowingPostsService = async ({
   current_user_id,
   page = 1,
-  limit = 10,
+  limit = 4,
 }) => {
   try {
     const skip = (page - 1) * limit;

@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+// usePost.js
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   getPosts,
   searchPosts,
   getRecommendedPosts,
   getPostsByTag,
-  getFollowingPosts, // Thêm hàm mới
+  getFollowingPosts,
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -15,13 +16,18 @@ export const usePosts = (queryParams = {}) => {
     category_id,
     user_id,
     tag_id,
-    page = 1,
-    limit = 10,
     recommend = false,
-    following = false, // Thêm tham số mới
+    following = false,
   } = queryParams;
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: [
       "posts",
       status,
@@ -29,25 +35,32 @@ export const usePosts = (queryParams = {}) => {
       category_id,
       user_id,
       tag_id,
-      page,
-      limit,
       recommend,
-      following, // Thêm vào queryKey
+      following,
     ],
-    queryFn: () => {
+    queryFn: async ({ pageParam = 1 }) => {
+      const limit = 4;
+      console.log(`Fetching page ${pageParam} with limit ${limit}`); // Debug
       if (recommend) {
-        return getRecommendedPosts({ page, limit }); // Lấy bài viết đề xuất
+        return getRecommendedPosts({ page: pageParam, limit });
       }
       if (following) {
-        return getFollowingPosts({ page, limit }); // Lấy bài viết từ người dùng đang theo dõi
+        return getFollowingPosts({ page: pageParam, limit });
       }
       if (keyword) {
-        return searchPosts({ keyword, page, limit }); // Tìm kiếm bài viết
+        return searchPosts({ keyword, page: pageParam, limit });
       }
       if (tag_id) {
-        return getPostsByTag({ tag_id, page, limit }); // Lấy bài viết theo tag
+        return getPostsByTag({ tag_id, page: pageParam, limit });
       }
-      return getPosts({ status, category_id, user_id, page, limit }); // Lấy bài viết theo danh mục hoặc trạng thái
+      return getPosts({ status, category_id, user_id, page: pageParam, limit });
+    },
+    getNextPageParam: (lastPage) => {
+      const { pagination } = lastPage;
+      console.log("Pagination:", pagination); // Debug
+      const currentPage = Number(pagination.page); // Chuyển đổi page thành số
+      const totalPages = Number(pagination.totalPages); // Chuyển đổi totalPages thành số
+      return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     onError: (error) => {
       notification.error({
@@ -56,10 +69,15 @@ export const usePosts = (queryParams = {}) => {
     },
   });
 
+  const posts = data?.pages.flatMap((page) => page.posts) || [];
+
   return {
-    posts: data?.posts || [], // Điều chỉnh theo cấu trúc response từ backend
-    pagination: data?.pagination || {},
+    posts,
+    pagination: data?.pages[data.pages.length - 1]?.pagination || {},
     isLoading,
     error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   };
 };

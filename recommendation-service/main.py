@@ -5,7 +5,7 @@ import uvicorn
 app = FastAPI()
 
 @app.get("/recommendations/surprise/{user_id}")
-async def get_recommendations(user_id: str, n: int = 10):
+async def get_recommendations(user_id: str, n: int = 6):
     recommendations = get_surprise_recommendations(user_id, n)
     return recommendations
 

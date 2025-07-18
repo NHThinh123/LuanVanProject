@@ -62,7 +62,7 @@ def get_surprise_recommendations(user_id, n=10):
     for post_id in all_posts:
         surprise_score = next((score for pid, score in surprise_scores if pid == post_id), 0.0)
         keyword_score = next((score for pid, score in keyword_scores if pid == post_id), 0.0)
-        combined_score = 0.7 * surprise_score + 0.3 * keyword_score
+        combined_score = 0.8 * surprise_score + 0.2 * keyword_score
         combined_scores.append({
             "post_id": post_id,
             "surprise_score": float(surprise_score),

@@ -1,5 +1,16 @@
-import React, { useState } from "react";
-import { Layout, Row, Col, Typography, Tabs, Divider, Skeleton } from "antd";
+// HomePage.jsx
+import React, { useState, useEffect } from "react";
+import {
+  Layout,
+  Row,
+  Col,
+  Typography,
+  Tabs,
+  Divider,
+  Skeleton,
+  Spin,
+} from "antd";
+import { useInView } from "react-intersection-observer";
 import PostList from "../features/home/components/templates/PostList";
 import PostPopularList from "../features/home/components/templates/PostPopularList";
 import UserList from "../features/home/components/templates/UserList";
@@ -12,27 +23,44 @@ const { Title } = Typography;
 
 const HomePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
-  const current_user_id = user?._id; // Lấy ID người dùng hiện tại
+  const current_user_id = user?._id;
   const { categories, loading: isCategoriesLoading } = useCategories();
   const { users, isLoading: isUserLoading } = useUsers({});
   const [activeTab, setActiveTab] = useState("recommended");
 
-  // Chỉ gọi usePosts cho tab hiện tại
+  const { ref, inView } = useInView({
+    threshold: 0,
+  });
+
   const {
     posts,
     isLoading: isPostsLoading,
-    // pagination,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = usePosts({
     recommend: activeTab === "recommended",
-    following: activeTab === "following", // Thêm tham số cho tab đang theo dõi
+    following: activeTab === "following",
     category_id:
       activeTab !== "recommended" && activeTab !== "following"
         ? activeTab
         : undefined,
     status: "accepted",
-    page: 1,
-    limit: 10,
   });
+
+  useEffect(() => {
+    console.log(
+      "inView:",
+      inView,
+      "hasNextPage:",
+      hasNextPage,
+      "isFetchingNextPage:",
+      isFetchingNextPage
+    ); // Debug
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isCategoriesLoading || isUserLoading || authLoading) {
     return (
@@ -64,7 +92,6 @@ const HomePage = () => {
     );
   }
 
-  // Lọc danh sách người dùng để loại bỏ người dùng hiện tại
   const filteredUsers = current_user_id
     ? users.filter((user) => user._id !== current_user_id)
     : users;
@@ -73,17 +100,53 @@ const HomePage = () => {
     {
       label: "Dành cho bạn",
       key: "recommended",
-      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+      children: (
+        <>
+          <PostList posts={posts} isLoading={isPostsLoading} />
+          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+            {isFetchingNextPage && <Spin />}
+            {!hasNextPage && posts.length > 0 && (
+              <Typography.Text type="secondary">
+                Không còn bài viết để tải
+              </Typography.Text>
+            )}
+          </div>
+        </>
+      ),
     },
     {
       label: "Đang theo dõi",
       key: "following",
-      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+      children: (
+        <>
+          <PostList posts={posts} isLoading={isPostsLoading} />
+          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+            {isFetchingNextPage && <Spin />}
+            {!hasNextPage && posts.length > 0 && (
+              <Typography.Text type="secondary">
+                Không còn bài viết để tải
+              </Typography.Text>
+            )}
+          </div>
+        </>
+      ),
     },
     ...categories.map((category) => ({
       label: category.category_name,
       key: category._id,
-      children: <PostList posts={posts} isLoading={isPostsLoading} />,
+      children: (
+        <>
+          <PostList posts={posts} isLoading={isPostsLoading} />
+          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+            {isFetchingNextPage && <Spin />}
+            {!hasNextPage && posts.length > 0 && (
+              <Typography.Text type="secondary">
+                Không còn bài viết để tải
+              </Typography.Text>
+            )}
+          </div>
+        </>
+      ),
     })),
   ];
 
@@ -93,7 +156,7 @@ const HomePage = () => {
         <Tabs
           defaultActiveKey="recommended"
           items={tabItems}
-          onChange={(key) => setActiveTab(key)} // Cập nhật tab hiện tại
+          onChange={(key) => setActiveTab(key)}
         />
       </Col>
       <Col
