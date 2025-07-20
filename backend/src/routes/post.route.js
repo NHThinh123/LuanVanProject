@@ -21,7 +21,7 @@ router.put("/:post_id", authentication, updatePost); // Cập nhật bài viết
 router.delete("/:post_id", authentication, deletePost); // Xóa bài viết
 
 // Endpoint yêu cầu xác thực và quyền admin
-router.patch("/:post_id/status", authentication, isAdmin, updatePostStatus); // Cập nhật trạng thái bài viết
+router.patch("/:post_id/status", authentication, updatePostStatus); // Cập nhật trạng thái bài viết
 
 // Endpoint công khai
 router.get("/", authentication, getPosts); // Lấy danh sách bài viết

@@ -51,7 +51,7 @@ def get_surprise_recommendations(user_id, n=10):
         if post_id in df["post_id"].unique():
             score = model.predict(user_id, post_id).est
         else:
-            score = 0.5  # Điểm mặc định cho bài viết không có tương tác
+            score = 0.5
         surprise_scores.append((post_id, score))
 
     # Tính điểm từ khóa

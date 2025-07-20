@@ -5,7 +5,7 @@ export const createPost = async ({
   category_id,
   title,
   content,
-  imageUrls = [], // Thêm imageUrls vào tham số
+  imageUrls = [],
 }) => {
   try {
     const response = await axios.post("/posts/", {
@@ -13,12 +13,37 @@ export const createPost = async ({
       category_id,
       title,
       content,
-      imageUrls, // Gửi danh sách URL ảnh
+      imageUrls,
     });
-
     return response;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi tạo bài viết");
+  }
+};
+
+export const updatePost = async (post_id, postData) => {
+  try {
+    const response = await axios.put(`/posts/${post_id}`, postData);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật bài viết");
+  }
+};
+export const updatePostStatus = async (postId, status) => {
+  try {
+    const response = await axios.patch(`/posts/${postId}/status`, { status });
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật trạng thái bài viết");
+  }
+};
+
+export const deletePost = async (post_id) => {
+  try {
+    const response = await axios.delete(`/posts/${post_id}`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi xóa bài viết");
   }
 };
 
@@ -29,7 +54,6 @@ export const getPosts = async (queryParams = {}) => {
         ...queryParams,
       },
     });
-
     return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi server");
@@ -43,7 +67,6 @@ export const searchPosts = async (queryParams = {}) => {
         ...queryParams,
       },
     });
-
     return response.data;
   } catch (error) {
     throw new Error(error.message || "Lỗi khi tìm kiếm bài viết");

@@ -2,8 +2,10 @@ import { Button, Divider, Flex, List } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { Link } from "react-router-dom";
 import { useUsers } from "../../../user/hooks/useUsers";
+import { useAuthContext } from "../../../../contexts/auth.context";
 
 const SearchingUserList = ({ users }) => {
+  const { user: current_user } = useAuthContext();
   const { isFollowLoading } = useUsers();
   if (!users || users.length === 0) {
     return (
@@ -30,15 +32,19 @@ const SearchingUserList = ({ users }) => {
                     bio={user.bio}
                     isHover={false}
                     style={{ gap: 16 }}
+                    user_id={user._id}
+                    isFollowing={user.isFollowing}
                   />
                 </div>
-                <Button
-                  variant={user.isFollowing ? "outlined" : "solid"}
-                  color={"primary"}
-                  loading={isFollowLoading}
-                >
-                  {user.isFollowing ? "Đang theo dõi" : "Theo dõi"}
-                </Button>
+                {current_user._id !== user._id && (
+                  <Button
+                    variant={user.isFollowing ? "outlined" : "solid"}
+                    color={"primary"}
+                    loading={isFollowLoading}
+                  >
+                    {user.isFollowing ? "Đang theo dõi" : "Theo dõi"}
+                  </Button>
+                )}
               </Flex>
             </Link>
             <Divider />

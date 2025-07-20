@@ -27,7 +27,7 @@ const createPost = async (req, res) => {
     category_id,
     title,
     content,
-    imageUrls, // Thêm imageUrls vào dữ liệu gửi đi
+    imageUrls,
   });
   return res
     .status(result.EC === 0 ? 201 : result.EC === 1 ? 400 : 500)
@@ -36,15 +36,18 @@ const createPost = async (req, res) => {
 
 const updatePost = async (req, res) => {
   const { post_id } = req.params;
-  const { course_id, category_id, title, content } = req.body;
+  const { course_id, category_id, title, content, imageUrls } = req.body;
   const user_id = req.user._id;
 
-  const result = await updatePostService(user_id, post_id, {
-    course_id,
-    category_id,
-    title,
-    content,
-  });
+  // Không yêu cầu title hoặc content bắt buộc, cho phép chỉ gửi imageUrls
+  const postData = {};
+  if (course_id) postData.course_id = course_id;
+  if (category_id) postData.category_id = category_id;
+  if (title) postData.title = title;
+  if (content) postData.content = content;
+  if (imageUrls) postData.imageUrls = imageUrls;
+
+  const result = await updatePostService(user_id, post_id, postData);
   return res
     .status(result.EC === 0 ? 200 : result.EC === 1 ? 400 : 500)
     .json(result);

@@ -21,8 +21,13 @@ import {
   UsbOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom"; // Thêm useSearchParams
+import { useState, useEffect, useRef } from "react"; // Thêm useRef
 import logo from "../assets/Logo/Logo.png";
 import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
@@ -40,6 +45,14 @@ export const MainLayout = ({ children }) => {
   const { searchHistory, addSearchHistory } = useSearchHistory();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // Thêm để lấy query params
+  const autoCompleteRef = useRef(null); // Ref để kiểm soát AutoComplete
+
+  // Lấy từ khóa từ query parameter khi tải trang
+  useEffect(() => {
+    const keyword = searchParams.get("keyword") || "";
+    setSearchValue(keyword); // Đặt giá trị tìm kiếm từ query parameter
+  }, [searchParams]);
 
   // Cuộn lên đầu trang khi đường dẫn thay đổi
   useEffect(() => {
@@ -95,15 +108,20 @@ export const MainLayout = ({ children }) => {
     if (!value.trim()) return; // Ignore empty searches
     try {
       await addSearchHistory(value); // Use mutation to save search history
-      setSearchValue(""); // Clear search input
       navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Redirect to search page
+      if (autoCompleteRef.current) {
+        autoCompleteRef.current.blur(); // Đóng dropdown của AutoComplete
+      }
     } catch (error) {
       console.error("Lỗi khi lưu lịch sử tìm kiếm:", error);
       navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Still redirect even if saving fails
+      if (autoCompleteRef.current) {
+        autoCompleteRef.current.blur(); // Đóng dropdown của AutoComplete
+      }
     }
   };
 
-  // Handle selecting a search history item or pressing Enter
+  // Handle selecting a search history item
   const handleSelect = (value) => {
     setSearchValue(value);
     handleSearch(value); // Trigger search when selecting an item
@@ -175,6 +193,7 @@ export const MainLayout = ({ children }) => {
           </Col>
           <Col span={11}>
             <AutoComplete
+              ref={autoCompleteRef} // Gán ref cho AutoComplete
               options={searchOptions}
               onSelect={handleSelect}
               onChange={(value) => setSearchValue(value)}
@@ -197,6 +216,7 @@ export const MainLayout = ({ children }) => {
                 prefix={<SearchOutlined />}
                 placeholder="Tìm kiếm..."
                 onKeyPress={handleKeyPress} // Handle Enter key
+                allowClear
               />
             </AutoComplete>
           </Col>
@@ -259,7 +279,6 @@ export const MainLayout = ({ children }) => {
                 icon: <HomeOutlined />,
                 label: <Link to="/">Trang chủ</Link>,
               },
-
               {
                 key: "profile",
                 icon: <UserOutlined />,
@@ -269,11 +288,6 @@ export const MainLayout = ({ children }) => {
                 key: "followers",
                 icon: <TeamOutlined />,
                 label: <Link to="/followers">Người theo dõi</Link>,
-              },
-              {
-                key: "searching",
-                icon: <SearchOutlined />,
-                label: <Link to="/searching">Tìm kiếm</Link>,
               },
               {
                 key: "messages",

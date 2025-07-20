@@ -156,12 +156,22 @@ const createPostService = async (user_id, postData) => {
 
 const updatePostService = async (user_id, post_id, postData) => {
   try {
-    const { course_id, category_id, title, content } = postData;
+    const { course_id, category_id, title, content, imageUrls = [] } = postData;
 
-    const post = await Post.findOne({ _id: post_id, user_id });
+    const user = await User.findById(user_id);
+    if (!user) {
+      return { message: "Người dùng không tồn tại", EC: 1 };
+    }
+
+    const post = await Post.findById(post_id);
     if (!post) {
+      return { message: "Bài viết không tồn tại", EC: 1 };
+    }
+
+    const isAdmin = user.role === "admin";
+    if (!isAdmin && post.user_id.toString() !== user_id) {
       return {
-        message: "Bài viết không tồn tại hoặc không thuộc về bạn",
+        message: "Bạn không có quyền chỉnh sửa bài viết này",
         EC: 1,
       };
     }
@@ -180,19 +190,25 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    if (title || content) {
+    let status = post.status;
+    let reason = "";
+    if (!isAdmin && (title || content)) {
       const wordCount = (content || post.content).split(/\s+/).length;
       if (wordCount > 100) {
-        const summaryPrompt = `Tóm tắt bài viết sau thành 30-40 từ:\nTiêu đề: ${
-          title || post.title
-        }\nNội dung: ${content || post.content}`;
-        const summaryResult = await ai.models.generateContent(summaryPrompt);
-        post.summary = summaryResult.text;
+        try {
+          const summaryPrompt = `Tóm tắt bài viết sau thành 30-40 từ:\nTiêu đề: ${
+            title || post.title
+          }\nNội dung: ${content || post.content}`;
+          const summaryResult = await ai.models.generateContent(summaryPrompt);
+          post.summary = summaryResult.text || "";
+        } catch (error) {
+          console.error("Lỗi khi tạo tóm tắt:", error);
+          post.summary = "";
+        }
       } else {
         post.summary = "";
       }
 
-      // Loại bỏ thẻ <img> khỏi content trước khi kiểm duyệt
       const cleanedContent = removeImagesFromContent(content || post.content);
 
       const moderationPrompt = `
@@ -207,62 +223,94 @@ const updatePostService = async (user_id, post_id, postData) => {
         Tiêu đề: ${title || post.title}
         Nội dung văn bản: ${cleanedContent}
       `;
-      const moderationResult = await ai.models.generateContent(
-        moderationPrompt
-      );
-
-      // Debug: Log toàn bộ nội dung trả về từ API
-      console.log("Raw moderationResult.text:", moderationResult.text);
+      let moderationResult;
+      try {
+        moderationResult = await ai.models.generateContent(moderationPrompt);
+        console.log("Raw moderationResult:", moderationResult);
+      } catch (error) {
+        console.error("Lỗi khi gọi API kiểm duyệt:", error);
+        return {
+          message: "Lỗi khi kiểm duyệt nội dung",
+          EC: 1,
+          reason: "Không thể gọi API kiểm duyệt",
+        };
+      }
 
       let moderationData;
       try {
-        // Loại bỏ markdown hoặc ký tự không mong muốn
-        const cleanedText = moderationResult.text
-          .replace(/```json\n|```/g, "") // Xóa ```json và ```
-          .replace(/`/g, "") // Xóa dấu nháy ngược
-          .trim();
-        moderationData = JSON.parse(cleanedText);
+        if (
+          moderationResult &&
+          typeof moderationResult.text === "string" &&
+          moderationResult.text.trim()
+        ) {
+          const cleanedText = moderationResult.text
+            .replace(/```json\n|```/g, "")
+            .replace(/`/g, "")
+            .trim();
+          moderationData = JSON.parse(cleanedText);
+        } else {
+          throw new Error("Kết quả kiểm duyệt không hợp lệ hoặc rỗng");
+        }
       } catch (parseError) {
         console.error(
           "Lỗi khi phân tích JSON từ moderationResult:",
           parseError
         );
-        console.error("Nội dung gốc:", moderationResult.text);
+        console.error("Nội dung gốc:", moderationResult?.text || "Không có");
         moderationData = {
           status: "pending",
           reason: "Không thể phân tích kết quả kiểm duyệt",
         };
       }
 
-      post.status = moderationData.status;
+      status = moderationData.status || "pending";
       reason = moderationData.reason || "";
 
-      if (!["accepted", "pending"].includes(post.status)) {
-        post.status = "pending";
+      if (!["accepted", "pending"].includes(status)) {
+        status = "pending";
         reason = reason || "Kết quả kiểm duyệt không hợp lệ";
       }
 
-      if (post.status === "pending") {
+      if (status === "pending") {
         console.log(
           `Lý do từ chối bài viết (post_id: ${post_id}, user_id: ${user_id}): ${reason}`
         );
+      }
+    } else {
+      status = "accepted";
+      // Bỏ qua tóm tắt cho admin để tránh lỗi API
+      if (title || content) {
+        const wordCount = (content || post.content).split(/\s+/).length;
+        post.summary = wordCount > 100 ? post.summary : "";
       }
     }
 
     post.course_id = course_id || post.course_id;
     post.category_id = category_id || post.category_id;
     post.title = title || post.title;
-    post.content = content || post.content; // Lưu content gốc, bao gồm thẻ <img>
+    post.content = content || post.content;
+    post.status = status;
+
+    if (imageUrls.length > 0) {
+      await Document.deleteMany({ post_id: post._id, type: "image" });
+      const documents = imageUrls.map((url) => ({
+        post_id: post._id,
+        type: "image",
+        document_url: url,
+      }));
+      await Document.insertMany(documents);
+    }
+
     await post.save();
 
     return {
       message:
-        post.status === "accepted"
+        status === "accepted"
           ? "Cập nhật bài viết thành công"
           : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
       EC: 0,
       data: post,
-      ...(post.status === "pending" && { reason }),
+      ...(status === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in updatePostService:", error);
@@ -279,6 +327,11 @@ const deletePostService = async (user_id, post_id) => {
         EC: 1,
       };
     }
+
+    // Xóa các document liên quan
+    await Document.deleteMany({ post_id });
+    // Xóa các post_tag liên quan
+    await Post_Tag.deleteMany({ post_id });
 
     return {
       message: "Xóa bài viết thành công",
@@ -373,7 +426,10 @@ const getPostsService = async (query) => {
           image,
           tags:
             tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              ? tagsResult.data.map((tag) => ({
+                  _id: tag.tag_id._id,
+                  tag_name: tag.tag_id.tag_name,
+                }))
               : [],
           likeCount: likesResult.length,
           isLiked: current_user_id ? !!likeStatus : false,
@@ -456,7 +512,10 @@ const getPostByIdService = async (post_id, current_user_id) => {
         documents: documentsResult.EC === 0 ? documentsResult.data : [],
         tags:
           tagsResult.EC === 0
-            ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+            ? tagsResult.data.map((tag) => ({
+                _id: tag.tag_id._id,
+                tag_name: tag.tag_id.tag_name,
+              }))
             : [],
         likeCount: likesResult.length,
         isLiked: current_user_id ? !!likeStatus : false,
@@ -706,7 +765,8 @@ const searchPostsService = async ({
         const image =
           documentsResult.EC === 0 && documentsResult.data.length > 0
             ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url
+                ?.document_url ||
+              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
             : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
 
         return {
@@ -724,7 +784,10 @@ const searchPostsService = async ({
           image,
           tags:
             tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              ? tagsResult.data.map((tag) => ({
+                  _id: tag.tag_id._id,
+                  tag_name: tag.tag_id.tag_name,
+                }))
               : [],
           likeCount: likesResult.length,
           isLiked: current_user_id ? !!likeStatus : false,
@@ -844,7 +907,10 @@ const getPostsByTagService = async ({
           image,
           tags:
             tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              ? tagsResult.data.map((tag) => ({
+                  _id: tag.tag_id._id,
+                  tag_name: tag.tag_id.tag_name,
+                }))
               : [],
           likeCount: likesResult.length,
           isLiked: current_user_id ? !!likeStatus : false,
@@ -970,7 +1036,10 @@ const getFollowingPostsService = async ({
           image,
           tags:
             tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => tag.tag_id.tag_name)
+              ? tagsResult.data.map((tag) => ({
+                  _id: tag.tag_id._id,
+                  tag_name: tag.tag_id.tag_name,
+                }))
               : [],
           likeCount: likesResult.length,
           isLiked: current_user_id ? !!likeStatus : false,

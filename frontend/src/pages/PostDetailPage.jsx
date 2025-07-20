@@ -15,7 +15,7 @@ import CommentList from "../features/post/components/templates/CommentList";
 import SuggestedPostList from "../features/post/components/templates/SuggestedPostList";
 import { usePostById } from "../features/post/hooks/usePostById";
 
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { formatDate } from "../constants/formatDate";
 import "quill/dist/quill.snow.css";
 import { useAuthContext } from "../contexts/auth.context";
@@ -26,6 +26,7 @@ import { usePosts } from "../features/post/hooks/usePost";
 const PostDetailPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const post_id = useParams().id;
+
   const { post, isLoading: postsLoading } = usePostById(post_id, user?._id);
   const { posts, isLoading: isPostsLoading } = usePosts({ status: "accepted" });
   const {
@@ -36,7 +37,7 @@ const PostDetailPage = () => {
     fetchNextPage,
     hasNextPage,
   } = useComment(post_id);
-
+  const navigate = useNavigate();
   if (authLoading || postsLoading || commentsLoading || isPostsLoading) {
     return (
       <Row justify={"center"}>
@@ -107,11 +108,16 @@ const PostDetailPage = () => {
           <>
             {post.tags?.map((tag) => (
               <Tag
-                style={{ padding: 4, fontSize: 14 }}
-                key={tag}
+                key={tag._id}
                 color="#222831"
+                onClick={() => navigate(`/posts/tag/${tag._id}`)}
+                style={{ cursor: "pointer" }}
+                onMouseEnter={(e) =>
+                  (e.target.style.textDecoration = "underline")
+                }
+                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
               >
-                #{tag}
+                #{tag.tag_name}
               </Tag>
             ))}
             <Divider style={{ margin: "16px 0" }} />

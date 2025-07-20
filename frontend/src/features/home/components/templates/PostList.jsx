@@ -18,10 +18,12 @@ import { formatDate } from "../../../../constants/formatDate";
 import SkeletonLoading from "../../../../components/atoms/SkeletonLoading";
 import ActionButtons from "../../../post/components/atoms/ActionButtons";
 import { getAllParagraphs } from "../../../../constants/getAllParagraphs";
+import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
 
 const PostList = ({ posts = [], isLoading }) => {
+  const navigate = useNavigate();
   if (isLoading) {
     return <SkeletonLoading />;
   }
@@ -116,8 +118,17 @@ const PostList = ({ posts = [], isLoading }) => {
           />
           <Flex gap="4px 0" wrap style={{ marginTop: 8 }}>
             {item.tags?.map((tag) => (
-              <Tag key={tag} color="#222831">
-                #{tag}
+              <Tag
+                key={tag._id}
+                color="#222831"
+                onClick={() => navigate(`/posts/tag/${tag._id}`)}
+                style={{ cursor: "pointer" }}
+                onMouseEnter={(e) =>
+                  (e.target.style.textDecoration = "underline")
+                }
+                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+              >
+                #{tag.tag_name}
               </Tag>
             ))}
           </Flex>

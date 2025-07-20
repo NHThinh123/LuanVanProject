@@ -21,6 +21,10 @@ import UserProfilePage from "./pages/UserProfilePage.jsx";
 import MessagePage from "./pages/MessagePage.jsx";
 import PostFilterByTagPage from "./pages/PostFilterByTagPage.jsx";
 import FollowerPage from "./pages/FollowerPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
+import AdminUserPage from "./pages/AdminUserPage.jsx";
+import AdminPostPage from "./pages/AdminPostPage.jsx";
+import AdminModerationPage from "./pages/AdminModerationPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -106,6 +110,25 @@ const router = createBrowserRouter([
   {
     path: "/information",
     element: <InformationPage />,
+  },
+  {
+    path: "/admin",
+    element: <AdminPage />,
+    children: [
+      {
+        index: true,
+
+        element: <AdminPostPage />,
+      },
+      {
+        path: "users",
+        element: <AdminUserPage />,
+      },
+      {
+        path: "moderation",
+        element: <AdminModerationPage />,
+      },
+    ],
   },
 ]);
 

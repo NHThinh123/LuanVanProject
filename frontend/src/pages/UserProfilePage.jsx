@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Avatar,
   Button,
@@ -15,9 +15,10 @@ import ProfileAbout from "../features/profile/components/templates/ProfileAbout"
 import UserList from "../features/home/components/templates/UserList";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useUsers } from "../features/user/hooks/useUsers";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useUserById } from "../features/user/hooks/useUserById";
 import { useAuthContext } from "../contexts/auth.context";
+import { useChatRoom } from "../features/chat/hooks/useChatRoom";
 import { Search } from "lucide-react";
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
 
@@ -35,10 +36,50 @@ const UserProfilePage = () => {
     isLoading: isUserLoading,
   } = useUsers({}, user_id);
   const { follow, unfollow, isFollowLoading } = useUsers();
+  const { chatRooms, createChatRoom, createChatRoomLoading } = useChatRoom(
+    1,
+    10
+  );
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("1");
+
+  // Reset activeTab to "1" when user_id changes
+  useEffect(() => {
+    setActiveTab("1");
+  }, [user_id]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
+  };
+
+  const handleMessageClick = async () => {
+    if (!current_user?._id || !user_id || current_user._id === user_id) return;
+
+    try {
+      // Tìm phòng chat private hiện có
+      const existingRoom = chatRooms.find(
+        (room) =>
+          room.type === "private" &&
+          room.members.some((member) => member._id === current_user._id) &&
+          room.members.some((member) => member._id === user_id)
+      );
+
+      if (existingRoom) {
+        // Nếu phòng chat đã tồn tại, chuyển hướng với chat_room_id
+        navigate("/messages", { state: { chat_room_id: existingRoom._id } });
+      } else {
+        // Tạo phòng chat mới
+        const result = await createChatRoom({ member_id: user_id });
+
+        if (result?._id) {
+          navigate("/messages", { state: { chat_room_id: result._id } });
+        } else {
+          console.error("Không thể tạo phòng chat");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi xử lý nhắn tin:", error.message);
+    }
   };
 
   const tabItems = [
@@ -119,20 +160,29 @@ const UserProfilePage = () => {
               </div>
               <Flex align="center" gap={8}>
                 {user_id !== current_user?._id && (
-                  <Button
-                    variant="outlined"
-                    color={user.isFollowing ? "default" : "primary"}
-                    onClick={() =>
-                      user.isFollowing
-                        ? unfollow({ user_follow_id: user._id })
-                        : follow({ user_follow_id: user._id })
-                    }
-                    disabled={isFollowLoading}
-                  >
-                    {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
-                  </Button>
+                  <>
+                    <Button
+                      variant="outlined"
+                      color={user.isFollowing ? "default" : "primary"}
+                      onClick={() =>
+                        user.isFollowing
+                          ? unfollow({ user_follow_id: user._id })
+                          : follow({ user_follow_id: user._id })
+                      }
+                      disabled={isFollowLoading}
+                    >
+                      {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                    </Button>
+                    <Button
+                      variant="solid"
+                      color="primary"
+                      onClick={handleMessageClick}
+                      loading={createChatRoomLoading}
+                    >
+                      Nhắn tin
+                    </Button>
+                  </>
                 )}
-                <Button type="primary">Nhắn tin</Button>
               </Flex>
             </Flex>
             <p style={{ marginTop: 16, width: "100%" }}>{user?.bio}</p>
