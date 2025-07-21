@@ -1,19 +1,30 @@
 import { Col, Divider, Flex, Row, Typography } from "antd";
 
-import { useAuthContext } from "../../../../contexts/auth.context";
 import "quill/dist/quill.snow.css";
-const ProfileAbout = ({ followers, following }) => {
-  const { user, isLoading: authLoading } = useAuthContext();
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
+const ProfileAbout = ({ followers, following, user }) => {
   return (
     <Row>
       <Col span={24}>
+        {user?.university_id && (
+          <Typography.Text>
+            <b>Học tại:</b>{" "}
+            {user?.university_id?.university_name || "Chưa cập nhật"}
+          </Typography.Text>
+        )}
+        <br />
+        {user?.major_id && (
+          <Typography.Text>
+            <b>Chuyên ngành:</b> {user?.major_id?.major_name || "Chưa cập nhật"}
+          </Typography.Text>
+        )}
+        <br />
+        <Typography.Text>
+          <b>Giới thiệu:</b>
+        </Typography.Text>
         <div
           className="ql-editor"
-          dangerouslySetInnerHTML={{ __html: user.bio || "" }}
+          style={{ height: "auto", padding: 0 }}
+          dangerouslySetInnerHTML={{ __html: user?.bio || "" }}
         ></div>
         <Divider />
 

@@ -291,7 +291,8 @@ const AdminPostPage = () => {
       render: (_, record) => (
         <div>
           <Button
-            type="primary"
+            variant="outlined"
+            color="primary"
             onClick={() => handleEdit(record)}
             style={{ marginRight: 8 }}
             disabled={isActionLoading}
@@ -299,7 +300,8 @@ const AdminPostPage = () => {
             Sửa
           </Button>
           <Button
-            type="danger"
+            variant="outlined"
+            color="red"
             onClick={() => handleDelete(record._id)}
             disabled={isActionLoading}
           >

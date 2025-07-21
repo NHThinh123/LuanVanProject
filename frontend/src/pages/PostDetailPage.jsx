@@ -90,6 +90,7 @@ const PostDetailPage = () => {
             size={40}
             style={{ fontSize: 16 }}
             color="#000"
+            user_id={post.user_id?._id}
           />
           <Button variant="outlined" color="primary">
             Theo dõi
