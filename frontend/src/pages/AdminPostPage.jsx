@@ -124,7 +124,7 @@ const QuillEditor = ({ content, setContent, selectedPost, isModalVisible }) => {
       isMounted = false;
       destroyQuill();
     };
-  }, [isModalVisible, selectedPost]);
+  }, [isModalVisible, selectedPost, setContent]);
 
   return (
     <div

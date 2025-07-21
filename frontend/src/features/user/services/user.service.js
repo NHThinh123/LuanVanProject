@@ -73,3 +73,21 @@ export const getFollowing = async (user_id) => {
     );
   }
 };
+
+export const updateUser = async (userId, userData) => {
+  try {
+    const response = await axios.put(`/users/${userId}`, userData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật thông tin người dùng");
+  }
+};
+
+export const deleteUser = async (userId) => {
+  try {
+    const response = await axios.delete(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi xóa người dùng");
+  }
+};

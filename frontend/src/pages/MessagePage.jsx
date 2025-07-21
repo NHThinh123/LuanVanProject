@@ -136,7 +136,17 @@ const MessagePage = () => {
       (id) => id.toString() === user._id.toString()
     );
   };
-
+  if (!chatRooms || chatRooms.length === 0) {
+    return (
+      <Row
+        style={{ height: "80vh", background: "#f0f2f5" }}
+        justify="center"
+        align="middle"
+      >
+        <Text>Chưa có phòng chat nào</Text>
+      </Row>
+    );
+  }
   if (authLoading || loading) {
     return (
       <Row
