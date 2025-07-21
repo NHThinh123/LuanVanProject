@@ -44,38 +44,6 @@ const createChatRoomService = async (user_id, data) => {
   }
 };
 
-const updateLastMessageService = async (chat_room_id, message_id) => {
-  try {
-    const chatRoom = await Chat_Room.findById(chat_room_id);
-    if (!chatRoom) {
-      return { message: "Phòng chat không tồn tại", EC: 1 };
-    }
-
-    const message = await Message.findById(message_id);
-    if (
-      !message ||
-      message.chat_room_id.toString() !== chat_room_id.toString()
-    ) {
-      return {
-        message: "Tin nhắn không hợp lệ hoặc không thuộc phòng chat",
-        EC: 1,
-      };
-    }
-
-    chatRoom.last_message_id = message_id;
-    await chatRoom.save();
-
-    return {
-      message: "Cập nhật tin nhắn cuối thành công",
-      EC: 0,
-      data: chatRoom,
-    };
-  } catch (error) {
-    console.error("Error in updateLastMessageService:", error);
-    return { message: "Lỗi server", EC: -1 };
-  }
-};
-
 const getUserChatRoomsService = async (user_id, query) => {
   try {
     const user = await User.findById(user_id);
@@ -105,7 +73,6 @@ const getUserChatRoomsService = async (user_id, query) => {
 
     const total = await Chat_Room.countDocuments({ members: user_id });
 
-    // Tính số lượng tin nhắn chưa đọc cho mỗi phòng chat
     const chatRoomsWithUnread = await Promise.all(
       chatRooms.map(async (chatRoom) => {
         const unreadCount = await Message.countDocuments({
@@ -164,7 +131,6 @@ const deleteChatRoomService = async (user_id, chat_room_id) => {
 
 module.exports = {
   createChatRoomService,
-  updateLastMessageService,
   getUserChatRoomsService,
   deleteChatRoomService,
 };

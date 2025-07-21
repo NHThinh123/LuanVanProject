@@ -9,6 +9,7 @@ import {
   Spin,
   Badge,
   Flex,
+  message,
 } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import React, { useEffect, useState, useRef } from "react";
@@ -16,81 +17,160 @@ import { useChatRoom } from "../features/chat/hooks/useChatRoom";
 import { useMessages } from "../features/chat/hooks/useMessages";
 import { useAuthContext } from "../contexts/auth.context";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import io from "socket.io-client";
 
 const { Text, Title } = Typography;
+
+const socket = io("http://localhost:8080", {
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+});
 
 const MessagePage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const { chatRooms, loading, error } = useChatRoom(1, 10);
   const [selectedChatRoom, setSelectedChatRoom] = useState(null);
   const [messageContent, setMessageContent] = useState("");
-  const [isStateProcessed, setIsStateProcessed] = useState(false); // Theo dõi state đã xử lý
   const messageContainerRef = useRef(null);
   const inputRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     messages,
+    setMessages,
     loading: messagesLoading,
     error: messagesError,
-    sendMessage,
-    sendMessageLoading,
-    sendMessageError,
     markMessageAsRead,
     markMessageAsReadLoading,
   } = useMessages(selectedChatRoom?._id, 1, 20);
 
-  // Xử lý chat_room_id từ state
+  // Xử lý chat_room_id từ location.state
   useEffect(() => {
-    if (chatRooms.length > 0 && !isStateProcessed) {
-      const chatRoomIdFromState = location.state?.chat_room_id;
-      if (chatRoomIdFromState) {
-        const targetRoom = chatRooms.find(
-          (room) => room._id === chatRoomIdFromState
-        );
-        if (targetRoom) {
-          setSelectedChatRoom(targetRoom);
-          setIsStateProcessed(true); // Đánh dấu state đã được xử lý
-          // Xóa state để tránh tái sử dụng
-          navigate("/messages", { state: {}, replace: true });
-        }
-      } else if (!selectedChatRoom) {
+    if (!chatRooms || chatRooms.length === 0 || selectedChatRoom) {
+      return;
+    }
+
+    const chatRoomIdFromState = location.state?.chat_room_id;
+    if (chatRoomIdFromState) {
+      const targetRoom = chatRooms.find(
+        (room) => room._id === chatRoomIdFromState
+      );
+      if (targetRoom) {
+        setSelectedChatRoom(targetRoom);
+        navigate("/messages", { state: {}, replace: true });
+      } else {
         setSelectedChatRoom(chatRooms[0]);
-        setIsStateProcessed(true); // Đánh dấu để không xử lý lại
       }
+    } else {
+      setSelectedChatRoom(chatRooms[0]);
     }
-  }, [chatRooms, location.state, selectedChatRoom, isStateProcessed, navigate]);
+  }, [chatRooms, location.state, navigate]);
 
-  // Cuộn xuống dưới cùng khi tin nhắn hoặc phòng chat thay đổi
+  // Xử lý Socket.IO
   useEffect(() => {
-    if (messageContainerRef.current) {
-      const scrollToBottom = () => {
-        messageContainerRef.current.scrollTo({
-          top: messageContainerRef.current.scrollHeight,
-          behavior: "instant",
-        });
-      };
-      scrollToBottom();
-      const observer = new MutationObserver(scrollToBottom);
-      observer.observe(messageContainerRef.current, {
-        childList: true,
-        subtree: true,
-      });
-      return () => observer.disconnect();
-    }
-  }, [messages, selectedChatRoom]);
+    if (!selectedChatRoom?._id || !user?._id) return;
 
-  // Đánh dấu tin nhắn đã đọc khi chọn phòng chat
+    socket.emit("join_room", selectedChatRoom._id);
+
+    const handleReceiveMessage = (newMessage) => {
+      console.log("Socket.IO message:", newMessage);
+      setMessages((prevMessages) => {
+        if (prevMessages.some((msg) => msg._id === newMessage._id)) {
+          console.log("Tin nhắn trùng lặp từ Socket.IO:", newMessage._id);
+          return prevMessages;
+        }
+        console.log("Thêm tin nhắn từ Socket.IO:", newMessage._id);
+        return [...prevMessages, newMessage];
+      });
+
+      queryClient.setQueryData(
+        ["messages", selectedChatRoom._id, 1, 20],
+        (oldData) => {
+          if (!oldData) {
+            return {
+              messages: [newMessage],
+              pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+            };
+          }
+          if (oldData.messages.some((msg) => msg._id === newMessage._id)) {
+            return oldData;
+          }
+          return {
+            ...oldData,
+            messages: [...oldData.messages, newMessage],
+            pagination: {
+              ...oldData.pagination,
+              total: oldData.pagination.total + 1,
+            },
+          };
+        }
+      );
+    };
+
+    const handleMessagesRead = ({ chat_room_id, user_id }) => {
+      if (chat_room_id === selectedChatRoom._id) {
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            !msg.read_by.includes(user_id)
+              ? { ...msg, read_by: [...msg.read_by, user_id] }
+              : msg
+          )
+        );
+        queryClient.setQueryData(
+          ["messages", selectedChatRoom._id, 1, 20],
+          (oldData) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              messages: oldData.messages.map((msg) =>
+                !msg.read_by.includes(user_id)
+                  ? { ...msg, read_by: [...msg.read_by, user_id] }
+                  : msg
+              ),
+            };
+          }
+        );
+      }
+    };
+
+    socket.on("receive_message", handleReceiveMessage);
+    socket.on("messages_read", handleMessagesRead);
+
+    return () => {
+      socket.off("receive_message", handleReceiveMessage);
+      socket.off("messages_read", handleMessagesRead);
+      socket.emit("leave_room", selectedChatRoom._id);
+    };
+  }, [selectedChatRoom, user, setMessages, queryClient]);
+
+  // Đánh dấu tin nhắn đã đọc
   useEffect(() => {
     if (selectedChatRoom?._id && user?._id) {
+      socket.emit("mark_as_read", {
+        chat_room_id: selectedChatRoom._id,
+        user_id: user._id,
+      });
       markMessageAsRead(selectedChatRoom._id).catch((error) => {
         console.error("Lỗi khi đánh dấu đã đọc:", error.message);
       });
     }
   }, [selectedChatRoom, user, markMessageAsRead]);
 
-  // Vô hiệu hóa cuộn trang
+  // Tự động cuộn xuống tin nhắn mới nhất
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTo({
+        top: messageContainerRef.current.scrollHeight,
+        behavior: "instant",
+      });
+    }
+  }, [messages, selectedChatRoom]);
+
+  // Ẩn thanh cuộn toàn trang
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -98,12 +178,12 @@ const MessagePage = () => {
     };
   }, []);
 
-  // Focus vào ô input khi component mount hoặc sau khi gửi tin nhắn
+  // Tự động focus vào input
   useEffect(() => {
-    if (inputRef.current && !sendMessageLoading) {
+    if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [sendMessageLoading]);
+  }, []);
 
   const getOtherMember = (chatRoom) => {
     if (!chatRoom?.members || !user?._id)
@@ -117,16 +197,17 @@ const MessagePage = () => {
   const handleSendMessage = async () => {
     if (!messageContent.trim() || !selectedChatRoom) return;
     try {
-      await sendMessage({
+      socket.emit("send_message", {
         chat_room_id: selectedChatRoom._id,
         content: messageContent,
+        user_id: user._id,
       });
       setMessageContent("");
       if (inputRef.current) {
         inputRef.current.focus();
       }
     } catch (error) {
-      console.error("Lỗi khi gửi tin nhắn:", error.message);
+      message.error("Lỗi khi gửi tin nhắn: " + error.message);
     }
   };
 
@@ -136,17 +217,7 @@ const MessagePage = () => {
       (id) => id.toString() === user._id.toString()
     );
   };
-  if (!chatRooms || chatRooms.length === 0) {
-    return (
-      <Row
-        style={{ height: "80vh", background: "#f0f2f5" }}
-        justify="center"
-        align="middle"
-      >
-        <Text>Chưa có phòng chat nào</Text>
-      </Row>
-    );
-  }
+
   if (authLoading || loading) {
     return (
       <Row
@@ -183,6 +254,18 @@ const MessagePage = () => {
     );
   }
 
+  if (!chatRooms || chatRooms.length === 0) {
+    return (
+      <Row
+        style={{ height: "80vh", background: "#f0f2f5" }}
+        justify="center"
+        align="middle"
+      >
+        <Text>Chưa có phòng chat nào</Text>
+      </Row>
+    );
+  }
+
   return (
     <Row
       style={{
@@ -212,10 +295,7 @@ const MessagePage = () => {
             const unreadCount = chatRoom.unread_count || 0;
             return (
               <List.Item
-                onClick={() => {
-                  setSelectedChatRoom(chatRoom);
-                  setIsStateProcessed(true); // Đánh dấu để bỏ qua state khi chọn thủ công
-                }}
+                onClick={() => setSelectedChatRoom(chatRoom)}
                 style={{
                   padding: "10px 20px",
                   cursor: "pointer",
@@ -340,6 +420,8 @@ const MessagePage = () => {
             <Spin />
           ) : messagesError ? (
             <Text type="danger">{messagesError}</Text>
+          ) : messages.length === 0 ? (
+            <Text>Chưa có tin nhắn</Text>
           ) : (
             messages?.map((message) => (
               <div
@@ -428,11 +510,6 @@ const MessagePage = () => {
             ))
           )}
         </div>
-        {sendMessageError && (
-          <Text type="danger" style={{ marginTop: "5px", display: "block" }}>
-            {sendMessageError}
-          </Text>
-        )}
         <Flex
           style={{
             padding: "10px 20px",
@@ -447,19 +524,12 @@ const MessagePage = () => {
             onChange={(e) => setMessageContent(e.target.value)}
             style={{ borderRadius: "20px", padding: "8px 15px" }}
             onPressEnter={handleSendMessage}
-            disabled={sendMessageLoading}
           />
           <SendOutlined
             style={{
               marginLeft: "10px",
-              cursor:
-                sendMessageLoading || !messageContent.trim()
-                  ? "not-allowed"
-                  : "pointer",
-              color:
-                sendMessageLoading || !messageContent.trim()
-                  ? "#d9d9d9"
-                  : "#0084ff",
+              cursor: !messageContent.trim() ? "not-allowed" : "pointer",
+              color: !messageContent.trim() ? "#d9d9d9" : "#0084ff",
             }}
             onClick={handleSendMessage}
           />

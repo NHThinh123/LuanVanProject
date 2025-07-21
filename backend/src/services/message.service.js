@@ -1,7 +1,6 @@
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const Chat_Room = require("../models/chat_room.model");
-const { updateLastMessageService } = require("./chat_room.service");
 
 const sendMessageService = async (user_id, chat_room_id, content) => {
   try {
@@ -30,10 +29,8 @@ const sendMessageService = async (user_id, chat_room_id, content) => {
       user_send_id: user_id,
       chat_room_id,
       content,
-      read_by: [user_id], // Người gửi tự động được đánh dấu là đã đọc
+      read_by: [user_id],
     });
-
-    await updateLastMessageService(chat_room_id, message._id);
 
     return {
       message: "Gửi tin nhắn thành công",
@@ -66,7 +63,7 @@ const getMessagesByChatRoomService = async (user_id, chat_room_id, query) => {
     const messages = await Message.find({ chat_room_id })
       .populate("user_send_id", "full_name avatar_url")
       .select("user_send_id content createdAt read_by")
-      .sort({ createdAt: 1 }) // Sắp xếp tăng dần để tin nhắn mới ở dưới
+      .sort({ createdAt: 1 })
       .skip(skip)
       .limit(limit);
 
@@ -116,10 +113,9 @@ const deleteMessageService = async (user_id, message_id) => {
       })
         .sort({ createdAt: -1 })
         .select("_id");
-      await updateLastMessageService(
-        message.chat_room_id,
-        latestMessage ? latestMessage._id : null
-      );
+      await Chat_Room.findByIdAndUpdate(message.chat_room_id, {
+        last_message_id: latestMessage ? latestMessage._id : null,
+      });
     }
 
     return {

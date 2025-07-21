@@ -20,16 +20,26 @@ const majorRoutes = require("./routes/major.route");
 const tagRoutes = require("./routes/tag.route");
 const chatRoomRoutes = require("./routes/chat_room.route");
 const categoryRoutes = require("./routes/category.route");
+const { Server } = require("socket.io");
+const Message = require("./models/message.model");
 
 const app = express();
 const port = process.env.PORT || 8888;
 
-app.use(cors());
+// Cấu hình CORS cho phép nhiều nguồn gốc
+const corsOptions = {
+  origin: ["http://localhost:3000", "http://localhost:5173"], // Thêm 5173
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 configViewEngine(app);
 
+// Các route hiện có
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
@@ -47,6 +57,64 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/chat-rooms", chatRoomRoutes);
 app.use("/api/categories", categoryRoutes);
 
+// Tạo HTTP server và tích hợp Socket.IO
+const http = require("http");
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: corsOptions, // Sử dụng cùng cấu hình CORS
+});
+
+// Xử lý kết nối Socket.IO
+io.on("connection", (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on("join_room", (chat_room_id) => {
+    socket.join(chat_room_id);
+    console.log(`User ${socket.id} joined room ${chat_room_id}`);
+  });
+
+  socket.on("send_message", async (data) => {
+    const { chat_room_id, content, user_id } = data;
+    try {
+      const message = await Message.create({
+        user_send_id: user_id,
+        chat_room_id,
+        content,
+        read_by: [user_id],
+      });
+
+      const populatedMessage = await Message.findById(message._id)
+        .populate("user_send_id", "full_name avatar_url")
+        .select("user_send_id content createdAt read_by");
+
+      io.to(chat_room_id).emit("receive_message", populatedMessage);
+
+      const Chat_Room = require("./models/chat_room.model");
+      await Chat_Room.findByIdAndUpdate(chat_room_id, {
+        last_message_id: message._id,
+      });
+    } catch (error) {
+      console.error("Error sending message via Socket.IO:", error);
+    }
+  });
+
+  socket.on("mark_as_read", async ({ chat_room_id, user_id }) => {
+    try {
+      await Message.updateMany(
+        { chat_room_id, read_by: { $ne: user_id } },
+        { $addToSet: { read_by: user_id } }
+      );
+      io.to(chat_room_id).emit("messages_read", { chat_room_id, user_id });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
 (async () => {
   try {
     await connection();
@@ -57,7 +125,7 @@ app.use("/api/categories", categoryRoutes);
       console.error("Error training Surprise model on server startup:");
     }
 
-    app.listen(port, () => {
+    server.listen(port, () => {
       console.log(`Backend Nodejs App listening on port ${port}`);
     });
   } catch (error) {
