@@ -28,7 +28,32 @@ const PostDetailPage = () => {
   const post_id = useParams().id;
 
   const { post, isLoading: postsLoading } = usePostById(post_id, user?._id);
-  const { posts, isLoading: isPostsLoading } = usePosts({ status: "accepted" });
+  const firstTagName = post?.tags?.[0]?.tag_name || "học tập";
+
+  const { posts: suggestedPostsByTag, isLoading: isPostsLoading } = usePosts({
+    status: "accepted",
+    keyword: firstTagName,
+  });
+  const { posts: fallbackPosts, isLoading: isFallbackPostsLoading } = usePosts({
+    status: "accepted",
+  });
+  let suggestedPosts = [];
+
+  if (suggestedPostsByTag?.length > 0) {
+    // Lọc bỏ bài viết hiện tại khỏi danh sách gợi ý
+    suggestedPosts = suggestedPostsByTag.filter((p) => p._id !== post_id);
+  }
+
+  // Nếu số bài viết gợi ý nhỏ hơn 4, bổ sung từ fallbackPosts
+  if (suggestedPosts.length < 4 && fallbackPosts?.length > 0) {
+    const additionalPosts = fallbackPosts
+      .filter(
+        (p) =>
+          p._id !== post_id && !suggestedPosts.some((sp) => sp._id === p._id)
+      ) // Loại bỏ bài viết hiện tại và bài viết trùng lặp
+      .slice(0, 4 - suggestedPosts.length); // Lấy đủ số bài viết cần thiết
+    suggestedPosts = [...suggestedPosts, ...additionalPosts];
+  }
   const {
     comments,
     // pagination,
@@ -38,7 +63,13 @@ const PostDetailPage = () => {
     hasNextPage,
   } = useComment(post_id);
   const navigate = useNavigate();
-  if (authLoading || postsLoading || commentsLoading || isPostsLoading) {
+  if (
+    authLoading ||
+    postsLoading ||
+    commentsLoading ||
+    isPostsLoading ||
+    isFallbackPostsLoading
+  ) {
     return (
       <Row justify={"center"}>
         <Col style={{ width: "100%", maxWidth: 800 }}>
@@ -187,7 +218,7 @@ const PostDetailPage = () => {
         <Typography.Title level={1} style={{ margin: "16px 0" }}>
           Bài viết đề xuất
         </Typography.Title>
-        <SuggestedPostList posts={posts} />
+        <SuggestedPostList posts={suggestedPosts} />
       </Col>
     </Row>
   );

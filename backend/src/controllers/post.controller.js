@@ -36,7 +36,8 @@ const createPost = async (req, res) => {
 
 const updatePost = async (req, res) => {
   const { post_id } = req.params;
-  const { course_id, category_id, title, content, imageUrls } = req.body;
+  const { course_id, category_id, title, content, imageUrls, status, tag_ids } =
+    req.body;
   const user_id = req.user._id;
 
   // Không yêu cầu title hoặc content bắt buộc, cho phép chỉ gửi imageUrls
@@ -46,6 +47,8 @@ const updatePost = async (req, res) => {
   if (title) postData.title = title;
   if (content) postData.content = content;
   if (imageUrls) postData.imageUrls = imageUrls;
+  if (status) postData.status = status;
+  if (tag_ids) postData.tag_ids = tag_ids;
 
   const result = await updatePostService(user_id, post_id, postData);
   return res

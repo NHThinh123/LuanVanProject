@@ -48,6 +48,7 @@ const ProfilePage = () => {
         <ProfileAbout
           followers={followers?.length}
           following={following?.length}
+          user={user}
         />
       ),
     },

@@ -40,7 +40,7 @@ export const usePosts = (queryParams = {}) => {
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const limit = 4;
-      console.log(`Fetching page ${pageParam} with limit ${limit}`); // Debug
+
       if (recommend) {
         return getRecommendedPosts({ page: pageParam, limit });
       }
@@ -57,7 +57,7 @@ export const usePosts = (queryParams = {}) => {
     },
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage;
-      console.log("Pagination:", pagination); // Debug
+
       const currentPage = Number(pagination.page); // Chuyển đổi page thành số
       const totalPages = Number(pagination.totalPages); // Chuyển đổi totalPages thành số
       return currentPage < totalPages ? currentPage + 1 : undefined;

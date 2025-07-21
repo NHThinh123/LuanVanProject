@@ -235,6 +235,38 @@ const AdminModerationPage = () => {
                 {selectedPost.title || "Không có tiêu đề"}
               </h3>
             </div>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+                Danh mục
+              </label>
+              <div
+                style={{
+                  margin: "8px 0",
+                  padding: "8px",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "4px",
+                }}
+              >
+                {selectedPost.category_id?.category_name || "Không có danh mục"}
+              </div>
+            </div>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+                Khóa học
+              </label>
+              <div
+                style={{
+                  margin: "8px 0",
+                  padding: "8px",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "4px",
+                }}
+              >
+                {selectedPost.course_id
+                  ? `${selectedPost.course_id.course_code} - ${selectedPost.course_id.course_name}`
+                  : "Không có khóa học"}
+              </div>
+            </div>
             {selectedPost.tags?.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
                 <label style={{ fontWeight: "bold", fontSize: "16px" }}>

@@ -156,7 +156,15 @@ const createPostService = async (user_id, postData) => {
 
 const updatePostService = async (user_id, post_id, postData) => {
   try {
-    const { course_id, category_id, title, content, imageUrls = [] } = postData;
+    const {
+      course_id,
+      category_id,
+      title,
+      content,
+      imageUrls = [],
+      status,
+      tag_ids = [],
+    } = postData;
 
     const user = await User.findById(user_id);
     if (!user) {
@@ -190,9 +198,16 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    let status = post.status;
+    // Kiểm tra trạng thái nếu được gửi và người dùng là admin
+    let newStatus = post.status;
     let reason = "";
-    if (!isAdmin && (title || content)) {
+    if (isAdmin && status) {
+      if (!["accepted", "pending", "rejected"].includes(status)) {
+        return { message: "Trạng thái không hợp lệ", EC: 1 };
+      }
+      newStatus = status;
+    } else if (!isAdmin && (title || content)) {
+      // Nếu không phải admin và có cập nhật title hoặc content, kiểm duyệt nội dung
       const wordCount = (content || post.content).split(/\s+/).length;
       if (wordCount > 100) {
         try {
@@ -263,34 +278,51 @@ const updatePostService = async (user_id, post_id, postData) => {
         };
       }
 
-      status = moderationData.status || "pending";
+      newStatus = moderationData.status || "pending";
       reason = moderationData.reason || "";
 
-      if (!["accepted", "pending"].includes(status)) {
-        status = "pending";
+      if (!["accepted", "pending"].includes(newStatus)) {
+        newStatus = "pending";
         reason = reason || "Kết quả kiểm duyệt không hợp lệ";
       }
 
-      if (status === "pending") {
+      if (newStatus === "pending") {
         console.log(
           `Lý do từ chối bài viết (post_id: ${post_id}, user_id: ${user_id}): ${reason}`
         );
       }
-    } else {
-      status = "accepted";
-      // Bỏ qua tóm tắt cho admin để tránh lỗi API
+    } else if (!isAdmin) {
+      // Nếu không phải admin và không cập nhật title hoặc content, giữ nguyên trạng thái
+      newStatus = post.status;
+    } else if (isAdmin && !status) {
+      // Nếu là admin nhưng không gửi status, giữ nguyên trạng thái hiện tại
+      newStatus = post.status;
       if (title || content) {
         const wordCount = (content || post.content).split(/\s+/).length;
         post.summary = wordCount > 100 ? post.summary : "";
       }
     }
 
+    // Cập nhật các trường
     post.course_id = course_id || post.course_id;
     post.category_id = category_id || post.category_id;
     post.title = title || post.title;
     post.content = content || post.content;
-    post.status = status;
+    post.status = newStatus;
 
+    // Xử lý tag_ids nếu được gửi
+    if (tag_ids.length > 0) {
+      // Xóa các tag hiện tại của bài viết
+      await Post_Tag.deleteMany({ post_id: post._id });
+      // Thêm các tag mới
+      const postTags = tag_ids.map((tag_id) => ({
+        post_id: post._id,
+        tag_id,
+      }));
+      await Post_Tag.insertMany(postTags);
+    }
+
+    // Xử lý imageUrls
     if (imageUrls.length > 0) {
       await Document.deleteMany({ post_id: post._id, type: "image" });
       const documents = imageUrls.map((url) => ({
@@ -305,12 +337,12 @@ const updatePostService = async (user_id, post_id, postData) => {
 
     return {
       message:
-        status === "accepted"
+        newStatus === "accepted"
           ? "Cập nhật bài viết thành công"
           : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
       EC: 0,
       data: post,
-      ...(status === "pending" && { reason }),
+      ...(newStatus === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in updatePostService:", error);

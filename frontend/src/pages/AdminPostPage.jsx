@@ -1,6 +1,22 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Table, Image, Modal, Form, Input, Button, Select, Tag } from "antd";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  Table,
+  Image,
+  Modal,
+  Form,
+  Input,
+  Button,
+  Select,
+  Tag,
+  AutoComplete,
+} from "antd";
 import moment from "moment";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
@@ -8,18 +24,131 @@ import { usePosts } from "../features/post/hooks/usePost";
 import { usePostActions } from "../features/post/hooks/usePostActions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTag } from "../features/tag/hooks/useTag";
+import { useCategories } from "../features/category/hooks/useCategories";
+import { useCourses } from "../features/course/hooks/useCourses";
 import { uploadImageToCloudinary } from "../features/post/services/upload.service";
+import AddNewModal from "../components/organisms/AddNewModal";
+
+const QuillEditor = ({ content, setContent, selectedPost, isModalVisible }) => {
+  const editorRef = useRef(null);
+  const quillRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeQuill = () => {
+      if (!quillRef.current && editorRef.current && isModalVisible) {
+        console.log("Khởi tạo Quill Editor tại:", new Date().toLocaleString());
+        quillRef.current = new Quill(editorRef.current, {
+          theme: "snow",
+          modules: {
+            toolbar: {
+              container: [
+                [{ header: [1, 2, 3, false] }],
+                ["bold", "italic", "underline"],
+                ["link", "image"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["clean"],
+              ],
+              handlers: {
+                image: async () => {
+                  const input = document.createElement("input");
+                  input.setAttribute("type", "file");
+                  input.setAttribute("accept", "image/*");
+                  input.click();
+
+                  input.onchange = async () => {
+                    const file = input.files[0];
+                    if (file && isMounted && quillRef.current) {
+                      try {
+                        const imageUrl = await uploadImageToCloudinary(file);
+                        if (imageUrl) {
+                          const range = quillRef.current.getSelection() || {
+                            index: 0,
+                          };
+                          quillRef.current.insertEmbed(
+                            range.index,
+                            "image",
+                            imageUrl
+                          );
+                          setContent(quillRef.current.root.innerHTML);
+                        }
+                      } catch (error) {
+                        console.error("Lỗi khi tải ảnh lên Cloudinary:", error);
+                      }
+                    }
+                  };
+                },
+              },
+            },
+          },
+          placeholder: "Nhập nội dung bài viết tại đây...",
+        });
+
+        quillRef.current.on("text-change", () => {
+          if (isMounted && quillRef.current) {
+            setContent(quillRef.current.root.innerHTML);
+          }
+        });
+
+        if (selectedPost && selectedPost.content) {
+          console.log("Cập nhật nội dung Quill:", selectedPost.content);
+          quillRef.current.root.innerHTML = selectedPost.content;
+          setContent(selectedPost.content);
+        } else {
+          quillRef.current.root.innerHTML = "";
+          setContent("");
+        }
+      }
+    };
+
+    const destroyQuill = () => {
+      if (quillRef.current) {
+        console.log("Hủy Quill Editor tại:", new Date().toLocaleString());
+        quillRef.current.off("text-change");
+        quillRef.current = null;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = "";
+        }
+      }
+    };
+
+    if (isModalVisible) {
+      destroyQuill(); // Hủy instance cũ trước khi tạo mới
+      initializeQuill();
+    } else {
+      destroyQuill();
+    }
+
+    return () => {
+      isMounted = false;
+      destroyQuill();
+    };
+  }, [isModalVisible, selectedPost]);
+
+  return (
+    <div
+      ref={editorRef}
+      style={{
+        minHeight: "300px",
+        border: "1px solid #d9d9d9",
+        borderRadius: "4px",
+      }}
+    />
+  );
+};
 
 const AdminPostPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAddCourseModalVisible, setIsAddCourseModalVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [content, setContent] = useState("");
   const [imageUrls, setImageUrls] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
+  const [filteredCourses, setFilteredCourses] = useState([]);
   const [form] = Form.useForm();
-  const editorRef = useRef(null);
-  const quillRef = useRef(null);
   const queryClient = useQueryClient();
 
   // Hooks
@@ -38,75 +167,43 @@ const AdminPostPage = () => {
     isLoading: isActionLoading,
   } = usePostActions(queryClient);
   const { tags, tagsLoading, createTag } = useTag();
+  const { categories, loading: categoriesLoading } = useCategories();
+  const { courses, loading: coursesLoading, addCourse } = useCourses();
 
-  // Khởi tạo Quill Editor
-  useEffect(() => {
-    if (isModalVisible && editorRef.current) {
-      quillRef.current = new Quill(editorRef.current, {
-        theme: "snow",
-        modules: {
-          toolbar: {
-            container: [
-              [{ header: [1, 2, 3, false] }],
-              ["bold", "italic", "underline"],
-              ["link", "image"],
-              [{ list: "ordered" }, { list: "bullet" }],
-              ["clean"],
-            ],
-            handlers: {
-              image: async () => {
-                const input = document.createElement("input");
-                input.setAttribute("type", "file");
-                input.setAttribute("accept", "image/*");
-                input.click();
+  // Xử lý mở modal
+  const handleEdit = useCallback((post) => {
+    setSelectedPost(post);
+    setIsModalVisible(true);
+  }, []);
 
-                input.onchange = async () => {
-                  const file = input.files[0];
-                  if (file) {
-                    const imageUrl = await uploadImageToCloudinary(file);
-                    if (imageUrl) {
-                      setImageUrls((prev) => [...prev, imageUrl]);
-                      const range = quillRef.current.getSelection() || {
-                        index: 0,
-                      };
-                      quillRef.current.insertEmbed(
-                        range.index,
-                        "image",
-                        imageUrl
-                      );
-                    }
-                  }
-                };
-              },
-            },
-          },
-        },
-        placeholder: "Nhập nội dung bài viết tại đây...",
-      });
-
-      quillRef.current.on("text-change", () => {
-        setContent(quillRef.current.root.innerHTML);
-      });
-
-      // Điền nội dung bài viết vào Quill
-      if (selectedPost) {
-        quillRef.current.root.innerHTML = selectedPost.content || "";
-        setContent(selectedPost.content || "");
-      }
-
-      return () => {
-        quillRef.current = null;
-      };
-    }
-  }, [isModalVisible, selectedPost]);
+  // Xử lý đóng modal
+  const handleCancel = useCallback(() => {
+    setIsModalVisible(false);
+    form.resetFields();
+    setContent("");
+    setImageUrls([]);
+    setSelectedTags([]);
+    setSearchValue("");
+    setSelectedPost(null);
+  }, [form]);
 
   // Điền dữ liệu vào form khi mở modal
   useEffect(() => {
     if (selectedPost) {
       form.setFieldsValue({
         title: selectedPost.title || "",
+        category_id: selectedPost.category_id?._id || "",
+        course_name: selectedPost.course_id
+          ? `${selectedPost.course_id.course_code} - ${selectedPost.course_id.course_name}`
+          : "",
         tags: selectedPost.tags?.map((tag) => tag.tag_name) || [],
+        status: selectedPost.status || "pending",
       });
+      setSearchValue(
+        selectedPost.course_id
+          ? `${selectedPost.course_id.course_code} - ${selectedPost.course_id.course_name}`
+          : ""
+      );
       setSelectedTags(selectedPost.tags?.map((tag) => tag.tag_name) || []);
       setImageUrls(
         selectedPost.documents
@@ -115,6 +212,22 @@ const AdminPostPage = () => {
       );
     }
   }, [selectedPost, form]);
+
+  // Cập nhật danh sách khóa học lọc theo tìm kiếm
+  useEffect(() => {
+    setFilteredCourses(
+      courses
+        .filter((course) =>
+          `${course.course_code} - ${course.course_name}`
+            .toLowerCase()
+            .includes(searchValue.toLowerCase())
+        )
+        .map((course) => ({
+          value: `${course.course_code} - ${course.course_name}`,
+          label: `${course.course_code} - ${course.course_name}`,
+        }))
+    );
+  }, [searchValue, courses]);
 
   // Tính toán dataSource cho trang hiện tại
   const dataSource = useMemo(() => {
@@ -133,6 +246,8 @@ const AdminPostPage = () => {
       content: post.content,
       tags: post.tags,
       documents: post.documents,
+      category_id: post.category_id,
+      course_id: post.course_id,
     }));
   }, [posts, currentPage, pagination.limit]);
 
@@ -140,15 +255,29 @@ const AdminPostPage = () => {
   const totalPages =
     pagination.totalPages || Math.ceil(posts.length / (pagination.limit || 4));
 
-  // Xử lý mở modal chỉnh sửa
-  const handleEdit = (post) => {
-    setSelectedPost(post);
-    setIsModalVisible(true);
-  };
-
   // Xử lý cập nhật bài viết
   const handleUpdate = async (values) => {
     try {
+      const [selectedCourseCode, selectedCourseName] = values.course_name
+        .split(" - ")
+        .map((str) => str.trim());
+
+      const selectedCourse = courses.find(
+        (course) =>
+          course.course_code === selectedCourseCode &&
+          course.course_name === selectedCourseName
+      );
+
+      if (!selectedCourse) {
+        form.setFields([
+          {
+            name: "course_name",
+            errors: ["Khóa học không hợp lệ!"],
+          },
+        ]);
+        return;
+      }
+
       const tagIds = [];
       for (const tagName of selectedTags) {
         const normalizedTagName = tagName.trim().toLowerCase();
@@ -177,15 +306,15 @@ const AdminPostPage = () => {
         title: values.title,
         content,
         imageUrls,
+        category_id: values.category_id,
+        course_id: selectedCourse._id,
+        tag_ids: tagIds,
+        status: values.status,
       };
 
       const response = await updatePostAction(selectedPost._id, postData);
       if (response.EC === 0) {
-        setIsModalVisible(false);
-        form.resetFields();
-        setContent("");
-        setImageUrls([]);
-        setSelectedTags([]);
+        handleCancel();
       }
     } catch (error) {
       form.setFields([
@@ -202,15 +331,25 @@ const AdminPostPage = () => {
     await deletePostAction(postId);
   };
 
-  // Đóng modal
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    form.resetFields();
-    setContent("");
-    setImageUrls([]);
-    setSelectedTags([]);
-    setSelectedPost(null);
+  // Xử lý thêm khóa học mới
+  const handleAddNewCourse = (values) => {
+    addCourse({ course_name: values.name, course_code: values.code });
+    setIsAddCourseModalVisible(false);
   };
+
+  // Dropdown render cho AutoComplete
+  const dropdownRender = (menu) => (
+    <div>
+      {menu}
+      <Button
+        type="link"
+        onClick={() => setIsAddCourseModalVisible(true)}
+        style={{ width: "100%", padding: "8px", textAlign: "center" }}
+      >
+        Thêm khóa học mới
+      </Button>
+    </div>
+  );
 
   // Cấu hình cột cho bảng
   const columns = [
@@ -338,15 +477,14 @@ const AdminPostPage = () => {
       />
       <Modal
         title="Chỉnh sửa bài viết"
-        visible={isModalVisible}
+        open={isModalVisible}
         centered={true}
         onCancel={handleCancel}
         footer={null}
         width={600}
-        bodyStyle={{
-          maxHeight: "60vh",
-          overflow: "auto",
-          padding: "16px",
+        destroyOnClose={true} // Đảm bảo DOM được làm sạch khi modal đóng
+        styles={{
+          body: { maxHeight: "60vh", overflow: "auto", padding: "16px" },
         }}
       >
         <Form form={form} layout="vertical" onFinish={handleUpdate}>
@@ -364,6 +502,44 @@ const AdminPostPage = () => {
                 borderRadius: "4px",
                 fontWeight: "bold",
               }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="category_id"
+            label="Danh mục bài viết"
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select
+              placeholder="Chọn danh mục"
+              size="large"
+              style={{ width: "100%" }}
+              loading={categoriesLoading}
+            >
+              {categories.map((cat) => (
+                <Select.Option key={cat._id} value={cat._id}>
+                  {cat.category_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="course_name"
+            label="Khóa học liên quan"
+            rules={[
+              { required: true, message: "Vui lòng chọn hoặc thêm khóa học" },
+            ]}
+          >
+            <AutoComplete
+              options={filteredCourses}
+              placeholder="Nhập để tìm kiếm hoặc chọn khóa học"
+              size="large"
+              onSelect={(value) => {
+                form.setFieldsValue({ course_name: value });
+                setSearchValue(value);
+              }}
+              onSearch={(value) => setSearchValue(value)}
+              popupRender={dropdownRender}
+              style={{ width: "100%" }}
             />
           </Form.Item>
           <Form.Item
@@ -393,6 +569,27 @@ const AdminPostPage = () => {
             </Select>
           </Form.Item>
           <Form.Item
+            name="status"
+            label="Trạng thái"
+            rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+          >
+            <Select
+              placeholder="Chọn trạng thái"
+              size="large"
+              style={{ width: "100%" }}
+            >
+              <Select.Option value="accepted">
+                <Tag color="green">Accepted</Tag>
+              </Select.Option>
+              <Select.Option value="pending">
+                <Tag color="orange">Pending</Tag>
+              </Select.Option>
+              <Select.Option value="rejected">
+                <Tag color="red">Rejected</Tag>
+              </Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
             label="Nội dung"
             rules={[
               { required: true, message: "Vui lòng nhập nội dung bài viết!" },
@@ -408,13 +605,11 @@ const AdminPostPage = () => {
               },
             ]}
           >
-            <div
-              ref={editorRef}
-              style={{
-                minHeight: "300px",
-                border: "1px solid #d9d9d9",
-                borderRadius: "4px",
-              }}
+            <QuillEditor
+              content={content}
+              setContent={setContent}
+              selectedPost={selectedPost}
+              isModalVisible={isModalVisible}
             />
           </Form.Item>
           <Form.Item>
@@ -427,6 +622,20 @@ const AdminPostPage = () => {
           </Form.Item>
         </Form>
       </Modal>
+      <AddNewModal
+        title="Thêm khóa học mới"
+        visible={isAddCourseModalVisible}
+        onOk={handleAddNewCourse}
+        onCancel={() => setIsAddCourseModalVisible(false)}
+        loading={coursesLoading}
+        placeholder="Nhập tên khóa học"
+        fields={[
+          { name: "name", label: "Tên khóa học", required: true },
+          { name: "code", label: "Mã khóa học", required: true },
+        ]}
+        minLength={3}
+        maxLength={50}
+      />
     </div>
   );
 };
