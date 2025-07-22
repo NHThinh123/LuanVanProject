@@ -41,7 +41,7 @@ export const usePosts = (queryParams = {}) => {
       popular, // Thêm vào queryKey
     ],
     queryFn: async ({ pageParam = 1 }) => {
-      const limit = 4;
+      const limit = 5;
 
       if (recommend) {
         return getRecommendedPosts({ page: pageParam, limit });

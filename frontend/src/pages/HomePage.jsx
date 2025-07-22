@@ -27,6 +27,13 @@ const HomePage = () => {
   const { users, isLoading: isUserLoading } = useUsers({});
   const [activeTab, setActiveTab] = useState(user ? "recommended" : "popular");
 
+  // Cập nhật activeTab khi user hoặc authLoading thay đổi
+  useEffect(() => {
+    if (!authLoading) {
+      setActiveTab(user ? "recommended" : "popular");
+    }
+  }, [user, authLoading]);
+
   const { ref, inView } = useInView({
     threshold: 0,
   });

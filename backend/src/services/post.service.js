@@ -272,7 +272,7 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
 
       newStatus = moderationData.status || "pending";
-      reason = moderationData.reason || "";
+      reason = modulationData.reason || "";
 
       if (!["accepted", "pending"].includes(newStatus)) {
         newStatus = "pending";
@@ -612,7 +612,7 @@ const getRecommendedPostsService = async (query) => {
     if (recommendations.length === 0) {
       const searchHistory = await SearchHistory.find({ user_id })
         .sort({ createdAt: -1 })
-        .limit(5);
+        .limit(3);
       if (searchHistory.length > 0) {
         const keywords = searchHistory.map((item) => item.keyword);
 
@@ -628,7 +628,11 @@ const getRecommendedPostsService = async (query) => {
         });
         const result = postsResult.data.posts.map((post) => ({
           ...post,
-          score: null,
+          surprise_score: null,
+          keyword_score: null,
+          following_score: null,
+          course_score: null,
+          combined_score: null,
         }));
         return {
           message:
@@ -663,10 +667,21 @@ const getRecommendedPostsService = async (query) => {
       });
 
       const result = [
-        ...popularPosts.data.posts.map((post) => ({ ...post, score: null })),
+        ...popularPosts.data.posts.map((post) => ({
+          ...post,
+          surprise_score: null,
+          keyword_score: null,
+          following_score: null,
+          course_score: null,
+          combined_score: null,
+        })),
         ...randomPostsResult.data.posts.map((post) => ({
           ...post,
-          score: null,
+          surprise_score: null,
+          keyword_score: null,
+          following_score: null,
+          course_score: null,
+          combined_score: null,
         })),
       ].slice(0, limit);
 
@@ -707,9 +722,11 @@ const getRecommendedPostsService = async (query) => {
         }
         return {
           ...post,
-          score: item.combined_score,
           surprise_score: item.surprise_score,
           keyword_score: item.keyword_score,
+          following_score: item.following_score,
+          course_score: item.course_score,
+          combined_score: item.combined_score,
         };
       })
       .filter((post) => post !== null);
@@ -921,7 +938,7 @@ const getPostsByTagService = async ({
           ...post._doc,
           user_id: {
             ...post.user_id._doc,
-            followers_count: followersCount,
+            followers_count: defendersCount,
             isFollowing:
               current_user_id && current_user_id !== post.user_id._id.toString()
                 ? followStatus.EC === 0
