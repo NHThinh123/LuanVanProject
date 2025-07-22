@@ -12,27 +12,32 @@ const AutoCompleteField = ({
   dropdownRender,
   rules,
   form,
+  multiple = false,
 }) => {
   return (
     <Form.Item label={label} name={name} rules={rules}>
       <AutoComplete
-        value={value}
+        value={multiple ? undefined : value}
         onSelect={(val) => {
-          onSelect(val);
-          form.setFieldsValue({ [name]: val });
+          if (multiple) {
+            const currentValues = form.getFieldValue(name) || [];
+            form.setFieldsValue({ [name]: [...currentValues, val] });
+          } else {
+            onSelect(val);
+            form.setFieldsValue({ [name]: val });
+          }
         }}
         onSearch={onSearch}
         placeholder={placeholder}
         size="large"
         style={{ width: "100%" }}
         popupRender={dropdownRender}
-      >
-        {options.map((item) => (
-          <AutoComplete.Option key={item.id} value={item.name}>
-            {item.name}
-          </AutoComplete.Option>
-        ))}
-      </AutoComplete>
+        options={options.map((item) => ({
+          value: item.name,
+          label: item.name,
+        }))}
+        allowClear
+      />
     </Form.Item>
   );
 };

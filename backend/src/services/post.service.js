@@ -352,13 +352,29 @@ const updatePostService = async (user_id, post_id, postData) => {
 
 const deletePostService = async (user_id, post_id) => {
   try {
-    const post = await Post.findOneAndDelete({ _id: post_id, user_id });
+    // Kiểm tra xem người dùng có tồn tại không
+    const user = await User.findById(user_id);
+    if (!user) {
+      return { message: "Người dùng không tồn tại", EC: 1 };
+    }
+
+    // Kiểm tra xem bài viết có tồn tại không
+    const post = await Post.findById(post_id);
     if (!post) {
+      return { message: "Bài viết không tồn tại", EC: 1 };
+    }
+
+    // Nếu người dùng là admin, cho phép xóa bất kỳ bài viết nào
+    // Nếu không phải admin, chỉ cho phép xóa bài viết của chính họ
+    if (user.role !== "admin" && post.user_id.toString() !== user_id) {
       return {
-        message: "Bài viết không tồn tại hoặc không thuộc về bạn",
+        message: "Bạn không có quyền xóa bài viết này",
         EC: 1,
       };
     }
+
+    // Xóa bài viết
+    await Post.findByIdAndDelete(post_id);
 
     // Xóa các document liên quan
     await Document.deleteMany({ post_id });

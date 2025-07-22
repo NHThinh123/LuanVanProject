@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const {
   createChatRoom,
-
   getUserChatRooms,
   deleteChatRoom,
 } = require("../controllers/chat_room.controller");

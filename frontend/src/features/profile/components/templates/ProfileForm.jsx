@@ -1,7 +1,6 @@
-import { Button, Col, Form, Input } from "antd";
+import { Button, Col, Form, Input, Select } from "antd";
 import React, { useEffect } from "react";
 import AvatarUpload from "../atoms/AvatarUpload";
-
 import YearSelector from "../atoms/YearSelector";
 import AutoCompleteField from "../../../../components/organisms/AutoCompleteField";
 
@@ -14,11 +13,13 @@ const ProfileForm = ({
   updateLoading,
   universityProps,
   majorProps,
+  courseProps,
   showAvatar = false,
   avatarUrl,
   setAvatarUrl,
   useRadioForYear = false,
   showBio = false,
+  showCourses = false,
   maxWidth = "400px",
 }) => {
   useEffect(() => {
@@ -28,6 +29,8 @@ const ProfileForm = ({
       major: user?.major_id?.major_name || "",
       startYear: user?.start_year?.toString() || "Khác",
       bio: user?.bio || "",
+      courses:
+        user?.interested_courses?.map((course) => course.course_name) || [],
     });
   }, [form, user]);
 
@@ -87,7 +90,20 @@ const ProfileForm = ({
           form={form}
         />
       )}
-
+      {showCourses && (
+        <Form.Item label="Khóa học yêu thích" name="courses">
+          <Select
+            mode="multiple"
+            placeholder="Chọn khóa học yêu thích"
+            value={courseProps.courses}
+            onChange={courseProps.onChange}
+            options={courseProps.options}
+            dropdownRender={courseProps.dropdownRender}
+            allowClear
+            size="large"
+          />
+        </Form.Item>
+      )}
       <YearSelector useRadio={useRadioForYear} />
       {showBio && (
         <Form.Item

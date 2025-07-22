@@ -4,8 +4,10 @@ const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 const UserFollow = require("../models/user_follow.model");
+const User_Interest_Course = require("../models/user_interest_course.model"); // Thêm import
 const cloudinary = require("../config/cloudinary");
 const { checkUserFollowService } = require("./user_follow.service");
+const { addInterestCourseService } = require("./user_interest_course.service");
 
 const createUserService = async (
   email,
@@ -92,7 +94,7 @@ const getUsersService = async (query, current_user_id) => {
     if (role) filter.role = role;
     if (university_id) filter.university_id = university_id;
     if (major_id) filter.major_id = major_id;
-    if (keyword) filter.$text = { $search: keyword }; // Sử dụng $text search cho keyword
+    if (keyword) filter.$text = { $search: keyword };
 
     const users = await User.find(
       filter,
@@ -114,13 +116,18 @@ const getUsersService = async (query, current_user_id) => {
       };
     }
 
-    // Kiểm tra trạng thái theo dõi và đếm số lượng người theo dõi
+    // Kiểm tra trạng thái theo dõi, đếm số lượng người theo dõi và lấy khóa học yêu thích
     const usersWithFollowStatus = await Promise.all(
       users.map(async (user) => {
         let isFollowing = false;
         const followersCount = await UserFollow.countDocuments({
           user_follow_id: user._id,
         });
+        const interestedCourses = await User_Interest_Course.find({
+          user_id: user._id,
+        })
+          .populate("course_id", "course_name course_code")
+          .select("course_id");
         if (current_user_id && user._id.toString() !== current_user_id) {
           const followStatus = await checkUserFollowService(
             current_user_id,
@@ -133,6 +140,7 @@ const getUsersService = async (query, current_user_id) => {
           ...user._doc,
           isFollowing,
           followers_count: followersCount,
+          interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm danh sách khóa học yêu thích
         };
       })
     );
@@ -160,10 +168,13 @@ const getUserByIdService = async (id, current_user_id) => {
       };
     }
 
-    // Đếm số lượng người theo dõi
+    // Đếm số lượng người theo dõi và lấy khóa học yêu thích
     const followersCount = await UserFollow.countDocuments({
       user_follow_id: id,
     });
+    const interestedCourses = await User_Interest_Course.find({ user_id: id })
+      .populate("course_id", "course_name course_code")
+      .select("course_id");
     let isFollowing = false;
     if (current_user_id && id.toString() !== current_user_id) {
       const followStatus = await checkUserFollowService(current_user_id, id);
@@ -177,6 +188,7 @@ const getUserByIdService = async (id, current_user_id) => {
         ...result._doc,
         followers_count: followersCount,
         isFollowing,
+        interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm danh sách khóa học yêu thích
       },
     };
   } catch (error) {
@@ -190,6 +202,20 @@ const updateUserService = async (id, updateData) => {
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, saltRounds);
     }
+
+    // Xử lý danh sách course_ids nếu có
+    if (updateData.course_ids && Array.isArray(updateData.course_ids)) {
+      const User_Interest_Course = require("../models/user_interest_course.model");
+      // Xóa tất cả các khóa học quan tâm hiện tại của người dùng
+      await User_Interest_Course.deleteMany({ user_id: id });
+      // Thêm lại các khóa học quan tâm mới
+      for (const course_id of updateData.course_ids) {
+        await addInterestCourseService(id, course_id);
+      }
+      // Loại bỏ course_ids khỏi updateData để không lưu trực tiếp vào User
+      delete updateData.course_ids;
+    }
+
     let result = await User.findByIdAndUpdate(id, updateData, {
       new: true,
     })
@@ -201,6 +227,11 @@ const updateUserService = async (id, updateData) => {
         EC: 1,
       };
     }
+
+    // Lấy danh sách khóa học yêu thích sau khi cập nhật
+    const interestedCourses = await User_Interest_Course.find({ user_id: id })
+      .populate("course_id", "course_name course_code")
+      .select("course_id");
 
     // Tạo token mới với thông tin cập nhật
     const payload = {
@@ -214,6 +245,7 @@ const updateUserService = async (id, updateData) => {
       major_id: result.major_id,
       university_id: result.university_id,
       avatar_url: result.avatar_url,
+      interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào payload
     };
     const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRE,
@@ -222,7 +254,10 @@ const updateUserService = async (id, updateData) => {
     return {
       message: "Cập nhật thông tin người dùng thành công",
       EC: 0,
-      data: result,
+      data: {
+        ...result._doc,
+        interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào data
+      },
       access_token,
     };
   } catch (error) {
@@ -240,6 +275,11 @@ const loginService = async (email, password) => {
     if (user) {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (isValidPassword) {
+        const interestedCourses = await User_Interest_Course.find({
+          user_id: user._id,
+        })
+          .populate("course_id", "course_name course_code")
+          .select("course_id");
         const payload = {
           _id: user._id,
           email: user.email,
@@ -250,6 +290,7 @@ const loginService = async (email, password) => {
           major_id: user.major_id,
           university_id: user.university_id,
           avatar_url: user.avatar_url,
+          interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào payload
         };
         const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
           expiresIn: process.env.JWT_EXPIRE,
@@ -266,6 +307,7 @@ const loginService = async (email, password) => {
             major_id: user.major_id,
             university_id: user.university_id,
             avatar_url: user.avatar_url,
+            interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào data
           },
         };
       } else {
@@ -316,6 +358,11 @@ const updateAvatarService = async (user_id, file) => {
       .populate("university_id", "university_name")
       .populate("major_id", "major_name");
 
+    // Lấy danh sách khóa học yêu thích
+    const interestedCourses = await User_Interest_Course.find({ user_id })
+      .populate("course_id", "course_name course_code")
+      .select("course_id");
+
     // Tạo token mới với thông tin cập nhật
     const payload = {
       _id: result._id,
@@ -327,6 +374,7 @@ const updateAvatarService = async (user_id, file) => {
       major_id: result.major_id,
       university_id: result.university_id,
       avatar_url: result.avatar_url,
+      interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào payload
     };
     const access_token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRE,
@@ -335,8 +383,32 @@ const updateAvatarService = async (user_id, file) => {
     return {
       message: "Cập nhật ảnh đại diện thành công",
       EC: 0,
-      data: result,
+      data: {
+        ...result._doc,
+        interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm vào data
+      },
       access_token,
+    };
+  } catch (error) {
+    console.error(error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
+const getAccount = async (user) => {
+  try {
+    const interestedCourses = await User_Interest_Course.find({
+      user_id: user._id,
+    })
+      .populate("course_id", "course_name course_code")
+      .select("course_id");
+    return {
+      message: "Lấy thông tin tài khoản thành công",
+      EC: 0,
+      data: {
+        ...user._doc,
+        interested_courses: interestedCourses.map((ic) => ic.course_id), // Thêm danh sách khóa học yêu thích
+      },
     };
   } catch (error) {
     console.error(error);
@@ -351,4 +423,5 @@ module.exports = {
   getUserByIdService,
   updateUserService,
   updateAvatarService,
+  getAccount,
 };

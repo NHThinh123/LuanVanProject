@@ -24,9 +24,6 @@ export const useTag = (query = {}) => {
   const createTagMutation = useMutation({
     mutationFn: createTag,
     onSuccess: () => {
-      notification.success({
-        message: "Tạo thẻ thành công",
-      });
       queryClient.invalidateQueries(["tags"]);
     },
     onError: (error) => {

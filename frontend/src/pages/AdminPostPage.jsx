@@ -29,7 +29,13 @@ import { useCourses } from "../features/course/hooks/useCourses";
 import { uploadImageToCloudinary } from "../features/post/services/upload.service";
 import AddNewModal from "../components/organisms/AddNewModal";
 
-const QuillEditor = ({ content, setContent, selectedPost, isModalVisible }) => {
+const QuillEditor = ({
+  content,
+  setContent,
+  selectedPost,
+  isModalVisible,
+  setImageUrls,
+}) => {
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
@@ -72,6 +78,7 @@ const QuillEditor = ({ content, setContent, selectedPost, isModalVisible }) => {
                             imageUrl
                           );
                           setContent(quillRef.current.root.innerHTML);
+                          setImageUrls((prev) => [...prev, imageUrl]);
                         }
                       } catch (error) {
                         console.error("Lỗi khi tải ảnh lên Cloudinary:", error);
@@ -124,7 +131,7 @@ const QuillEditor = ({ content, setContent, selectedPost, isModalVisible }) => {
       isMounted = false;
       destroyQuill();
     };
-  }, [isModalVisible, selectedPost, setContent]);
+  }, [isModalVisible, selectedPost, setContent, setImageUrls]);
 
   return (
     <div
@@ -210,6 +217,7 @@ const AdminPostPage = () => {
           ?.filter((doc) => doc.type === "image")
           .map((doc) => doc.document_url) || []
       );
+      setContent(selectedPost.content || "");
     }
   }, [selectedPost, form]);
 
@@ -305,7 +313,7 @@ const AdminPostPage = () => {
       const postData = {
         title: values.title,
         content,
-        imageUrls,
+        imageUrls, // Thêm danh sách imageUrls
         category_id: values.category_id,
         course_id: selectedCourse._id,
         tag_ids: tagIds,
@@ -610,6 +618,7 @@ const AdminPostPage = () => {
               setContent={setContent}
               selectedPost={selectedPost}
               isModalVisible={isModalVisible}
+              setImageUrls={setImageUrls}
             />
           </Form.Item>
           <Form.Item>
