@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Thêm useNavigate
 import { Divider, Form, Layout, notification, Row, Typography } from "antd";
 import logo from "../assets/Logo/Logo.png";
 import BoxCustom from "../components/atoms/BoxCustom";
@@ -18,6 +19,7 @@ const InformationPage = () => {
     isLoading: updateLoading,
     error: updateError,
   } = useAuth();
+  const navigate = useNavigate(); // Thêm navigate để điều hướng
   const {
     university,
     setUniversity,
@@ -51,6 +53,7 @@ const InformationPage = () => {
   const { courses, loading: coursesLoading, addCourse } = useCourses();
   const [form] = Form.useForm();
   const [selectedCourses, setSelectedCourses] = useState([]);
+  const [updateSuccess, setUpdateSuccess] = useState(false); // Thêm trạng thái để theo dõi cập nhật thành công
 
   useEffect(() => {
     if (updateError) {
@@ -62,17 +65,19 @@ const InformationPage = () => {
   }, [updateError]);
 
   useEffect(() => {
-    setSelectedCourses(
-      user?.interested_courses?.map((course) => course.course_name) || []
-    );
-    form.setFieldsValue({
-      name: user?.full_name || "",
-      university: user?.university_id?.university_name || "",
-      major: user?.major_id?.major_name || "",
-      startYear: user?.start_year?.toString() || "Khác",
-      courses:
-        user?.interested_courses?.map((course) => course.course_name) || [],
-    });
+    if (user) {
+      setSelectedCourses(
+        user?.interested_courses?.map((course) => course.course_name) || []
+      );
+      form.setFieldsValue({
+        name: user?.full_name || "",
+        university: user?.university_id?.university_name || "",
+        major: user?.major_id?.major_name || "",
+        startYear: user?.start_year?.toString() || "Khác",
+        courses:
+          user?.interested_courses?.map((course) => course.course_name) || [],
+      });
+    }
   }, [form, user]);
 
   const universityDropdownRender = (menu) => (
@@ -134,7 +139,7 @@ const InformationPage = () => {
     setIsCourseModalVisible(false);
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     const selectedUniversity = universities.find(
       (uni) => uni.name === values.university
     );
@@ -143,14 +148,30 @@ const InformationPage = () => {
       .filter((course) => values.courses?.includes(course.course_name))
       .map((course) => course._id);
 
-    handleUpdateUser({
-      full_name: values.name,
-      university_id: selectedUniversity?.id,
-      major_id: selectedMajor?.id,
-      start_year:
-        values.startYear === "Khác" ? null : parseInt(values.startYear),
-      course_ids: selectedCourseIds,
-    });
+    try {
+      await handleUpdateUser({
+        full_name: values.name,
+        university_id: selectedUniversity?.id,
+        major_id: selectedMajor?.id,
+        start_year:
+          values.startYear === "Khác" ? null : parseInt(values.startYear),
+        course_ids: selectedCourseIds,
+      });
+      setUpdateSuccess(true); // Đánh dấu cập nhật thành công
+      notification.success({
+        message: "Cập nhật thông tin thành công",
+        description: "Đang chuyển hướng đến trang chủ...",
+      });
+      // Chờ 1 giây để đảm bảo trạng thái user được cập nhật trước khi chuyển trang
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    } catch (error) {
+      notification.error({
+        message: "Cập nhật thông tin thất bại",
+        description: "Vui lòng thử lại sau.",
+      });
+    }
   };
 
   const onUniversityModalOk = (values) => {

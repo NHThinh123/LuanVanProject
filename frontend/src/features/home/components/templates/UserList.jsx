@@ -10,9 +10,11 @@ import {
 import React from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { useAuthContext } from "../../../../contexts/auth.context";
+import { useUsers } from "../../../user/hooks/useUsers";
 
 const UserList = ({ users, loading }) => {
   const { user: current_user, isLoading: authLoading } = useAuthContext();
+  const { follow, unfollow, isFollowLoading } = useUsers();
 
   if (loading || authLoading) {
     return (
@@ -56,7 +58,13 @@ const UserList = ({ users, loading }) => {
                 <Button
                   variant={user.isFollowing ? "outlined" : "solid"}
                   color={"primary"}
-                  href="/login" // Tạm thời giữ href để đồng bộ, nhưng logic follow/unfollow được xử lý trong AvatarCustom
+                  onClick={() =>
+                    user.isFollowing
+                      ? unfollow({ user_follow_id: user._id })
+                      : follow({ user_follow_id: user._id })
+                  }
+                  loading={isFollowLoading}
+                  style={{ width: 120 }}
                 >
                   {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
                 </Button>
