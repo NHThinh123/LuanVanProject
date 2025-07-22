@@ -205,15 +205,17 @@ const AdminModerationPage = () => {
       />
       <Modal
         title="Chi tiết bài viết"
-        visible={isModalVisible}
+        open={isModalVisible}
         centered={true}
         onCancel={handleCancel}
         footer={null}
         width={600}
-        bodyStyle={{
-          maxHeight: "60vh",
-          overflow: "auto",
-          padding: "16px",
+        style={{
+          body: {
+            maxHeight: "60vh",
+            overflow: "auto",
+            padding: "16px",
+          },
         }}
       >
         {selectedPost && (

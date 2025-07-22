@@ -151,6 +151,7 @@ createRoot(document.getElementById("root")).render(
             borderRadiusLG: 20,
             borderRadius: 20,
             optionSelectedColor: "#ffffff",
+            optionSelectedBg: "#7d7d7dff",
           },
           Radio: {
             dotSize: 0,

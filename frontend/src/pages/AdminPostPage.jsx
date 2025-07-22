@@ -489,10 +489,10 @@ const AdminPostPage = () => {
         centered={true}
         onCancel={handleCancel}
         footer={null}
-        width={600}
-        destroyOnClose={true} // Đảm bảo DOM được làm sạch khi modal đóng
+        width={800}
+        destroyOnHidden={true} // Đảm bảo DOM được làm sạch khi modal đóng
         styles={{
-          body: { maxHeight: "60vh", overflow: "auto", padding: "16px" },
+          body: { maxHeight: "80vh", overflow: "auto", padding: "16px" },
         }}
       >
         <Form form={form} layout="vertical" onFinish={handleUpdate}>

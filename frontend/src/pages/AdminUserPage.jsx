@@ -214,7 +214,7 @@ const AdminUserPage = () => {
         onCancel={handleCancel}
         footer={null}
         width={600}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         styles={{
           body: { maxHeight: "60vh", overflow: "auto", padding: "16px" },
         }}
