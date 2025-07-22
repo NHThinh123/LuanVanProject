@@ -611,12 +611,15 @@ const getRecommendedPostsService = async (query) => {
   try {
     const { user_id, page = 1, limit = 10, current_user_id } = query;
 
+    const skip = (page - 1) * limit;
+
     const response = await axios.get(
-      `http://localhost:8000/recommendations/surprise/${user_id}?n=99`
+      `http://localhost:8000/recommendations/surprise/${user_id}?page=${page}&limit=${limit}`
     );
     const {
       user_id: response_user_id,
       recommendations,
+      pagination: apiPagination,
       debug_info,
     } = response.data;
 
@@ -737,12 +740,7 @@ const getRecommendedPostsService = async (query) => {
       EC: 0,
       data: {
         posts: postsWithScores,
-        pagination: {
-          page,
-          limit,
-          total: postsWithScores.length,
-          totalPages: Math.ceil(postsWithScores.length / limit),
-        },
+        pagination: apiPagination,
       },
       user_id,
       debug_info,

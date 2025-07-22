@@ -29,6 +29,7 @@ export const updatePost = async (post_id, postData) => {
     throw new Error(error.message || "Lỗi khi cập nhật bài viết");
   }
 };
+
 export const updatePostStatus = async (postId, status) => {
   try {
     const response = await axios.patch(`/posts/${postId}/status`, { status });
@@ -109,11 +110,12 @@ export const unlikePost = async (postId) => {
   }
 };
 
-export const getRecommendedPosts = async (queryParams = {}) => {
+export const getRecommendedPosts = async ({ page = 1, limit = 10 }) => {
   try {
     const response = await axios.get("/posts/recommend", {
       params: {
-        ...queryParams,
+        page,
+        limit,
       },
     });
     return response.data;

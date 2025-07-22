@@ -108,7 +108,7 @@ const updatePostStatus = async (req, res) => {
 };
 
 const getRecommendedPosts = async (req, res) => {
-  const { page, limit } = req.query;
+  const { page = 1, limit = 10 } = req.query;
   const user_id = req.user._id;
 
   const result = await getRecommendedPostsService({

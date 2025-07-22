@@ -8,7 +8,6 @@ import numpy as np
 
 MODEL_PATH = "saved_models/surprise_model.pkl"
 
-
 def train_surprise_model():
     df = get_user_post_interactions()
     reader = Reader(rating_scale=(0, 1))
@@ -25,15 +24,13 @@ def train_surprise_model():
 
     return model
 
-
 def load_surprise_model():
     if os.path.exists(MODEL_PATH):
         with open(MODEL_PATH, "rb") as f:
             return pickle.load(f)
     return train_surprise_model()
 
-
-def get_surprise_recommendations(user_id, n=10):
+def get_surprise_recommendations(user_id, page=1, limit=10):
     model = load_surprise_model()
     df = get_user_post_interactions()
     post_metadata = get_post_metadata()
@@ -73,20 +70,31 @@ def get_surprise_recommendations(user_id, n=10):
     # Sắp xếp theo combined_score giảm dần
     combined_scores.sort(key=lambda x: x["combined_score"], reverse=True)
 
-    # Lấy top n bài viết
-    result = combined_scores[:min(n, len(combined_scores))]
+    # Phân trang
+    start = (page - 1) * limit
+    end = start + limit
+    paginated_recommendations = combined_scores[start:end]
 
-    # Tạo debug_info
+    # Lấy tổng số bài viết
+    total = len(combined_scores)
+
+    # TТаблица dữ liệu trả về
     debug_info = {
         "all_posts": all_posts,
         "keywords": keywords
     }
 
-    print("Final recommendations for user", user_id, ":", result)  # Debug log
+    print("Final recommendations for user", user_id, ":", paginated_recommendations)  # Debug log
     print("Debug info:", debug_info)  # Debug log
 
     return {
         "user_id": user_id,
-        "recommendations": result,
+        "recommendations": paginated_recommendations,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "totalPages": (total + limit - 1) // limit
+        },
         "debug_info": debug_info
     }
