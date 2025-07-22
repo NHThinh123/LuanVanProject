@@ -86,6 +86,23 @@ const ProfilePage = () => {
       </Row>
     );
   }
+  if (!user) {
+    return (
+      <Row justify="center" align={"middle"} style={{ marginTop: 50 }}>
+        <Col>
+          <Flex align="center" justify="center" vertical gap={16}>
+            <Typography.Text type="secondary">
+              Vui lòng đăng nhập để có chức năng này
+            </Typography.Text>
+
+            <Button type="primary" style={{ marginLeft: 10 }} href="/login">
+              Đăng nhập
+            </Button>
+          </Flex>
+        </Col>
+      </Row>
+    );
+  }
 
   return (
     <Row justify="center" gutter={[24, 24]}>

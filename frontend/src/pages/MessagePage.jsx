@@ -10,6 +10,7 @@ import {
   Badge,
   Flex,
   message,
+  Button,
 } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import React, { useEffect, useState, useRef } from "react";
@@ -244,12 +245,18 @@ const MessagePage = () => {
 
   if (!user) {
     return (
-      <Row
-        style={{ height: "80vh", background: "#f0f2f5" }}
-        justify="center"
-        align="middle"
-      >
-        <Text type="danger">Vui lòng đăng nhập để xem tin nhắn</Text>
+      <Row justify="center" align={"middle"} style={{ marginTop: 50 }}>
+        <Col>
+          <Flex align="center" justify="center" vertical gap={16}>
+            <Typography.Text type="secondary">
+              Vui lòng đăng nhập để có chức năng này
+            </Typography.Text>
+
+            <Button type="primary" style={{ marginLeft: 10 }} href="/login">
+              Đăng nhập
+            </Button>
+          </Flex>
+        </Col>
       </Row>
     );
   }

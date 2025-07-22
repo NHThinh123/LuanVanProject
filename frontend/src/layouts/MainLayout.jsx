@@ -11,14 +11,12 @@ import {
   Dropdown,
 } from "antd";
 import {
-  AppstoreOutlined,
   CommentOutlined,
   HomeOutlined,
   MenuOutlined,
   ProfileOutlined,
   SearchOutlined,
   TeamOutlined,
-  UsbOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import {
@@ -26,8 +24,8 @@ import {
   useLocation,
   useNavigate,
   useSearchParams,
-} from "react-router-dom"; // Thêm useSearchParams
-import { useState, useEffect, useRef } from "react"; // Thêm useRef
+} from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import logo from "../assets/Logo/Logo.png";
 import { BookCopy, LogOut, PenLine, UserRoundPen } from "lucide-react";
 import { useAuthContext } from "../contexts/auth.context";
@@ -38,26 +36,29 @@ import FooterCustom from "../components/molecules/Footer";
 const { Header, Content, Sider } = Layout;
 
 export const MainLayout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
   const { searchHistory, addSearchHistory } = useSearchHistory();
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // Thêm để lấy query params
-  const autoCompleteRef = useRef(null); // Ref để kiểm soát AutoComplete
+  const [searchParams] = useSearchParams();
+  const autoCompleteRef = useRef(null);
 
-  // Lấy từ khóa từ query parameter khi tải trang
   useEffect(() => {
     const keyword = searchParams.get("keyword") || "";
-    setSearchValue(keyword); // Đặt giá trị tìm kiếm từ query parameter
+    setSearchValue(keyword);
   }, [searchParams]);
 
-  // Cuộn lên đầu trang khi đường dẫn thay đổi
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
+  useEffect(() => {
+    if (user) {
+      setCollapsed(false);
+    }
+  }, [user]);
 
   const dropdownItems = [
     {
@@ -99,48 +100,43 @@ export const MainLayout = ({ children }) => {
     },
   ];
 
-  const toggleSider = () => {
-    setCollapsed(!collapsed);
-  };
-
-  // Handle search and save to history
   const handleSearch = async (value) => {
-    if (!value.trim()) return; // Ignore empty searches
+    if (!value.trim()) return;
     try {
-      await addSearchHistory(value); // Use mutation to save search history
-      navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Redirect to search page
+      if (user) {
+        await addSearchHistory(value);
+      }
+      navigate(`/searching?keyword=${encodeURIComponent(value)}`);
       if (autoCompleteRef.current) {
-        autoCompleteRef.current.blur(); // Đóng dropdown của AutoComplete
+        autoCompleteRef.current.blur();
       }
     } catch (error) {
       console.error("Lỗi khi lưu lịch sử tìm kiếm:", error);
-      navigate(`/searching?keyword=${encodeURIComponent(value)}`); // Still redirect even if saving fails
+      navigate(`/searching?keyword=${encodeURIComponent(value)}`);
       if (autoCompleteRef.current) {
-        autoCompleteRef.current.blur(); // Đóng dropdown của AutoComplete
+        autoCompleteRef.current.blur();
       }
     }
   };
 
-  // Handle selecting a search history item
   const handleSelect = (value) => {
     setSearchValue(value);
-    handleSearch(value); // Trigger search when selecting an item
+    handleSearch(value);
   };
 
-  // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleSearch(searchValue);
     }
   };
 
-  // Convert search history to AutoComplete options
-  const searchOptions = searchHistory.map((item) => ({
-    value: item.keyword,
-    label: item.keyword,
-  }));
+  const searchOptions = user
+    ? searchHistory.map((item) => ({
+        value: item.keyword,
+        label: item.keyword,
+      }))
+    : [];
 
-  // Map URL paths to menu keys
   const getSelectedKey = () => {
     const path = location.pathname;
     if (path === "/") return "home";
@@ -153,7 +149,6 @@ export const MainLayout = ({ children }) => {
     return "home";
   };
 
-  // Handle logo click to reload page
   const handleLogoClick = () => {
     window.location.reload();
   };
@@ -179,7 +174,7 @@ export const MainLayout = ({ children }) => {
               <Button
                 type="text"
                 icon={<MenuOutlined />}
-                onClick={toggleSider}
+                onClick={() => setCollapsed(!collapsed)}
                 style={{ marginRight: 16 }}
               />
               <Link
@@ -193,14 +188,14 @@ export const MainLayout = ({ children }) => {
           </Col>
           <Col span={11}>
             <AutoComplete
-              ref={autoCompleteRef} // Gán ref cho AutoComplete
+              ref={autoCompleteRef}
               options={searchOptions}
               onSelect={handleSelect}
               onChange={(value) => setSearchValue(value)}
               value={searchValue}
               style={{ width: "100%", maxWidth: 500 }}
               filterOption={(inputValue, option) =>
-                option.value
+                option?.value
                   .normalize("NFD")
                   .replace(/[\u0300-\u036f]/g, "")
                   .toLowerCase()
@@ -215,17 +210,19 @@ export const MainLayout = ({ children }) => {
               <Input
                 prefix={<SearchOutlined />}
                 placeholder="Tìm kiếm..."
-                onKeyPress={handleKeyPress} // Handle Enter key
+                onKeyUp={handleKeyPress}
                 allowClear
               />
             </AutoComplete>
           </Col>
           <Col span={3}>
             <Flex justify="end">
-              <Button variant="outlined" color="primary" href="/posts/create">
-                <PenLine strokeWidth={1.25} size={18} />
-                Đăng bài
-              </Button>
+              {user && (
+                <Button variant="outlined" color="primary" href="/posts/create">
+                  <PenLine strokeWidth={1.25} size={18} />
+                  Đăng bài
+                </Button>
+              )}
             </Flex>
           </Col>
           <Col span={4}>

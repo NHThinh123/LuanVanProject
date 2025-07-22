@@ -1,7 +1,16 @@
 import React, { useState } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useUsers } from "../features/user/hooks/useUsers";
-import { Col, Divider, Row, Skeleton, Typography, Input } from "antd";
+import {
+  Col,
+  Divider,
+  Row,
+  Skeleton,
+  Typography,
+  Input,
+  Flex,
+  Button,
+} from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
 
@@ -35,7 +44,21 @@ const FollowerPage = () => {
   );
 
   if (!user_id) {
-    return <div>Vui lòng đăng nhập để xem trang người theo dõi.</div>;
+    return (
+      <Row justify="center" align={"middle"} style={{ marginTop: 50 }}>
+        <Col>
+          <Flex align="center" justify="center" vertical gap={16}>
+            <Typography.Text type="secondary">
+              Vui lòng đăng nhập để có chức năng này
+            </Typography.Text>
+
+            <Button type="primary" style={{ marginLeft: 10 }} href="/login">
+              Đăng nhập
+            </Button>
+          </Flex>
+        </Col>
+      </Row>
+    );
   }
 
   if (authLoading || isUserLoading) {

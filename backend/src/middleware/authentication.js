@@ -6,6 +6,9 @@ const authentication = (req, res, next) => {
   const white_lists = [
     "/users/register",
     "/users/login",
+    "/users",
+    "/users/:id",
+
     "/courses",
     "/courses/:id",
     "/tags",
@@ -17,6 +20,7 @@ const authentication = (req, res, next) => {
     "/universities",
     "/universities/:id",
     "/posts",
+    "/posts/search",
     "/posts/:post_id",
     "/post-tags/post/:post_id",
     "/post-tags/tag/:tag_id",
@@ -66,7 +70,6 @@ const authentication = (req, res, next) => {
           avatar_url: decoded.avatar_url,
         };
       } catch (error) {
-        console.log("Token không hợp lệ hoặc đã hết hạn:", error.message);
         req.user = null; // Token không hợp lệ, gán req.user = null
       }
     } else {

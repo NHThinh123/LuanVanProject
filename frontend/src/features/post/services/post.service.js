@@ -148,3 +148,14 @@ export const getFollowingPosts = async ({ page = 1, limit = 10 }) => {
     );
   }
 };
+
+export const getPopularPosts = async ({ page = 1, limit = 10 }) => {
+  try {
+    const response = await axios.get("/posts/popular", {
+      params: { page, limit },
+    });
+    return response.data || [];
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi lấy danh sách bài viết phổ biến");
+  }
+};

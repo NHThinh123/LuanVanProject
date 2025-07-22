@@ -1,4 +1,3 @@
-// usePost.js
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   getPosts,
@@ -6,6 +5,7 @@ import {
   getRecommendedPosts,
   getPostsByTag,
   getFollowingPosts,
+  getPopularPosts, // Thêm hàm mới
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -18,6 +18,7 @@ export const usePosts = (queryParams = {}) => {
     tag_id,
     recommend = false,
     following = false,
+    popular = false, // Thêm tham số mới
   } = queryParams;
 
   const {
@@ -37,6 +38,7 @@ export const usePosts = (queryParams = {}) => {
       tag_id,
       recommend,
       following,
+      popular, // Thêm vào queryKey
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const limit = 4;
@@ -46,6 +48,9 @@ export const usePosts = (queryParams = {}) => {
       }
       if (following) {
         return getFollowingPosts({ page: pageParam, limit });
+      }
+      if (popular) {
+        return getPopularPosts({ page: pageParam, limit });
       }
       if (keyword) {
         return searchPosts({ keyword, page: pageParam, limit });
@@ -58,8 +63,8 @@ export const usePosts = (queryParams = {}) => {
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage;
 
-      const currentPage = Number(pagination.page); // Chuyển đổi page thành số
-      const totalPages = Number(pagination.totalPages); // Chuyển đổi totalPages thành số
+      const currentPage = Number(pagination.page);
+      const totalPages = Number(pagination.totalPages);
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     onError: (error) => {

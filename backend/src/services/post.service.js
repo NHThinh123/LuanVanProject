@@ -18,7 +18,6 @@ const cheerio = require("cheerio");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Hàm loại bỏ thẻ <img> khỏi chuỗi HTML bằng cheerio
 const removeImagesFromContent = (htmlContent) => {
   if (!htmlContent) return "";
   try {
@@ -27,7 +26,7 @@ const removeImagesFromContent = (htmlContent) => {
     return $.html("body").replace(/^<body>|<\/body>$/g, "");
   } catch (error) {
     console.error("Lỗi khi loại bỏ thẻ <img> khỏi content:", error);
-    return htmlContent; // Trả về nội dung gốc nếu có lỗi
+    return htmlContent;
   }
 };
 
@@ -67,7 +66,6 @@ const createPostService = async (user_id, postData) => {
       summary = summaryResult.text;
     }
 
-    // Loại bỏ thẻ <img> khỏi content trước khi kiểm duyệt
     const cleanedContent = removeImagesFromContent(content);
 
     const moderationPrompt = `
@@ -87,15 +85,13 @@ const createPostService = async (user_id, postData) => {
       contents: moderationPrompt,
     });
 
-    // Debug: Log toàn bộ nội dung trả về từ API
     console.log("Raw moderationResult.text:", moderationResult.text);
 
     let moderationData;
     try {
-      // Loại bỏ markdown hoặc ký tự không mong muốn
       const cleanedText = moderationResult.text
-        .replace(/```json\n|```/g, "") // Xóa ```json và ```
-        .replace(/`/g, "") // Xóa dấu nháy ngược
+        .replace(/```json\n|```/g, "")
+        .replace(/`/g, "")
         .trim();
       moderationData = JSON.parse(cleanedText);
     } catch (parseError) {
@@ -124,12 +120,11 @@ const createPostService = async (user_id, postData) => {
       course_id,
       category_id,
       title,
-      content, // Lưu content gốc, bao gồm thẻ <img>
+      content,
       summary,
       status,
     });
 
-    // Tạo các bản ghi Document cho các ảnh
     if (imageUrls.length > 0) {
       const documents = imageUrls.map((url) => ({
         post_id: post._id,
@@ -198,7 +193,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    // Kiểm tra trạng thái nếu được gửi và người dùng là admin
     let newStatus = post.status;
     let reason = "";
     if (isAdmin && status) {
@@ -207,7 +201,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
       newStatus = status;
     } else if (!isAdmin && (title || content)) {
-      // Nếu không phải admin và có cập nhật title hoặc content, kiểm duyệt nội dung
       const wordCount = (content || post.content).split(/\s+/).length;
       if (wordCount > 100) {
         try {
@@ -292,10 +285,8 @@ const updatePostService = async (user_id, post_id, postData) => {
         );
       }
     } else if (!isAdmin) {
-      // Nếu không phải admin và không cập nhật title hoặc content, giữ nguyên trạng thái
       newStatus = post.status;
     } else if (isAdmin && !status) {
-      // Nếu là admin nhưng không gửi status, giữ nguyên trạng thái hiện tại
       newStatus = post.status;
       if (title || content) {
         const wordCount = (content || post.content).split(/\s+/).length;
@@ -303,18 +294,14 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
     }
 
-    // Cập nhật các trường
     post.course_id = course_id || post.course_id;
     post.category_id = category_id || post.category_id;
     post.title = title || post.title;
     post.content = content || post.content;
     post.status = newStatus;
 
-    // Xử lý tag_ids nếu được gửi
     if (tag_ids.length > 0) {
-      // Xóa các tag hiện tại của bài viết
       await Post_Tag.deleteMany({ post_id: post._id });
-      // Thêm các tag mới
       const postTags = tag_ids.map((tag_id) => ({
         post_id: post._id,
         tag_id,
@@ -322,7 +309,6 @@ const updatePostService = async (user_id, post_id, postData) => {
       await Post_Tag.insertMany(postTags);
     }
 
-    // Xử lý imageUrls
     if (imageUrls.length > 0) {
       await Document.deleteMany({ post_id: post._id, type: "image" });
       const documents = imageUrls.map((url) => ({
@@ -352,20 +338,16 @@ const updatePostService = async (user_id, post_id, postData) => {
 
 const deletePostService = async (user_id, post_id) => {
   try {
-    // Kiểm tra xem người dùng có tồn tại không
     const user = await User.findById(user_id);
     if (!user) {
       return { message: "Người dùng không tồn tại", EC: 1 };
     }
 
-    // Kiểm tra xem bài viết có tồn tại không
     const post = await Post.findById(post_id);
     if (!post) {
       return { message: "Bài viết không tồn tại", EC: 1 };
     }
 
-    // Nếu người dùng là admin, cho phép xóa bất kỳ bài viết nào
-    // Nếu không phải admin, chỉ cho phép xóa bài viết của chính họ
     if (user.role !== "admin" && post.user_id.toString() !== user_id) {
       return {
         message: "Bạn không có quyền xóa bài viết này",
@@ -373,12 +355,9 @@ const deletePostService = async (user_id, post_id) => {
       };
     }
 
-    // Xóa bài viết
     await Post.findByIdAndDelete(post_id);
 
-    // Xóa các document liên quan
     await Document.deleteMany({ post_id });
-    // Xóa các post_tag liên quan
     await Post_Tag.deleteMany({ post_id });
 
     return {
@@ -1114,6 +1093,107 @@ const getFollowingPostsService = async ({
   }
 };
 
+const getPopularPostsService = async ({
+  page = 1,
+  limit = 10,
+  current_user_id,
+}) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const posts = await Post.find({ status: "accepted" })
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
+      .populate("course_id", "course_name course_code")
+      .populate("category_id", "category_name")
+      .sort({ createdAt: -1, likeCount: -1 }) // Sắp xếp theo thời gian mới nhất và lượt thích
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Post.countDocuments({ status: "accepted" });
+
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const [
+          documentsResult,
+          tagsResult,
+          likesResult,
+          commentsResult,
+          likeStatus,
+          followersCount,
+          followStatus,
+        ] = await Promise.all([
+          getDocumentsByPostService(post._id),
+          getTagsByPostService(post._id),
+          User_Like_Post.find({ post_id: post._id }),
+          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
+          current_user_id
+            ? User_Like_Post.findOne({
+                user_id: current_user_id,
+                post_id: post._id,
+              })
+            : null,
+          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
+          current_user_id && current_user_id !== post.user_id._id.toString()
+            ? checkUserFollowService(current_user_id, post.user_id._id)
+            : null,
+        ]);
+        const image =
+          documentsResult.EC === 0 && documentsResult.data.length > 0
+            ? documentsResult.data.find((doc) => doc.type === "image")
+                ?.document_url ||
+              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+        return {
+          ...post._doc,
+          user_id: {
+            ...post.user_id._doc,
+            followers_count: followersCount,
+            isFollowing:
+              current_user_id && current_user_id !== post.user_id._id.toString()
+                ? followStatus.EC === 0
+                  ? followStatus.data.following
+                  : false
+                : false,
+          },
+          image,
+          tags:
+            tagsResult.EC === 0
+              ? tagsResult.data.map((tag) => ({
+                  _id: tag.tag_id._id,
+                  tag_name: tag.tag_id.tag_name,
+                }))
+              : [],
+          likeCount: likesResult.length,
+          isLiked: current_user_id ? !!likeStatus : false,
+          commentCount:
+            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        };
+      })
+    );
+
+    return {
+      message: "Lấy danh sách bài viết phổ biến thành công",
+      EC: 0,
+      data: {
+        posts: postsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getPopularPostsService:", error);
+    return { message: "Lỗi server", EC: -1 };
+  }
+};
+
 module.exports = {
   createPostService,
   updatePostService,
@@ -1125,4 +1205,5 @@ module.exports = {
   searchPostsService,
   getPostsByTagService,
   getFollowingPostsService,
+  getPopularPostsService,
 };

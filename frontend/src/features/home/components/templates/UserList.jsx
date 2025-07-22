@@ -9,12 +9,10 @@ import {
 } from "antd";
 import React from "react";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
-import { useUsers } from "../../../user/hooks/useUsers";
 import { useAuthContext } from "../../../../contexts/auth.context";
 
 const UserList = ({ users, loading }) => {
   const { user: current_user, isLoading: authLoading } = useAuthContext();
-  const { follow, unfollow, isFollowLoading } = useUsers();
 
   if (loading || authLoading) {
     return (
@@ -54,18 +52,23 @@ const UserList = ({ users, loading }) => {
                   fontWeight="normal"
                 />
               </div>
-              {user._id !== current_user?._id && (
+              {current_user?._id && user._id !== current_user._id && (
                 <Button
                   variant={user.isFollowing ? "outlined" : "solid"}
                   color={"primary"}
-                  onClick={() =>
-                    user.isFollowing
-                      ? unfollow({ user_follow_id: user._id })
-                      : follow({ user_follow_id: user._id })
-                  }
-                  disabled={isFollowLoading}
+                  href="/login" // Tạm thời giữ href để đồng bộ, nhưng logic follow/unfollow được xử lý trong AvatarCustom
                 >
                   {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                </Button>
+              )}
+              {!current_user?._id && (
+                <Button
+                  variant="outlined"
+                  href="/login"
+                  style={{ width: 120 }}
+                  title="Đăng nhập để tương tác"
+                >
+                  Đăng nhập để...
                 </Button>
               )}
             </Flex>

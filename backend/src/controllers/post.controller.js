@@ -9,6 +9,7 @@ const {
   searchPostsService,
   getPostsByTagService,
   getFollowingPostsService,
+  getPopularPostsService, // Thêm service mới
 } = require("../services/post.service");
 const {
   addSearchHistoryService,
@@ -40,7 +41,6 @@ const updatePost = async (req, res) => {
     req.body;
   const user_id = req.user._id;
 
-  // Không yêu cầu title hoặc content bắt buộc, cho phép chỉ gửi imageUrls
   const postData = {};
   if (course_id) postData.course_id = course_id;
   if (category_id) postData.category_id = category_id;
@@ -122,17 +122,21 @@ const getRecommendedPosts = async (req, res) => {
 
 const searchPosts = async (req, res) => {
   const { keyword, page = 1, limit = 10 } = req.query;
-  const user_id = req.user._id;
+  const user_id = req?.user?._id;
 
   if (!keyword) {
     return res.status(400).json({ message: "Thiếu từ khóa tìm kiếm", EC: 1 });
   }
+  if (user_id) {
+    const searchHistoryResult = await addSearchHistoryService(user_id, keyword);
 
-  const searchHistoryResult = await addSearchHistoryService(user_id, keyword);
-  if (searchHistoryResult.EC !== 0) {
-    console.error("Lỗi khi lưu lịch sử tìm kiếm:", searchHistoryResult.message);
+    if (searchHistoryResult.EC !== 0) {
+      console.error(
+        "Lỗi khi lưu lịch sử tìm kiếm:",
+        searchHistoryResult.message
+      );
+    }
   }
-
   const result = await searchPostsService({
     keyword,
     page,
@@ -174,6 +178,20 @@ const getFollowingPosts = async (req, res) => {
     .json(result);
 };
 
+const getPopularPosts = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const current_user_id = req.user?._id;
+
+  const result = await getPopularPostsService({
+    page,
+    limit,
+    current_user_id,
+  });
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
+    .json(result);
+};
+
 module.exports = {
   createPost,
   updatePost,
@@ -185,4 +203,5 @@ module.exports = {
   searchPosts,
   getPostsByTag,
   getFollowingPosts,
+  getPopularPosts,
 };

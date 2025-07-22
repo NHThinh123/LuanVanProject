@@ -59,8 +59,12 @@ const AvatarCustom = ({
   return (
     <Popover
       content={
-        <Row gutter={16} align="middle" style={{ width: 300 }}>
-          <Col span={14}>
+        <Row
+          gutter={16}
+          align="middle"
+          style={{ width: user?._id ? 300 : 400 }}
+        >
+          <Col span={user?._id ? 14 : 12}>
             <Flex align="center" gap={16}>
               <Avatar src={src} shape="circle" size={size || 64} />
               <div>
@@ -71,36 +75,42 @@ const AvatarCustom = ({
               </div>
             </Flex>
           </Col>
-          <Col span={10}>
-            {user?._id !== user_id ? (
-              <>
-                <Button
-                  block
-                  style={{ marginBottom: 8 }}
-                  variant="outlined"
-                  color={isFollowing ? "default" : "primary"}
-                  onClick={() =>
-                    isFollowing
-                      ? unfollow({ user_follow_id: user_id })
-                      : follow({ user_follow_id: user_id })
-                  }
-                  loading={isFollowLoading}
-                >
-                  {isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+          <Col span={user?._id ? 10 : 12}>
+            {user?._id ? (
+              user._id !== user_id ? (
+                <>
+                  <Button
+                    block
+                    style={{ marginBottom: 8 }}
+                    variant="outlined"
+                    color={isFollowing ? "default" : "primary"}
+                    onClick={() =>
+                      isFollowing
+                        ? unfollow({ user_follow_id: user_id })
+                        : follow({ user_follow_id: user_id })
+                    }
+                    loading={isFollowLoading}
+                  >
+                    {isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                  </Button>
+                  <Button
+                    variant="solid"
+                    color="primary"
+                    block
+                    onClick={handleMessageClick}
+                    loading={createChatRoomLoading}
+                  >
+                    Nhắn tin
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outlined" href="/profile" block>
+                  Trang cá nhân
                 </Button>
-                <Button
-                  variant="solid"
-                  color="primary"
-                  block
-                  onClick={handleMessageClick}
-                  loading={createChatRoomLoading}
-                >
-                  Nhắn tin
-                </Button>
-              </>
+              )
             ) : (
-              <Button variant="outlined" href="/profile" block>
-                Trang cá nhân
+              <Button variant="outlined" href="/login" block>
+                Đăng nhập để tương tác
               </Button>
             )}
           </Col>

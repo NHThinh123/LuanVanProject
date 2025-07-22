@@ -1,12 +1,11 @@
 import { Button, Divider, Flex, List } from "antd";
 import AvatarCustom from "../../../../components/molecules/AvatarCustom";
 import { Link } from "react-router-dom";
-import { useUsers } from "../../../user/hooks/useUsers";
 import { useAuthContext } from "../../../../contexts/auth.context";
 
 const SearchingUserList = ({ users }) => {
   const { user: current_user } = useAuthContext();
-  const { isFollowLoading } = useUsers();
+
   if (!users || users.length === 0) {
     return (
       <Flex justify="center" style={{ marginTop: 20 }}>
@@ -14,6 +13,7 @@ const SearchingUserList = ({ users }) => {
       </Flex>
     );
   }
+
   return (
     <div>
       <List
@@ -36,14 +36,20 @@ const SearchingUserList = ({ users }) => {
                     isFollowing={user.isFollowing}
                   />
                 </div>
-                {current_user._id !== user._id && (
+                {current_user?._id && current_user._id !== user._id ? (
                   <Button
                     variant={user.isFollowing ? "outlined" : "solid"}
                     color={"primary"}
-                    loading={isFollowLoading}
+                    href="/login"
                   >
                     {user.isFollowing ? "Đang theo dõi" : "Theo dõi"}
                   </Button>
+                ) : (
+                  !current_user?._id && (
+                    <Button variant="outlined" href="/login">
+                      Đăng nhập để tương tác
+                    </Button>
+                  )
                 )}
               </Flex>
             </Link>

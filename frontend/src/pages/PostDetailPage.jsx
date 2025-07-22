@@ -123,9 +123,7 @@ const PostDetailPage = () => {
             color="#000"
             user_id={post.user_id?._id}
           />
-          <Button variant="outlined" color="primary">
-            Theo dõi
-          </Button>
+
           <Typography.Text>{formatDate(post.createdAt)}</Typography.Text>
         </Flex>
         <Divider style={{ margin: "16px 0" }} />

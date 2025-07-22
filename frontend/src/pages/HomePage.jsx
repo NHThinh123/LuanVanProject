@@ -1,4 +1,3 @@
-// HomePage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Layout,
@@ -26,7 +25,7 @@ const HomePage = () => {
   const current_user_id = user?._id;
   const { categories, loading: isCategoriesLoading } = useCategories();
   const { users, isLoading: isUserLoading } = useUsers({});
-  const [activeTab, setActiveTab] = useState("recommended");
+  const [activeTab, setActiveTab] = useState(user ? "recommended" : "popular");
 
   const { ref, inView } = useInView({
     threshold: 0,
@@ -39,24 +38,19 @@ const HomePage = () => {
     hasNextPage,
     isFetchingNextPage,
   } = usePosts({
-    recommend: activeTab === "recommended",
-    following: activeTab === "following",
+    recommend: activeTab === "recommended" && !!user,
+    following: activeTab === "following" && !!user,
+    popular: activeTab === "popular" && !user,
     category_id:
-      activeTab !== "recommended" && activeTab !== "following"
+      activeTab !== "recommended" &&
+      activeTab !== "following" &&
+      activeTab !== "popular"
         ? activeTab
         : undefined,
     status: "accepted",
   });
 
   useEffect(() => {
-    console.log(
-      "inView:",
-      inView,
-      "hasNextPage:",
-      hasNextPage,
-      "isFetchingNextPage:",
-      isFetchingNextPage
-    ); // Debug
     if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
@@ -96,65 +90,102 @@ const HomePage = () => {
     ? users.filter((user) => user._id !== current_user_id)
     : users;
 
-  const tabItems = [
-    {
-      label: "Dành cho bạn",
-      key: "recommended",
-      children: (
-        <>
-          <PostList posts={posts} isLoading={isPostsLoading} />
-          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
-            {isFetchingNextPage && <Spin />}
-            {!hasNextPage && posts.length > 0 && (
-              <Typography.Text type="secondary">
-                Không còn bài viết để tải
-              </Typography.Text>
-            )}
-          </div>
-        </>
-      ),
-    },
-    {
-      label: "Đang theo dõi",
-      key: "following",
-      children: (
-        <>
-          <PostList posts={posts} isLoading={isPostsLoading} />
-          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
-            {isFetchingNextPage && <Spin />}
-            {!hasNextPage && posts.length > 0 && (
-              <Typography.Text type="secondary">
-                Không còn bài viết để tải
-              </Typography.Text>
-            )}
-          </div>
-        </>
-      ),
-    },
-    ...categories.map((category) => ({
-      label: category.category_name,
-      key: category._id,
-      children: (
-        <>
-          <PostList posts={posts} isLoading={isPostsLoading} />
-          <div ref={ref} style={{ height: 20, textAlign: "center" }}>
-            {isFetchingNextPage && <Spin />}
-            {!hasNextPage && posts.length > 0 && (
-              <Typography.Text type="secondary">
-                Không còn bài viết để tải
-              </Typography.Text>
-            )}
-          </div>
-        </>
-      ),
-    })),
-  ];
+  const tabItems = user
+    ? [
+        {
+          label: "Dành cho bạn",
+          key: "recommended",
+          children: (
+            <>
+              <PostList posts={posts} isLoading={isPostsLoading} />
+              <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+                {isFetchingNextPage && <Spin />}
+                {!hasNextPage && posts.length > 0 && (
+                  <Typography.Text type="secondary">
+                    Không còn bài viết để tải
+                  </Typography.Text>
+                )}
+              </div>
+            </>
+          ),
+        },
+        {
+          label: "Đang theo dõi",
+          key: "following",
+          children: (
+            <>
+              <PostList posts={posts} isLoading={isPostsLoading} />
+              <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+                {isFetchingNextPage && <Spin />}
+                {!hasNextPage && posts.length > 0 && (
+                  <Typography.Text type="secondary">
+                    Không còn bài viết để tải
+                  </Typography.Text>
+                )}
+              </div>
+            </>
+          ),
+        },
+        ...categories.map((category) => ({
+          label: category.category_name,
+          key: category._id,
+          children: (
+            <>
+              <PostList posts={posts} isLoading={isPostsLoading} />
+              <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+                {isFetchingNextPage && <Spin />}
+                {!hasNextPage && posts.length > 0 && (
+                  <Typography.Text type="secondary">
+                    Không còn bài viết để tải
+                  </Typography.Text>
+                )}
+              </div>
+            </>
+          ),
+        })),
+      ]
+    : [
+        {
+          label: "Bài viết phổ biến",
+          key: "popular",
+          children: (
+            <>
+              <PostList posts={posts} isLoading={isPostsLoading} />
+              <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+                {isFetchingNextPage && <Spin />}
+                {!hasNextPage && posts.length > 0 && (
+                  <Typography.Text type="secondary">
+                    Không còn bài viết để tải
+                  </Typography.Text>
+                )}
+              </div>
+            </>
+          ),
+        },
+        ...categories.map((category) => ({
+          label: category.category_name,
+          key: category._id,
+          children: (
+            <>
+              <PostList posts={posts} isLoading={isPostsLoading} />
+              <div ref={ref} style={{ height: 20, textAlign: "center" }}>
+                {isFetchingNextPage && <Spin />}
+                {!hasNextPage && posts.length > 0 && (
+                  <Typography.Text type="secondary">
+                    Không còn bài viết để tải
+                  </Typography.Text>
+                )}
+              </div>
+            </>
+          ),
+        })),
+      ];
 
   return (
     <Row gutter={16}>
       <Col span={16} style={{ padding: "0px 24px" }}>
         <Tabs
-          defaultActiveKey="recommended"
+          defaultActiveKey={user ? "recommended" : "popular"}
           items={tabItems}
           onChange={(key) => setActiveTab(key)}
         />

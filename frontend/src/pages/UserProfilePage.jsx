@@ -160,29 +160,39 @@ const UserProfilePage = () => {
                 </Typography.Text>
               </div>
               <Flex align="center" gap={8}>
-                {user_id !== current_user?._id && (
-                  <>
-                    <Button
-                      variant="outlined"
-                      color={user.isFollowing ? "default" : "primary"}
-                      onClick={() =>
-                        user.isFollowing
-                          ? unfollow({ user_follow_id: user._id })
-                          : follow({ user_follow_id: user._id })
-                      }
-                      disabled={isFollowLoading}
-                    >
-                      {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                {current_user?._id ? (
+                  user_id !== current_user._id ? (
+                    <>
+                      <Button
+                        variant="outlined"
+                        color={user.isFollowing ? "default" : "primary"}
+                        onClick={() =>
+                          user.isFollowing
+                            ? unfollow({ user_follow_id: user._id })
+                            : follow({ user_follow_id: user._id })
+                        }
+                        disabled={isFollowLoading}
+                      >
+                        {user.isFollowing ? "Bỏ theo dõi" : "Theo dõi"}
+                      </Button>
+                      <Button
+                        variant="solid"
+                        color="primary"
+                        onClick={handleMessageClick}
+                        loading={createChatRoomLoading}
+                      >
+                        Nhắn tin
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="outlined" href="/profile">
+                      Trang cá nhân
                     </Button>
-                    <Button
-                      variant="solid"
-                      color="primary"
-                      onClick={handleMessageClick}
-                      loading={createChatRoomLoading}
-                    >
-                      Nhắn tin
-                    </Button>
-                  </>
+                  )
+                ) : (
+                  <Button variant="outlined" href="/login">
+                    Đăng nhập để tương tác
+                  </Button>
                 )}
               </Flex>
             </Flex>
