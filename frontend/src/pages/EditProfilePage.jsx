@@ -276,8 +276,8 @@ const EditProfilePage = () => {
         onCancel={handleCourseModalCancel}
         loading={createMajorLoading}
         fields={[
-          { name: "name", label: "Tên khóa học", required: true },
           { name: "code", label: "Mã khóa học", required: false },
+          { name: "name", label: "Tên khóa học", required: true },
         ]}
         minLength={3}
         maxLength={100}

@@ -348,8 +348,8 @@ const PostCreatePage = () => {
           loading={coursesLoading}
           placeholder="Nhập tên khóa học"
           fields={[
-            { name: "name", label: "Tên khóa học", required: true },
             { name: "code", label: "Mã khóa học", required: true },
+            { name: "name", label: "Tên khóa học", required: true },
           ]}
           minLength={3}
           maxLength={50}

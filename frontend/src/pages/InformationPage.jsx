@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -8,6 +8,7 @@ import BoxCustom from "../components/atoms/BoxCustom";
 import ProfileForm from "../features/profile/components/templates/ProfileForm";
 import { useUniversity } from "../features/university/hooks/useUniversity";
 import { useMajor } from "../features/major/hooks/useMajor";
+import { useCourses } from "../features/course/hooks/useCourses";
 import AddNewModal from "../components/organisms/AddNewModal";
 
 const InformationPage = () => {
@@ -47,7 +48,9 @@ const InformationPage = () => {
     handleModalCancel: handleMajorModalCancel,
     createMajorLoading,
   } = useMajor();
+  const { courses, loading: coursesLoading, addCourse } = useCourses();
   const [form] = Form.useForm();
+  const [selectedCourses, setSelectedCourses] = useState([]);
 
   useEffect(() => {
     if (updateError) {
@@ -57,6 +60,20 @@ const InformationPage = () => {
       });
     }
   }, [updateError]);
+
+  useEffect(() => {
+    setSelectedCourses(
+      user?.interested_courses?.map((course) => course.course_name) || []
+    );
+    form.setFieldsValue({
+      name: user?.full_name || "",
+      university: user?.university_id?.university_name || "",
+      major: user?.major_id?.major_name || "",
+      startYear: user?.start_year?.toString() || "Khác",
+      courses:
+        user?.interested_courses?.map((course) => course.course_name) || [],
+    });
+  }, [form, user]);
 
   const universityDropdownRender = (menu) => (
     <div>
@@ -84,24 +101,62 @@ const InformationPage = () => {
     </div>
   );
 
+  const courseDropdownRender = (menu) => (
+    <div>
+      {menu}
+      <Divider style={{ margin: "8px 0" }} />
+      <Typography.Link
+        onClick={showCourseModal}
+        style={{ display: "block", textAlign: "center" }}
+      >
+        Không có khóa học của bạn, Thêm mới?
+      </Typography.Link>
+    </div>
+  );
+
+  const [isCourseModalVisible, setIsCourseModalVisible] = useState(false);
+
+  const showCourseModal = () => {
+    setIsCourseModalVisible(true);
+  };
+
+  const handleCourseModalOk = (values) => {
+    if (values.name?.trim()) {
+      addCourse({ course_name: values.name, course_code: values.code || "" });
+      const newCourses = [...selectedCourses, values.name];
+      setSelectedCourses(newCourses);
+      form.setFieldsValue({ courses: newCourses });
+      setIsCourseModalVisible(false);
+    }
+  };
+
+  const handleCourseModalCancel = () => {
+    setIsCourseModalVisible(false);
+  };
+
   const onFinish = (values) => {
     const selectedUniversity = universities.find(
       (uni) => uni.name === values.university
     );
     const selectedMajor = majors.find((maj) => maj.name === values.major);
+    const selectedCourseIds = courses
+      .filter((course) => values.courses?.includes(course.course_name))
+      .map((course) => course._id);
+
     handleUpdateUser({
       full_name: values.name,
       university_id: selectedUniversity?.id,
       major_id: selectedMajor?.id,
       start_year:
         values.startYear === "Khác" ? null : parseInt(values.startYear),
+      course_ids: selectedCourseIds,
     });
   };
 
   const onUniversityModalOk = (values) => {
     if (values.name?.trim()) {
       setNewUniversity(values.name);
-      handleUniversityModalOk(values.name); // Truyền trực tiếp values.name
+      handleUniversityModalOk(values.name);
       form.setFieldsValue({ university: values.name });
       setUniversity(values.name);
     }
@@ -110,13 +165,13 @@ const InformationPage = () => {
   const onMajorModalOk = (values) => {
     if (values.name?.trim()) {
       setNewMajor(values.name);
-      handleMajorModalOk(values.name); // Truyền trực tiếp values.name
+      handleMajorModalOk(values.name);
       form.setFieldsValue({ major: values.name });
       setMajor(values.name);
     }
   };
 
-  if (authLoading || universitiesLoading || majorsLoading) {
+  if (authLoading || universitiesLoading || majorsLoading || coursesLoading) {
     return <div>Đang tải...</div>;
   }
 
@@ -168,7 +223,16 @@ const InformationPage = () => {
               filterOptions: filterMajorOptions,
               dropdownRender: majorDropdownRender,
             }}
-            useRadioForYear
+            courseProps={{
+              courses: selectedCourses,
+              onChange: (value) => setSelectedCourses(value),
+              options: courses.map((course) => ({
+                value: course.course_name,
+                label: course.course_name,
+              })),
+              dropdownRender: courseDropdownRender,
+            }}
+            showCourses
           />
         </BoxCustom>
       </Row>
@@ -189,6 +253,19 @@ const InformationPage = () => {
         onCancel={handleMajorModalCancel}
         loading={createMajorLoading}
         fields={[{ name: "name", label: "Tên ngành học", required: true }]}
+        minLength={3}
+        maxLength={100}
+      />
+      <AddNewModal
+        title="Thêm khóa học mới"
+        visible={isCourseModalVisible}
+        onOk={handleCourseModalOk}
+        onCancel={handleCourseModalCancel}
+        loading={createMajorLoading}
+        fields={[
+          { name: "code", label: "Mã khóa học", required: false },
+          { name: "name", label: "Tên khóa học", required: true },
+        ]}
         minLength={3}
         maxLength={100}
       />
