@@ -29,7 +29,7 @@ const port = process.env.PORT || 8888;
 // Cấu hình CORS cho phép nhiều nguồn gốc
 const corsOptions = {
   origin: ["http://localhost:3000", "http://localhost:5173"], // Thêm 5173
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
 

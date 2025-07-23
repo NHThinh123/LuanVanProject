@@ -123,6 +123,7 @@ const createPostService = async (user_id, postData) => {
       content,
       summary,
       status,
+      reason, // Lưu reason vào bài viết
     });
 
     if (imageUrls.length > 0) {
@@ -140,7 +141,7 @@ const createPostService = async (user_id, postData) => {
           ? "Tạo bài viết thành công"
           : "Bài viết đã được tạo nhưng đang chờ duyệt",
       EC: 0,
-      data: post,
+      data: { ...post._doc, reason }, // Trả về reason
       ...(status === "pending" && { reason }),
     };
   } catch (error) {
@@ -194,7 +195,7 @@ const updatePostService = async (user_id, post_id, postData) => {
     }
 
     let newStatus = post.status;
-    let reason = "";
+    let reason = post.reason || "";
     if (isAdmin && status) {
       if (!["accepted", "pending", "rejected"].includes(status)) {
         return { message: "Trạng thái không hợp lệ", EC: 1 };
@@ -272,7 +273,7 @@ const updatePostService = async (user_id, post_id, postData) => {
       }
 
       newStatus = moderationData.status || "pending";
-      reason = modulationData.reason || "";
+      reason = moderationData.reason || "";
 
       if (!["accepted", "pending"].includes(newStatus)) {
         newStatus = "pending";
@@ -284,8 +285,6 @@ const updatePostService = async (user_id, post_id, postData) => {
           `Lý do từ chối bài viết (post_id: ${post_id}, user_id: ${user_id}): ${reason}`
         );
       }
-    } else if (!isAdmin) {
-      newStatus = post.status;
     } else if (isAdmin && !status) {
       newStatus = post.status;
       if (title || content) {
@@ -299,6 +298,7 @@ const updatePostService = async (user_id, post_id, postData) => {
     post.title = title || post.title;
     post.content = content || post.content;
     post.status = newStatus;
+    post.reason = reason; // Lưu reason vào bài viết
 
     if (tag_ids.length > 0) {
       await Post_Tag.deleteMany({ post_id: post._id });
@@ -327,7 +327,7 @@ const updatePostService = async (user_id, post_id, postData) => {
           ? "Cập nhật bài viết thành công"
           : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
       EC: 0,
-      data: post,
+      data: { ...post._doc, reason }, // Trả về reason
       ...(newStatus === "pending" && { reason }),
     };
   } catch (error) {
@@ -440,6 +440,7 @@ const getPostsService = async (query) => {
 
         return {
           ...post._doc,
+          reason: post.reason || "", // Thêm reason
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -526,6 +527,7 @@ const getPostByIdService = async (post_id, current_user_id) => {
       EC: 0,
       data: {
         ...post._doc,
+        reason: post.reason || "", // Thêm reason
         user_id: {
           ...post.user_id._doc,
           followers_count: followersCount,
@@ -573,12 +575,13 @@ const updatePostStatusService = async (post_id, status, admin_id) => {
     }
 
     post.status = status;
+    post.reason = status === "rejected" ? "Admin rejected the post" : ""; // Cập nhật reason khi admin từ chối
     await post.save();
 
     return {
       message: `Cập nhật trạng thái bài viết thành ${status} thành công`,
       EC: 0,
-      data: post,
+      data: { ...post._doc, reason: post.reason || "" }, // Trả về reason
     };
   } catch (error) {
     console.error("Error in updatePostStatusService:", error);
@@ -633,6 +636,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
+          reason: post.reason || "", // Thêm reason
         }));
         return {
           message:
@@ -674,6 +678,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
+          reason: post.reason || "", // Thêm reason
         })),
         ...randomPostsResult.data.posts.map((post) => ({
           ...post,
@@ -682,6 +687,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
+          reason: post.reason || "", // Thêm reason
         })),
       ].slice(0, limit);
 
@@ -727,6 +733,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: item.following_score,
           course_score: item.course_score,
           combined_score: item.combined_score,
+          reason: post.reason || "", // Thêm reason
         };
       })
       .filter((post) => post !== null);
@@ -813,6 +820,7 @@ const searchPostsService = async ({
 
         return {
           ...post._doc,
+          reason: post.reason || "", // Thêm reason
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -936,9 +944,10 @@ const getPostsByTagService = async ({
 
         return {
           ...post._doc,
+          reason: post.reason || "", // Thêm reason
           user_id: {
             ...post.user_id._doc,
-            followers_count: defendersCount,
+            followers_count: followersCount,
             isFollowing:
               current_user_id && current_user_id !== post.user_id._id.toString()
                 ? followStatus.EC === 0
@@ -1065,6 +1074,7 @@ const getFollowingPostsService = async ({
 
         return {
           ...post._doc,
+          reason: post.reason || "", // Thêm reason
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -1125,7 +1135,7 @@ const getPopularPostsService = async ({
       })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
-      .sort({ createdAt: -1, likeCount: -1 }) // Sắp xếp theo thời gian mới nhất và lượt thích
+      .sort({ createdAt: -1, likeCount: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -1166,6 +1176,7 @@ const getPopularPostsService = async ({
 
         return {
           ...post._doc,
+          reason: post.reason || "", // Thêm reason
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,

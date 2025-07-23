@@ -431,7 +431,10 @@ const PostList = ({ posts = [], isLoading }) => {
                 fontWeight="normal"
               />
               <div>
-                <Tag color="blue">{item?.course_id?.course_name}</Tag>
+                <Tag color="blue">
+                  {item?.course_id?.course_code} -{" "}
+                  {item?.course_id?.course_name}
+                </Tag>
                 <Tag color="green">{item?.category_id?.category_name}</Tag>
               </div>
             </Flex>
