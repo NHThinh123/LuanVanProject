@@ -369,7 +369,7 @@ const AdminPostPage = () => {
         <Image
           src={image}
           alt="Hình ảnh bài viết"
-          width={50}
+          width={100}
           height={50}
           style={{ objectFit: "cover" }}
         />

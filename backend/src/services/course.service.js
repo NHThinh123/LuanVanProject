@@ -102,11 +102,11 @@ const getAllCoursesService = async (query) => {
     const { page = 1, limit = 10, search } = query;
     const filter = {};
 
-    // Tìm kiếm theo tên hoặc mã khóa học nếu có
+    // Tìm kiếm chính xác theo course_code, nếu không có thì tìm theo course_name
     if (search) {
       filter.$or = [
-        { course_name: { $regex: search, $options: "i" } },
-        { course_code: { $regex: search, $options: "i" } },
+        { course_code: search }, // Tìm kiếm chính xác course_code
+        { course_name: { $regex: search, $options: "i" } }, // Tìm kiếm không chính xác course_name
       ];
     }
 

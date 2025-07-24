@@ -25,6 +25,9 @@ import AdminPage from "./pages/AdminPage.jsx";
 import AdminUserPage from "./pages/AdminUserPage.jsx";
 import AdminPostPage from "./pages/AdminPostPage.jsx";
 import AdminModerationPage from "./pages/AdminModerationPage.jsx";
+import CategorySearchingPage from "./pages/CategorySearchingPage.jsx";
+import PostFilterByCoursePage from "./pages/PostFilterByCoursePage.jsx";
+import AdminChartPage from "./pages/AdminChartPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -62,6 +65,10 @@ const router = createBrowserRouter([
             path: "tag/:tag_id",
             element: <PostFilterByTagPage />,
           },
+          {
+            path: "course/:course_id",
+            element: <PostFilterByCoursePage />,
+          },
         ],
       },
       {
@@ -80,6 +87,10 @@ const router = createBrowserRouter([
       {
         path: "/searching",
         element: <SearchingPage />,
+      },
+      {
+        path: "categories",
+        element: <CategorySearchingPage />,
       },
       {
         path: "followers",
@@ -127,6 +138,10 @@ const router = createBrowserRouter([
       {
         path: "moderation",
         element: <AdminModerationPage />,
+      },
+      {
+        path: "charts",
+        element: <AdminChartPage />,
       },
     ],
   },

@@ -123,7 +123,7 @@ const createPostService = async (user_id, postData) => {
       content,
       summary,
       status,
-      reason, // Lưu reason vào bài viết
+      reason,
     });
 
     if (imageUrls.length > 0) {
@@ -141,7 +141,7 @@ const createPostService = async (user_id, postData) => {
           ? "Tạo bài viết thành công"
           : "Bài viết đã được tạo nhưng đang chờ duyệt",
       EC: 0,
-      data: { ...post._doc, reason }, // Trả về reason
+      data: { ...post._doc, reason },
       ...(status === "pending" && { reason }),
     };
   } catch (error) {
@@ -298,7 +298,7 @@ const updatePostService = async (user_id, post_id, postData) => {
     post.title = title || post.title;
     post.content = content || post.content;
     post.status = newStatus;
-    post.reason = reason; // Lưu reason vào bài viết
+    post.reason = reason;
 
     if (tag_ids.length > 0) {
       await Post_Tag.deleteMany({ post_id: post._id });
@@ -327,7 +327,7 @@ const updatePostService = async (user_id, post_id, postData) => {
           ? "Cập nhật bài viết thành công"
           : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
       EC: 0,
-      data: { ...post._doc, reason }, // Trả về reason
+      data: { ...post._doc, reason },
       ...(newStatus === "pending" && { reason }),
     };
   } catch (error) {
@@ -440,7 +440,7 @@ const getPostsService = async (query) => {
 
         return {
           ...post._doc,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -527,7 +527,7 @@ const getPostByIdService = async (post_id, current_user_id) => {
       EC: 0,
       data: {
         ...post._doc,
-        reason: post.reason || "", // Thêm reason
+        reason: post.reason || "",
         user_id: {
           ...post.user_id._doc,
           followers_count: followersCount,
@@ -575,13 +575,13 @@ const updatePostStatusService = async (post_id, status, admin_id) => {
     }
 
     post.status = status;
-    post.reason = status === "rejected" ? "Admin rejected the post" : ""; // Cập nhật reason khi admin từ chối
+    post.reason = status === "rejected" ? "Admin rejected the post" : "";
     await post.save();
 
     return {
       message: `Cập nhật trạng thái bài viết thành ${status} thành công`,
       EC: 0,
-      data: { ...post._doc, reason: post.reason || "" }, // Trả về reason
+      data: { ...post._doc, reason: post.reason || "" },
     };
   } catch (error) {
     console.error("Error in updatePostStatusService:", error);
@@ -636,7 +636,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
         }));
         return {
           message:
@@ -678,7 +678,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
         })),
         ...randomPostsResult.data.posts.map((post) => ({
           ...post,
@@ -687,7 +687,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: null,
           course_score: null,
           combined_score: null,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
         })),
       ].slice(0, limit);
 
@@ -733,7 +733,7 @@ const getRecommendedPostsService = async (query) => {
           following_score: item.following_score,
           course_score: item.course_score,
           combined_score: item.combined_score,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
         };
       })
       .filter((post) => post !== null);
@@ -762,15 +762,23 @@ const searchPostsService = async ({
 }) => {
   try {
     const skip = (page - 1) * limit;
+    const filter = { status: "accepted" };
 
-    const posts = await Post.find(
-      {
-        $text: { $search: keyword },
-        status: "accepted",
-      },
-      { score: { $meta: "textScore" } }
-    )
-      .sort({ score: { $meta: "textScore" }, createdAt: -1 })
+    // Kiểm tra xem keyword có khớp với course_code không
+    const course = await Course.findOne({ course_code: keyword });
+    if (course) {
+      filter.course_id = course._id; // Nếu tìm thấy khóa học, thêm điều kiện lọc theo course_id
+    } else {
+      // Nếu không tìm thấy khóa học, sử dụng tìm kiếm văn bản
+      filter.$text = { $search: keyword };
+    }
+
+    const posts = await Post.find(filter)
+      .sort(
+        filter.$text
+          ? { score: { $meta: "textScore" }, createdAt: -1 }
+          : { createdAt: -1 }
+      )
       .populate({
         path: "user_id",
         select: "full_name avatar_url",
@@ -780,10 +788,7 @@ const searchPostsService = async ({
       .skip(skip)
       .limit(limit);
 
-    const total = await Post.countDocuments({
-      $text: { $search: keyword },
-      status: "accepted",
-    });
+    const total = await Post.countDocuments(filter);
 
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
@@ -820,7 +825,7 @@ const searchPostsService = async ({
 
         return {
           ...post._doc,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -944,7 +949,7 @@ const getPostsByTagService = async ({
 
         return {
           ...post._doc,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -1074,7 +1079,7 @@ const getFollowingPostsService = async ({
 
         return {
           ...post._doc,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,
@@ -1176,7 +1181,7 @@ const getPopularPostsService = async ({
 
         return {
           ...post._doc,
-          reason: post.reason || "", // Thêm reason
+          reason: post.reason || "",
           user_id: {
             ...post.user_id._doc,
             followers_count: followersCount,

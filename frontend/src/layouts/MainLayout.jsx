@@ -16,6 +16,7 @@ import {
   MenuOutlined,
   ProfileOutlined,
   SearchOutlined,
+  TagOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -143,6 +144,7 @@ export const MainLayout = ({ children }) => {
     if (path.startsWith("/posts")) return "post";
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/searching")) return "searching";
+    if (path.startsWith("/categories")) return "categories";
     if (path.startsWith("/messages")) return "messages";
     if (path.startsWith("/tags")) return "tags";
     if (path.startsWith("/followers")) return "followers";
@@ -285,6 +287,11 @@ export const MainLayout = ({ children }) => {
                 key: "followers",
                 icon: <TeamOutlined />,
                 label: <Link to="/followers">Người theo dõi</Link>,
+              },
+              {
+                key: "categories",
+                icon: <SearchOutlined />,
+                label: <Link to="/categories">Tìm kiếm</Link>,
               },
               {
                 key: "messages",

@@ -8,7 +8,8 @@ const authentication = (req, res, next) => {
     "/users/login",
     "/users",
     "/users/:id",
-
+    "/statistics",
+    "/statistics/:period",
     "/courses",
     "/courses/:id",
     "/tags",

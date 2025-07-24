@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllCourses, createCourse } from "../services/course.service";
 import { notification } from "antd";
 
-export const useCourses = () => {
+export const useCourses = ({ keyword } = {}) => {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["courses"],
-    queryFn: getAllCourses,
+    queryKey: ["courses", keyword], // Thêm keyword vào queryKey để refetch khi keyword thay đổi
+    queryFn: () => getAllCourses({ keyword }),
   });
 
   const addCourseMutation = useMutation({

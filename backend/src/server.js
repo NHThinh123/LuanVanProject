@@ -20,6 +20,7 @@ const majorRoutes = require("./routes/major.route");
 const tagRoutes = require("./routes/tag.route");
 const chatRoomRoutes = require("./routes/chat_room.route");
 const categoryRoutes = require("./routes/category.route");
+const statisticsRoutes = require("./routes/statistics.route");
 const { Server } = require("socket.io");
 const Message = require("./models/message.model");
 
@@ -28,7 +29,7 @@ const port = process.env.PORT || 8888;
 
 // Cấu hình CORS cho phép nhiều nguồn gốc
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:5173"], // Thêm 5173
+  origin: ["http://localhost:3000", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
@@ -56,12 +57,13 @@ app.use("/api/majors", majorRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/chat-rooms", chatRoomRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 // Tạo HTTP server và tích hợp Socket.IO
 const http = require("http");
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: corsOptions, // Sử dụng cùng cấu hình CORS
+  cors: corsOptions,
 });
 
 // Xử lý kết nối Socket.IO

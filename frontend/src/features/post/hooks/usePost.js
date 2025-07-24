@@ -5,7 +5,7 @@ import {
   getRecommendedPosts,
   getPostsByTag,
   getFollowingPosts,
-  getPopularPosts, // Thêm hàm mới
+  getPopularPosts,
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -16,9 +16,10 @@ export const usePosts = (queryParams = {}) => {
     category_id,
     user_id,
     tag_id,
+    course_id,
     recommend = false,
     following = false,
-    popular = false, // Thêm tham số mới
+    popular = false,
   } = queryParams;
 
   const {
@@ -36,9 +37,10 @@ export const usePosts = (queryParams = {}) => {
       category_id,
       user_id,
       tag_id,
+      course_id,
       recommend,
       following,
-      popular, // Thêm vào queryKey
+      popular,
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const limit = 5;
@@ -58,13 +60,20 @@ export const usePosts = (queryParams = {}) => {
       if (tag_id) {
         return getPostsByTag({ tag_id, page: pageParam, limit });
       }
-      return getPosts({ status, category_id, user_id, page: pageParam, limit });
+      return getPosts({
+        status,
+        category_id,
+        user_id,
+        course_id,
+        page: pageParam,
+        limit,
+      });
     },
     getNextPageParam: (lastPage) => {
-      const { pagination } = lastPage;
+      const { pagination } = lastPage.data || lastPage;
 
-      const currentPage = Number(pagination.page);
-      const totalPages = Number(pagination.totalPages);
+      const currentPage = Number(pagination?.page || 1);
+      const totalPages = Number(pagination?.totalPages || 1);
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     onError: (error) => {
@@ -72,6 +81,13 @@ export const usePosts = (queryParams = {}) => {
         message: error.message || "Lấy danh sách bài viết thất bại",
       });
     },
+    select: (data) => ({
+      pages: data.pages.map((page) => ({
+        posts: page.data?.posts || page.posts || [],
+        pagination: page.data?.pagination || page.pagination || {},
+      })),
+      pageParams: data.pageParams,
+    }),
   });
 
   const posts = data?.pages.flatMap((page) => page.posts) || [];

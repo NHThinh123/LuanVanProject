@@ -68,7 +68,7 @@ const AdminPage = () => {
     if (path.startsWith("/admin/posts")) return "posts";
     if (path.startsWith("/admin/users")) return "users";
     if (path.startsWith("/admin/moderation")) return "moderation";
-    if (path.startsWith("/admin/analysis")) return "analysis";
+    if (path.startsWith("/admin/charts")) return "charts";
     return "posts";
   };
 
@@ -168,9 +168,9 @@ const AdminPage = () => {
                 label: <Link to="/admin/moderation">Kiểm duyệt bài viết</Link>,
               },
               {
-                key: "analysis",
+                key: "charts",
                 icon: <BarChartOutlined />,
-                label: <Link to="/admin/analysis">Phân tích</Link>,
+                label: <Link to="/admin/charts">Phân tích</Link>,
               },
             ]}
           />

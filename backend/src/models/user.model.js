@@ -35,6 +35,7 @@ userSchema.index(
   { full_name: "text", bio: "text" },
   { weights: { full_name: 10, bio: 5 } }
 );
+userSchema.index({ createdAt: 1 });
 
 const User = mongoose.model("User", userSchema);
 
