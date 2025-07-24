@@ -16,6 +16,7 @@ import {
   Select,
   Tag,
   AutoComplete,
+  Space,
 } from "antd";
 import moment from "moment";
 import Quill from "quill";
@@ -156,6 +157,7 @@ const AdminPostPage = () => {
   const [searchValue, setSearchValue] = useState("");
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [form] = Form.useForm();
+  const [searchText, setSearchText] = useState("");
   const queryClient = useQueryClient();
 
   // Hooks
@@ -242,7 +244,16 @@ const AdminPostPage = () => {
     const pageSize = pagination.limit || 4;
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return posts.slice(startIndex, endIndex).map((post) => ({
+    let filteredPosts = posts;
+
+    // Lọc bài viết theo tìm kiếm
+    if (searchText) {
+      filteredPosts = posts.filter((post) =>
+        post.title.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    return filteredPosts.slice(startIndex, endIndex).map((post) => ({
       key: post._id,
       _id: post._id,
       image: post.image,
@@ -257,7 +268,7 @@ const AdminPostPage = () => {
       category_id: post.category_id,
       course_id: post.course_id,
     }));
-  }, [posts, currentPage, pagination.limit]);
+  }, [posts, currentPage, pagination.limit, searchText]);
 
   // Tính toán tổng số trang
   const totalPages =
@@ -313,7 +324,7 @@ const AdminPostPage = () => {
       const postData = {
         title: values.title,
         content,
-        imageUrls, // Thêm danh sách imageUrls
+        imageUrls,
         category_id: values.category_id,
         course_id: selectedCourse._id,
         tag_ids: tagIds,
@@ -379,6 +390,7 @@ const AdminPostPage = () => {
       title: "Tiêu đề",
       dataIndex: "title",
       key: "title",
+      sorter: (a, b) => a.title.localeCompare(b.title),
       render: (text, record) => (
         <span
           style={{
@@ -401,16 +413,19 @@ const AdminPostPage = () => {
       title: "Số lượt thích",
       dataIndex: "likeCount",
       key: "likeCount",
+      sorter: (a, b) => a.likeCount - b.likeCount,
     },
     {
       title: "Số lượt bình luận",
       dataIndex: "commentCount",
       key: "commentCount",
+      sorter: (a, b) => a.commentCount - b.commentCount,
     },
     {
       title: "Ngày đăng",
       dataIndex: "createdAt",
       key: "createdAt",
+      sorter: (a, b) => moment(a.createdAt).unix() - moment(b.createdAt).unix(),
       render: (date) => moment(date).format("DD/MM/YYYY HH:mm"),
     },
     {
@@ -459,9 +474,24 @@ const AdminPostPage = () => {
     },
   ];
 
+  // Xử lý tìm kiếm
+  const handleSearch = (value) => {
+    setSearchText(value);
+    setCurrentPage(1); // Reset về trang đầu khi tìm kiếm
+  };
+
   return (
     <div>
       <h2>Quản lý bài viết</h2>
+      <Space style={{ marginBottom: 16 }}>
+        <Input.Search
+          placeholder="Tìm kiếm theo tiêu đề..."
+          allowClear
+          onSearch={handleSearch}
+          onChange={(e) => handleSearch(e.target.value)}
+          style={{ width: 300 }}
+        />
+      </Space>
       <Table
         columns={columns}
         dataSource={dataSource}
@@ -490,7 +520,7 @@ const AdminPostPage = () => {
         onCancel={handleCancel}
         footer={null}
         width={800}
-        destroyOnHidden={true} // Đảm bảo DOM được làm sạch khi modal đóng
+        destroyOnHidden={true}
         styles={{
           body: { maxHeight: "80vh", overflow: "auto", padding: "16px" },
         }}

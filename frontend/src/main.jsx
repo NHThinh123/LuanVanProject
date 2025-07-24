@@ -185,6 +185,7 @@ createRoot(document.getElementById("root")).render(
             primaryShadow: "none",
             borderRadiusLG: 20,
             borderRadius: 20,
+            borderRadiusSM: 20,
           },
         },
         token: {

@@ -129,11 +129,13 @@ const AdminUserPage = () => {
           {text}
         </span>
       ),
+      sorter: (a, b) => a.full_name.localeCompare(b.full_name),
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      sorter: (a, b) => a.email.localeCompare(b.email),
     },
     {
       title: "Vai trò",
@@ -147,22 +149,26 @@ const AdminUserPage = () => {
           {role}
         </Tag>
       ),
+      sorter: (a, b) => a.role.localeCompare(b.role),
     },
     {
       title: "Năm bắt đầu",
       dataIndex: "start_year",
       key: "start_year",
+      sorter: (a, b) => a.start_year - b.start_year,
     },
     {
       title: "Số người theo dõi",
       dataIndex: "followers_count",
       key: "followers_count",
+      sorter: (a, b) => a.followers_count - b.followers_count,
     },
     {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date) => moment(date).format("DD/MM/YYYY HH:mm"),
+      sorter: (a, b) => moment(a.createdAt).unix() - moment(b.createdAt).unix(),
     },
     {
       title: "Hành động",
