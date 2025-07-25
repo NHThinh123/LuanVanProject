@@ -5,6 +5,8 @@ from data.fetch_data import get_user_post_interactions, get_search_history, get_
 import pickle
 import os
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
 
 MODEL_PATH = "saved_models/surprise_model.pkl"
 
@@ -13,10 +15,10 @@ def train_surprise_model():
     df = get_user_post_interactions()
     reader = Reader(rating_scale=(0, 1))
     data = Dataset.load_from_df(df[["user_id", "post_id", "rating"]], reader)
-
     trainset, _ = train_test_split(data, test_size=0.2, random_state=42)
 
-    model = SVD(n_factors=50, random_state=42)
+    # Tối ưu tham số SVD
+    model = SVD(n_factors=20, n_epochs=20, lr_all=0.005, reg_all=0.02, random_state=42)
     model.fit(trainset)
 
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
@@ -33,64 +35,82 @@ def load_surprise_model():
     return train_surprise_model()
 
 
-def get_surprise_recommendations(user_id, page=1, limit=10):
+async def calculate_surprise_score(model, user_id, post_id, df):
+    loop = asyncio.get_event_loop()
+    if post_id in df["post_id"].unique():
+        score = await loop.run_in_executor(None, lambda: model.predict(user_id, post_id).est)
+        return (post_id, score)
+    return (post_id, 0.5)
+
+
+async def calculate_following_score(post_id, following_ids, post_metadata):
+    loop = asyncio.get_event_loop()
+    post = post_metadata[post_metadata["post_id"] == post_id]
+    if post.empty:
+        return (post_id, 0.0)
+    post_user_id = post["user_id"].iloc[0]
+    return (post_id, 1.0 if post_user_id in following_ids else 0.0)
+
+
+async def calculate_course_score(post_id, interest_course_ids, post_metadata):
+    loop = asyncio.get_event_loop()
+    post = post_metadata[post_metadata["post_id"] == post_id]
+    if post.empty or not post["course_id"].iloc[0]:
+        return (post_id, 0.0)
+    post_course_id = post["course_id"].iloc[0]
+    return (post_id, 1.0 if post_course_id in interest_course_ids else 0.0)
+
+
+async def get_surprise_recommendations(user_id, page=1, limit=10):
     model = load_surprise_model()
     df = get_user_post_interactions()
     post_metadata = get_post_metadata()
-
-    # Lấy tất cả bài viết có status="accepted"
     all_posts = post_metadata["post_id"].tolist()
-    print("All accepted posts:", all_posts)  # Debug log
+    print("All accepted posts:", all_posts)
 
-    # Lấy danh sách người dùng đang theo dõi
-    following_ids = get_following_users(user_id)
-    print("Following users for user", user_id, ":", following_ids)  # Debug log
+    following_ids = set(get_following_users(user_id))  # Chuyển sang set để tìm kiếm nhanh hơn
+    print("Following users for user", user_id, ":", following_ids)
 
-    # Lấy danh sách môn học yêu thích
-    interest_course_ids = get_user_interest_courses(user_id)
-    print("Interest courses for user", user_id, ":", interest_course_ids)  # Debug log
+    interest_course_ids = set(get_user_interest_courses(user_id))  # Chuyển sang set
+    print("Interest courses for user", user_id, ":", interest_course_ids)
 
-    # Lấy lịch sử tìm kiếm kèm thời gian
     keywords_with_time = get_search_history(user_id, limit=3)
     keywords = [item["keyword"] for item in keywords_with_time]
-    print("Search history keywords for user", user_id, ":", keywords)  # Debug log
+    print("Search history keywords for user", user_id, ":", keywords)
 
-    # Tính điểm Surprise cho bài viết
-    surprise_scores = []
-    for post_id in all_posts:
-        if post_id in df["post_id"].unique():
-            score = model.predict(user_id, post_id).est
-        else:
-            score = 0.5
-        surprise_scores.append((post_id, score))
+    # Song song hóa tính toán điểm số
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        # Tính điểm Surprise
+        surprise_tasks = [
+            loop.run_in_executor(None, lambda pid=post_id: model.predict(user_id, pid).est if pid in df[
+                "post_id"].unique() else 0.5)
+            for post_id in all_posts
+        ]
+        surprise_scores = [(post_id, score) for post_id, score in zip(all_posts, await asyncio.gather(*surprise_tasks))]
 
-    # Tính điểm từ khóa
-    keyword_scores = [(post_id, calculate_keyword_relevance(post_id, keywords_with_time, post_metadata)) for post_id in
-                      all_posts]
+        # Tính điểm từ khóa
+        keyword_tasks = [
+            calculate_keyword_relevance(post_id, keywords_with_time, post_metadata)
+            for post_id in all_posts
+        ]
+        keyword_scores = [(post_id, score) for post_id, score in zip(all_posts, await asyncio.gather(*keyword_tasks))]
 
-    # Tính điểm theo dõi
-    following_scores = []
-    for post_id in all_posts:
-        post = post_metadata[post_metadata["post_id"] == post_id]
-        if post.empty:
-            following_score = 0.0
-        else:
-            post_user_id = post["user_id"].iloc[0]
-            following_score = 1.0 if post_user_id in following_ids else 0.0
-        following_scores.append((post_id, following_score))
+        # Tính điểm theo dõi
+        following_tasks = [
+            calculate_following_score(post_id, following_ids, post_metadata)
+            for post_id in all_posts
+        ]
+        following_scores = await asyncio.gather(*following_tasks)
 
-    # Tính điểm môn học yêu thích
-    course_scores = []
-    for post_id in all_posts:
-        post = post_metadata[post_metadata["post_id"] == post_id]
-        if post.empty or not post["course_id"].iloc[0]:
-            course_score = 0.0
-        else:
-            post_course_id = post["course_id"].iloc[0]
-            course_score = 1.0 if post_course_id in interest_course_ids else 0.0
-        course_scores.append((post_id, course_score))
+        # Tính điểm môn học
+        course_tasks = [
+            calculate_course_score(post_id, interest_course_ids, post_metadata)
+            for post_id in all_posts
+        ]
+        course_scores = await asyncio.gather(*course_tasks)
 
-    # Kết hợp điểm và nhân trọng số
+    # Kết hợp điểm
     combined_scores = []
     for post_id in all_posts:
         surprise_score = next((score for pid, score in surprise_scores if pid == post_id), 0.0)
@@ -98,7 +118,6 @@ def get_surprise_recommendations(user_id, page=1, limit=10):
         following_score = next((score for pid, score in following_scores if pid == post_id), 0.0)
         course_score = next((score for pid, score in course_scores if pid == post_id), 0.0)
 
-        # Nhân trọng số cho từng điểm số
         weighted_surprise = 0.6 * surprise_score
         weighted_keyword = 0.2 * keyword_score
         weighted_following = 0.1 * following_score
@@ -114,27 +133,22 @@ def get_surprise_recommendations(user_id, page=1, limit=10):
             "combined_score": float(combined_score)
         })
 
-    # Sắp xếp theo combined_score giảm dần
+    # Sắp xếp và phân trang
     combined_scores.sort(key=lambda x: x["combined_score"], reverse=True)
-
-    # Phân trang
     start = (page - 1) * limit
     end = start + limit
     paginated_recommendations = combined_scores[start:end]
-
-    # Lấy tổng số bài viết
     total = len(combined_scores)
 
-    # Dữ liệu trả về
     debug_info = {
         "all_posts": all_posts,
         "keywords": keywords,
-        "following_ids": following_ids,
-        "interest_course_ids": interest_course_ids
+        "following_ids": list(following_ids),
+        "interest_course_ids": list(interest_course_ids)
     }
 
-    print("Final recommendations for user", user_id, ":", paginated_recommendations)  # Debug log
-    print("Debug info:", debug_info)  # Debug log
+    print("Final recommendations for user", user_id, ":", paginated_recommendations)
+    print("Debug info:", debug_info)
 
     return {
         "user_id": user_id,

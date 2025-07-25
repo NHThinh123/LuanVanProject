@@ -1,4 +1,5 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
 const Post = require("../models/post.model");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
@@ -8,10 +9,11 @@ const UserFollow = require("../models/user_follow.model");
 const SearchHistory = require("../models/search_history.model");
 const Post_Tag = require("../models/post_tag.model");
 const Document = require("../models/document.model");
+const Comment = require("../models/comment.model");
 const { getDocumentsByPostService } = require("./document.service");
-const { getCommentsByPostService } = require("./comment.service");
 const { getTagsByPostService } = require("./post_tag.service");
 const { checkUserFollowService } = require("./user_follow.service");
+const { getCommentsByPostService } = require("./comment.service");
 const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
 const cheerio = require("cheerio");
@@ -25,7 +27,7 @@ const removeImagesFromContent = (htmlContent) => {
     $("img").remove();
     return $.html("body").replace(/^<body>|<\/body>$/g, "");
   } catch (error) {
-    console.error("Lỗi khi loại bỏ thẻ <img> khỏi content:", error);
+    console.error("Error removing <img> tags from content:", error);
     return htmlContent;
   }
 };
@@ -36,20 +38,20 @@ const createPostService = async (user_id, postData) => {
 
     const user = await User.findById(user_id);
     if (!user) {
-      return { message: "Người dùng không tồn tại", EC: 1 };
+      return { message: "User not found", EC: 1 };
     }
 
     if (course_id) {
       const course = await Course.findById(course_id);
       if (!course) {
-        return { message: "Khóa học không tồn tại", EC: 1 };
+        return { message: "Course not found", EC: 1 };
       }
     }
 
     if (category_id) {
       const category = await Category.findById(category_id);
       if (!category) {
-        return { message: "Danh mục không tồn tại", EC: 1 };
+        return { message: "Category not found", EC: 1 };
       }
     }
 
@@ -85,8 +87,6 @@ const createPostService = async (user_id, postData) => {
       contents: moderationPrompt,
     });
 
-    console.log("Raw moderationResult.text:", moderationResult.text);
-
     let moderationData;
     try {
       const cleanedText = moderationResult.text
@@ -95,11 +95,10 @@ const createPostService = async (user_id, postData) => {
         .trim();
       moderationData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error("Lỗi khi phân tích JSON từ moderationResult:", parseError);
-      console.error("Nội dung gốc:", moderationResult.text);
+      console.error("Error parsing JSON from moderationResult:", parseError);
       moderationData = {
         status: "pending",
-        reason: "Không thể phân tích kết quả kiểm duyệt",
+        reason: "Unable to parse moderation result",
       };
     }
 
@@ -108,11 +107,7 @@ const createPostService = async (user_id, postData) => {
 
     if (!["accepted", "pending"].includes(status)) {
       status = "pending";
-      reason = reason || "Kết quả kiểm duyệt không hợp lệ";
-    }
-
-    if (status === "pending") {
-      console.log(`Lý do từ chối bài viết (user_id: ${user_id}): ${reason}`);
+      reason = reason || "Invalid moderation result";
     }
 
     const post = await Post.create({
@@ -138,15 +133,15 @@ const createPostService = async (user_id, postData) => {
     return {
       message:
         status === "accepted"
-          ? "Tạo bài viết thành công"
-          : "Bài viết đã được tạo nhưng đang chờ duyệt",
+          ? "Post created successfully"
+          : "Post created but pending approval",
       EC: 0,
       data: { ...post._doc, reason },
       ...(status === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in createPostService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -164,33 +159,33 @@ const updatePostService = async (user_id, post_id, postData) => {
 
     const user = await User.findById(user_id);
     if (!user) {
-      return { message: "Người dùng không tồn tại", EC: 1 };
+      return { message: "User not found", EC: 1 };
     }
 
     const post = await Post.findById(post_id);
     if (!post) {
-      return { message: "Bài viết không tồn tại", EC: 1 };
+      return { message: "Post not found", EC: 1 };
     }
 
     const isAdmin = user.role === "admin";
     if (!isAdmin && post.user_id.toString() !== user_id) {
       return {
-        message: "Bạn không có quyền chỉnh sửa bài viết này",
-        EC: 1,
+        message: "You are not authorized to edit this post",
+        EC: 2,
       };
     }
 
     if (course_id) {
       const course = await Course.findById(course_id);
       if (!course) {
-        return { message: "Khóa học không tồn tại", EC: 1 };
+        return { message: "Course not found", EC: 1 };
       }
     }
 
     if (category_id) {
       const category = await Category.findById(category_id);
       if (!category) {
-        return { message: "Danh mục không tồn tại", EC: 1 };
+        return { message: "Category not found", EC: 1 };
       }
     }
 
@@ -198,22 +193,20 @@ const updatePostService = async (user_id, post_id, postData) => {
     let reason = post.reason || "";
     if (isAdmin && status) {
       if (!["accepted", "pending", "rejected"].includes(status)) {
-        return { message: "Trạng thái không hợp lệ", EC: 1 };
+        return { message: "Invalid status", EC: 1 };
       }
       newStatus = status;
     } else if (!isAdmin && (title || content)) {
-      const wordCount = (content || post.content).split(/\s+/).length;
+      const wordCount = (content || post.content).split(/\s/).length;
       if (wordCount > 100) {
-        try {
-          const summaryPrompt = `Tóm tắt bài viết sau thành 30-40 từ:\nTiêu đề: ${
-            title || post.title
-          }\nNội dung: ${content || post.content}`;
-          const summaryResult = await ai.models.generateContent(summaryPrompt);
-          post.summary = summaryResult.text || "";
-        } catch (error) {
-          console.error("Lỗi khi tạo tóm tắt:", error);
-          post.summary = "";
-        }
+        const summaryPrompt = `Tóm tắt bài viết sau thành 30-50 từ:\nTiêu đề: ${
+          title || post.title
+        }\nNội dung: ${content || post.content}`;
+        const summaryResult = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: summaryPrompt,
+        });
+        post.summary = summaryResult.text || "";
       } else {
         post.summary = "";
       }
@@ -232,43 +225,23 @@ const updatePostService = async (user_id, post_id, postData) => {
         Tiêu đề: ${title || post.title}
         Nội dung văn bản: ${cleanedContent}
       `;
-      let moderationResult;
-      try {
-        moderationResult = await ai.models.generateContent(moderationPrompt);
-        console.log("Raw moderationResult:", moderationResult);
-      } catch (error) {
-        console.error("Lỗi khi gọi API kiểm duyệt:", error);
-        return {
-          message: "Lỗi khi kiểm duyệt nội dung",
-          EC: 1,
-          reason: "Không thể gọi API kiểm duyệt",
-        };
-      }
+      const moderationResult = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: moderationPrompt,
+      });
 
       let moderationData;
       try {
-        if (
-          moderationResult &&
-          typeof moderationResult.text === "string" &&
-          moderationResult.text.trim()
-        ) {
-          const cleanedText = moderationResult.text
-            .replace(/```json\n|```/g, "")
-            .replace(/`/g, "")
-            .trim();
-          moderationData = JSON.parse(cleanedText);
-        } else {
-          throw new Error("Kết quả kiểm duyệt không hợp lệ hoặc rỗng");
-        }
+        const cleanedText = moderationResult.text
+          .replace(/```json\n|```/g, "")
+          .replace(/`/g, "")
+          .trim();
+        moderationData = JSON.parse(cleanedText);
       } catch (parseError) {
-        console.error(
-          "Lỗi khi phân tích JSON từ moderationResult:",
-          parseError
-        );
-        console.error("Nội dung gốc:", moderationResult?.text || "Không có");
+        console.error("Error parsing JSON from moderationResult:", parseError);
         moderationData = {
           status: "pending",
-          reason: "Không thể phân tích kết quả kiểm duyệt",
+          reason: "Unable to parse moderation result",
         };
       }
 
@@ -277,19 +250,7 @@ const updatePostService = async (user_id, post_id, postData) => {
 
       if (!["accepted", "pending"].includes(newStatus)) {
         newStatus = "pending";
-        reason = reason || "Kết quả kiểm duyệt không hợp lệ";
-      }
-
-      if (newStatus === "pending") {
-        console.log(
-          `Lý do từ chối bài viết (post_id: ${post_id}, user_id: ${user_id}): ${reason}`
-        );
-      }
-    } else if (isAdmin && !status) {
-      newStatus = post.status;
-      if (title || content) {
-        const wordCount = (content || post.content).split(/\s+/).length;
-        post.summary = wordCount > 100 ? post.summary : "";
+        reason = reason || "Invalid moderation result";
       }
     }
 
@@ -324,15 +285,15 @@ const updatePostService = async (user_id, post_id, postData) => {
     return {
       message:
         newStatus === "accepted"
-          ? "Cập nhật bài viết thành công"
-          : "Bài viết đã được cập nhật nhưng đang chờ duyệt",
+          ? "Post updated successfully"
+          : "Post updated but pending approval",
       EC: 0,
       data: { ...post._doc, reason },
       ...(newStatus === "pending" && { reason }),
     };
   } catch (error) {
     console.error("Error in updatePostService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -340,37 +301,37 @@ const deletePostService = async (user_id, post_id) => {
   try {
     const user = await User.findById(user_id);
     if (!user) {
-      return { message: "Người dùng không tồn tại", EC: 1 };
+      return { message: "User not found", EC: 1 };
     }
 
     const post = await Post.findById(post_id);
     if (!post) {
-      return { message: "Bài viết không tồn tại", EC: 1 };
+      return { message: "Post not found", EC: 1 };
     }
 
     if (user.role !== "admin" && post.user_id.toString() !== user_id) {
       return {
-        message: "Bạn không có quyền xóa bài viết này",
-        EC: 1,
+        message: "You are not authorized to delete this post",
+        EC: 2,
       };
     }
 
     await Post.findByIdAndDelete(post_id);
-
     await Document.deleteMany({ post_id });
     await Post_Tag.deleteMany({ post_id });
 
     return {
-      message: "Xóa bài viết thành công",
+      message: "Post deleted successfully",
       EC: 0,
     };
   } catch (error) {
     console.error("Error in deletePostService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
 const getPostsService = async (query) => {
+  const startTime = Date.now();
   try {
     const {
       user_id,
@@ -381,6 +342,7 @@ const getPostsService = async (query) => {
       limit = 10,
       current_user_id,
       $or,
+      post_id,
     } = query;
     const filter = {};
 
@@ -389,6 +351,15 @@ const getPostsService = async (query) => {
     if (category_id) filter.category_id = category_id;
     if (status) filter.status = status;
     if ($or) filter.$or = $or;
+    if (post_id) {
+      if (Array.isArray(post_id)) {
+        filter._id = {
+          $in: post_id.map((id) => new mongoose.Types.ObjectId(id)),
+        };
+      } else {
+        filter._id = new mongoose.Types.ObjectId(post_id);
+      }
+    }
 
     const skip = (page - 1) * limit;
 
@@ -405,70 +376,101 @@ const getPostsService = async (query) => {
 
     const total = await Post.countDocuments(filter);
 
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const [
-          documentsResult,
-          tagsResult,
-          likesResult,
-          commentsResult,
-          likeStatus,
-          followersCount,
-          followStatus,
-        ] = await Promise.all([
-          getDocumentsByPostService(post._id),
-          getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }),
-          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
-          current_user_id
-            ? User_Like_Post.findOne({
-                user_id: current_user_id,
-                post_id: post._id,
-              })
-            : null,
-          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
-          current_user_id && current_user_id !== post.user_id._id.toString()
-            ? checkUserFollowService(current_user_id, post.user_id._id)
-            : null,
-        ]);
-        const image =
-          documentsResult.EC === 0 && documentsResult.data.length > 0
-            ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url ||
-              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
-            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+    const postIds = posts.map((post) => post._id);
 
-        return {
-          ...post._doc,
-          reason: post.reason || "",
-          user_id: {
-            ...post.user_id._doc,
-            followers_count: followersCount,
-            isFollowing:
-              current_user_id && current_user_id !== post.user_id._id.toString()
-                ? followStatus.EC === 0
-                  ? followStatus.data.following
-                  : false
-                : false,
-          },
-          image,
-          tags:
-            tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => ({
-                  _id: tag.tag_id._id,
-                  tag_name: tag.tag_id.tag_name,
-                }))
-              : [],
-          likeCount: likesResult.length,
-          isLiked: current_user_id ? !!likeStatus : false,
-          commentCount:
-            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
-        };
-      })
-    );
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? User_Like_Post.find({
+            user_id: current_user_id,
+            post_id: { $in: postIds },
+          }).select("post_id")
+        : [],
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? UserFollow.find({
+            user_id: current_user_id,
+            user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+          }).select("user_follow_id")
+        : [],
+    ]);
+
+    const postsWithDetails = posts.map((post) => {
+      const documents = allDocuments.filter(
+        (doc) => doc.post_id.toString() === post._id.toString()
+      );
+      const tags = allTags
+        .filter((tag) => tag.post_id.toString() === post._id.toString())
+        .map((tag) => ({ _id: tag.tag_id._id, tag_name: tag.tag_id.tag_name }));
+      const likes = allLikes.filter(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const commentCount =
+        allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+          ?.count || 0;
+      const likeStatus = allLikeStatuses.find(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const followersCount =
+        allFollowersCounts.find(
+          (fc) => fc._id.toString() === post.user_id._id.toString()
+        )?.count || 0;
+      const followStatus = allFollowStatuses.find(
+        (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+      );
+
+      const image =
+        documents.length > 0
+          ? documents.find((doc) => doc.type === "image")?.document_url ||
+            "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+          : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+      return {
+        ...post._doc,
+        reason: post.reason || "",
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? !!followStatus
+              : false,
+        },
+        image,
+        tags,
+        likeCount: likes.length,
+        isLiked: current_user_id ? !!likeStatus : false,
+        commentCount,
+      };
+    });
+
+    console.log(`getPostsService took ${Date.now() - startTime}ms`);
 
     return {
-      message: "Lấy danh sách bài viết thành công",
+      message: "Posts retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithDetails,
@@ -482,11 +484,12 @@ const getPostsService = async (query) => {
     };
   } catch (error) {
     console.error("Error in getPostsService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
 const getPostByIdService = async (post_id, current_user_id) => {
+  const startTime = Date.now();
   try {
     const post = await Post.findById(post_id)
       .populate({
@@ -497,7 +500,7 @@ const getPostByIdService = async (post_id, current_user_id) => {
       .populate("category_id", "category_name");
 
     if (!post) {
-      return { message: "Bài viết không tồn tại", EC: 1 };
+      return { message: "Post not found", EC: 1 };
     }
 
     const [
@@ -511,10 +514,16 @@ const getPostByIdService = async (post_id, current_user_id) => {
     ] = await Promise.all([
       getDocumentsByPostService(post_id),
       getTagsByPostService(post_id),
-      User_Like_Post.find({ post_id }),
-      getCommentsByPostService(post_id, { page: 1, limit: 0 }),
+      User_Like_Post.find({ post_id }).select("user_id"),
+      getCommentsByPostService(
+        post_id,
+        { page: 1, limit: 10 },
+        current_user_id
+      ),
       current_user_id
-        ? User_Like_Post.findOne({ user_id: current_user_id, post_id })
+        ? User_Like_Post.findOne({ user_id: current_user_id, post_id }).select(
+            "_id"
+          )
         : null,
       UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
       current_user_id && current_user_id !== post.user_id._id.toString()
@@ -522,8 +531,10 @@ const getPostByIdService = async (post_id, current_user_id) => {
         : null,
     ]);
 
+    console.log(`getPostByIdService took ${Date.now() - startTime}ms`);
+
     return {
-      message: "Lấy thông tin bài viết thành công",
+      message: "Post retrieved successfully",
       EC: 0,
       data: {
         ...post._doc,
@@ -533,7 +544,7 @@ const getPostByIdService = async (post_id, current_user_id) => {
           followers_count: followersCount,
           isFollowing:
             current_user_id && current_user_id !== post.user_id._id.toString()
-              ? followStatus.EC === 0
+              ? followStatus?.EC === 0
                 ? followStatus.data.following
                 : false
               : false,
@@ -550,11 +561,12 @@ const getPostByIdService = async (post_id, current_user_id) => {
         isLiked: current_user_id ? !!likeStatus : false,
         commentCount:
           commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+        comments: commentsResult.EC === 0 ? commentsResult.data.comments : [],
       },
     };
   } catch (error) {
     console.error("Error in getPostByIdService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -562,16 +574,16 @@ const updatePostStatusService = async (post_id, status, admin_id) => {
   try {
     const admin = await User.findById(admin_id);
     if (!admin || admin.role !== "admin") {
-      return { message: "Không có quyền thực hiện hành động này", EC: 1 };
+      return { message: "Not authorized to perform this action", EC: 2 };
     }
 
     const post = await Post.findById(post_id);
     if (!post) {
-      return { message: "Bài viết không tồn tại", EC: 1 };
+      return { message: "Post not found", EC: 1 };
     }
 
     if (!["accepted", "rejected"].includes(status)) {
-      return { message: "Trạng thái không hợp lệ", EC: 1 };
+      return { message: "Invalid status", EC: 1 };
     }
 
     post.status = status;
@@ -579,21 +591,20 @@ const updatePostStatusService = async (post_id, status, admin_id) => {
     await post.save();
 
     return {
-      message: `Cập nhật trạng thái bài viết thành ${status} thành công`,
+      message: `Post status updated to ${status} successfully`,
       EC: 0,
       data: { ...post._doc, reason: post.reason || "" },
     };
   } catch (error) {
     console.error("Error in updatePostStatusService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
 const getRecommendedPostsService = async (query) => {
+  const startTime = Date.now();
   try {
     const { user_id, page = 1, limit = 10, current_user_id } = query;
-
-    const skip = (page - 1) * limit;
 
     const response = await axios.get(
       `http://localhost:8000/recommendations/surprise/${user_id}?page=${page}&limit=${limit}`
@@ -609,7 +620,7 @@ const getRecommendedPostsService = async (query) => {
       console.error(
         `User ID mismatch: requested=${user_id}, received=${response_user_id}`
       );
-      return { message: "User ID không khớp", EC: -1 };
+      return { message: "User ID mismatch", EC: -1 };
     }
 
     if (recommendations.length === 0) {
@@ -638,9 +649,15 @@ const getRecommendedPostsService = async (query) => {
           combined_score: null,
           reason: post.reason || "",
         }));
+
+        console.log(
+          `getRecommendedPostsService (search history) took ${
+            Date.now() - startTime
+          }ms`
+        );
+
         return {
-          message:
-            "Lấy danh sách bài viết dựa trên lịch sử tìm kiếm thành công",
+          message: "Posts retrieved based on search history successfully",
           EC: 0,
           data: {
             posts: result,
@@ -665,7 +682,7 @@ const getRecommendedPostsService = async (query) => {
         { $sample: { size: Math.floor(limit / 2) } },
       ]);
       const randomPostsResult = await getPostsService({
-        post_id: { $in: randomPosts.map((p) => p._id) },
+        post_id: randomPosts.map((p) => p._id),
         status: "accepted",
         current_user_id,
       });
@@ -691,8 +708,14 @@ const getRecommendedPostsService = async (query) => {
         })),
       ].slice(0, limit);
 
+      console.log(
+        `getRecommendedPostsService (popular/random) took ${
+          Date.now() - startTime
+        }ms`
+      );
+
       return {
-        message: "Lấy danh sách bài viết phổ biến và ngẫu nhiên thành công",
+        message: "Popular and random posts retrieved successfully",
         EC: 0,
         data: {
           posts: result,
@@ -713,7 +736,7 @@ const getRecommendedPostsService = async (query) => {
     const postIds = recommendations.map((item) => item.post_id);
 
     const postsResult = await getPostsService({
-      post_id: { $in: postIds },
+      post_id: postIds,
       status: "accepted",
       current_user_id,
     });
@@ -738,8 +761,10 @@ const getRecommendedPostsService = async (query) => {
       })
       .filter((post) => post !== null);
 
+    console.log(`getRecommendedPostsService took ${Date.now() - startTime}ms`);
+
     return {
-      message: "Lấy danh sách bài viết đề xuất thành công",
+      message: "Recommended posts retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithScores,
@@ -750,7 +775,7 @@ const getRecommendedPostsService = async (query) => {
     };
   } catch (error) {
     console.error("Error in getRecommendedPostsService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -760,100 +785,130 @@ const searchPostsService = async ({
   limit = 10,
   current_user_id,
 }) => {
+  const startTime = Date.now();
   try {
     const skip = (page - 1) * limit;
     const filter = { status: "accepted" };
 
-    // Kiểm tra xem keyword có khớp với course_code không
     const course = await Course.findOne({ course_code: keyword });
     if (course) {
-      filter.course_id = course._id; // Nếu tìm thấy khóa học, thêm điều kiện lọc theo course_id
+      filter.course_id = course._id;
     } else {
-      // Nếu không tìm thấy khóa học, sử dụng tìm kiếm văn bản
       filter.$text = { $search: keyword };
     }
 
     const posts = await Post.find(filter)
-      .sort(
-        filter.$text
-          ? { score: { $meta: "textScore" }, createdAt: -1 }
-          : { createdAt: -1 }
-      )
       .populate({
         path: "user_id",
         select: "full_name avatar_url",
       })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
+      .sort(
+        filter.$text
+          ? { score: { $meta: "textScore" }, createdAt: -1 }
+          : { createdAt: -1 }
+      )
       .skip(skip)
       .limit(limit);
 
     const total = await Post.countDocuments(filter);
 
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const [
-          documentsResult,
-          tagsResult,
-          likesResult,
-          commentsResult,
-          likeStatus,
-          followersCount,
-          followStatus,
-        ] = await Promise.all([
-          getDocumentsByPostService(post._id),
-          getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }),
-          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
-          current_user_id
-            ? User_Like_Post.findOne({
-                user_id: current_user_id,
-                post_id: post._id,
-              })
-            : null,
-          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
-          current_user_id && current_user_id !== post.user_id._id.toString()
-            ? checkUserFollowService(current_user_id, post.user_id._id)
-            : null,
-        ]);
-        const image =
-          documentsResult.EC === 0 && documentsResult.data.length > 0
-            ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url ||
-              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
-            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+    const postIds = posts.map((post) => post._id);
 
-        return {
-          ...post._doc,
-          reason: post.reason || "",
-          user_id: {
-            ...post.user_id._doc,
-            followers_count: followersCount,
-            isFollowing:
-              current_user_id && current_user_id !== post.user_id._id.toString()
-                ? followStatus.EC === 0
-                  ? followStatus.data.following
-                  : false
-                : false,
-          },
-          image,
-          tags:
-            tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => ({
-                  _id: tag.tag_id._id,
-                  tag_name: tag.tag_id.tag_name,
-                }))
-              : [],
-          likeCount: likesResult.length,
-          isLiked: current_user_id ? !!likeStatus : false,
-          commentCount:
-            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
-        };
-      })
-    );
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? User_Like_Post.find({
+            user_id: current_user_id,
+            post_id: { $in: postIds },
+          }).select("post_id")
+        : [],
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? UserFollow.find({
+            user_id: current_user_id,
+            user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+          }).select("user_follow_id")
+        : [],
+    ]);
+
+    const postsWithDetails = posts.map((post) => {
+      const documents = allDocuments.filter(
+        (doc) => doc.post_id.toString() === post._id.toString()
+      );
+      const tags = allTags
+        .filter((tag) => tag.post_id.toString() === post._id.toString())
+        .map((tag) => ({ _id: tag.tag_id._id, tag_name: tag.tag_id.tag_name }));
+      const likes = allLikes.filter(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const commentCount =
+        allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+          ?.count || 0;
+      const likeStatus = allLikeStatuses.find(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const followersCount =
+        allFollowersCounts.find(
+          (fc) => fc._id.toString() === post.user_id._id.toString()
+        )?.count || 0;
+      const followStatus = allFollowStatuses.find(
+        (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+      );
+
+      const image =
+        documents.length > 0
+          ? documents.find((doc) => doc.type === "image")?.document_url ||
+            "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+          : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+      return {
+        ...post._doc,
+        reason: post.reason || "",
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? !!followStatus
+              : false,
+        },
+        image,
+        tags,
+        likeCount: likes.length,
+        isLiked: current_user_id ? !!likeStatus : false,
+        commentCount,
+      };
+    });
+
+    console.log(`searchPostsService took ${Date.now() - startTime}ms`);
 
     return {
-      message: "Tìm kiếm bài viết thành công",
+      message: "Search results retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithDetails,
@@ -867,7 +922,7 @@ const searchPostsService = async ({
     };
   } catch (error) {
     console.error("Error in searchPostsService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -877,6 +932,7 @@ const getPostsByTagService = async ({
   limit = 10,
   current_user_id,
 }) => {
+  const startTime = Date.now();
   try {
     const skip = (page - 1) * limit;
 
@@ -884,7 +940,7 @@ const getPostsByTagService = async ({
 
     if (!postTags || postTags.length === 0) {
       return {
-        message: "Không tìm thấy bài viết nào cho thẻ này",
+        message: "No posts found for this tag",
         EC: 1,
         data: {
           posts: [],
@@ -914,70 +970,99 @@ const getPostsByTagService = async ({
 
     const total = await Post_Tag.countDocuments({ tag_id });
 
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const [
-          documentsResult,
-          tagsResult,
-          likesResult,
-          commentsResult,
-          likeStatus,
-          followersCount,
-          followStatus,
-        ] = await Promise.all([
-          getDocumentsByPostService(post._id),
-          getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }),
-          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
-          current_user_id
-            ? User_Like_Post.findOne({
-                user_id: current_user_id,
-                post_id: post._id,
-              })
-            : null,
-          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
-          current_user_id && current_user_id !== post.user_id._id.toString()
-            ? checkUserFollowService(current_user_id, post.user_id._id)
-            : null,
-        ]);
-        const image =
-          documentsResult.EC === 0 && documentsResult.data.length > 0
-            ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url ||
-              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
-            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? User_Like_Post.find({
+            user_id: current_user_id,
+            post_id: { $in: postIds },
+          }).select("post_id")
+        : [],
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? UserFollow.find({
+            user_id: current_user_id,
+            user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+          }).select("user_follow_id")
+        : [],
+    ]);
 
-        return {
-          ...post._doc,
-          reason: post.reason || "",
-          user_id: {
-            ...post.user_id._doc,
-            followers_count: followersCount,
-            isFollowing:
-              current_user_id && current_user_id !== post.user_id._id.toString()
-                ? followStatus.EC === 0
-                  ? followStatus.data.following
-                  : false
-                : false,
-          },
-          image,
-          tags:
-            tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => ({
-                  _id: tag.tag_id._id,
-                  tag_name: tag.tag_id.tag_name,
-                }))
-              : [],
-          likeCount: likesResult.length,
-          isLiked: current_user_id ? !!likeStatus : false,
-          commentCount:
-            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
-        };
-      })
-    );
+    const postsWithDetails = posts.map((post) => {
+      const documents = allDocuments.filter(
+        (doc) => doc.post_id.toString() === post._id.toString()
+      );
+      const tags = allTags
+        .filter((tag) => tag.post_id.toString() === post._id.toString())
+        .map((tag) => ({ _id: tag.tag_id._id, tag_name: tag.tag_id.tag_name }));
+      const likes = allLikes.filter(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const commentCount =
+        allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+          ?.count || 0;
+      const likeStatus = allLikeStatuses.find(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const followersCount =
+        allFollowersCounts.find(
+          (fc) => fc._id.toString() === post.user_id._id.toString()
+        )?.count || 0;
+      const followStatus = allFollowStatuses.find(
+        (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+      );
+
+      const image =
+        documents.length > 0
+          ? documents.find((doc) => doc.type === "image")?.document_url ||
+            "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+          : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+      return {
+        ...post._doc,
+        reason: post.reason || "",
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? !!followStatus
+              : false,
+        },
+        image,
+        tags,
+        likeCount: likes.length,
+        isLiked: current_user_id ? !!likeStatus : false,
+        commentCount,
+      };
+    });
+
+    console.log(`getPostsByTagService took ${Date.now() - startTime}ms`);
 
     return {
-      message: "Lấy danh sách bài viết theo thẻ thành công",
+      message: "Posts by tag retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithDetails,
@@ -991,7 +1076,7 @@ const getPostsByTagService = async ({
     };
   } catch (error) {
     console.error("Error in getPostsByTagService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -1000,6 +1085,7 @@ const getFollowingPostsService = async ({
   page = 1,
   limit = 4,
 }) => {
+  const startTime = Date.now();
   try {
     const skip = (page - 1) * limit;
 
@@ -1010,8 +1096,7 @@ const getFollowingPostsService = async ({
 
     if (!followingIds || followingIds.length === 0) {
       return {
-        message:
-          "Bạn chưa theo dõi ai hoặc không có bài viết nào từ người bạn theo dõi",
+        message: "You are not following anyone or no posts from followed users",
         EC: 1,
         data: {
           posts: [],
@@ -1044,70 +1129,101 @@ const getFollowingPostsService = async ({
       status: "accepted",
     });
 
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const [
-          documentsResult,
-          tagsResult,
-          likesResult,
-          commentsResult,
-          likeStatus,
-          followersCount,
-          followStatus,
-        ] = await Promise.all([
-          getDocumentsByPostService(post._id),
-          getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }),
-          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
-          current_user_id
-            ? User_Like_Post.findOne({
-                user_id: current_user_id,
-                post_id: post._id,
-              })
-            : null,
-          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
-          current_user_id && current_user_id !== post.user_id._id.toString()
-            ? checkUserFollowService(current_user_id, post.user_id._id)
-            : null,
-        ]);
-        const image =
-          documentsResult.EC === 0 && documentsResult.data.length > 0
-            ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url ||
-              "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
-            : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+    const postIds = posts.map((post) => post._id);
 
-        return {
-          ...post._doc,
-          reason: post.reason || "",
-          user_id: {
-            ...post.user_id._doc,
-            followers_count: followersCount,
-            isFollowing:
-              current_user_id && current_user_id !== post.user_id._id.toString()
-                ? followStatus.EC === 0
-                  ? followStatus.data.following
-                  : false
-                : false,
-          },
-          image,
-          tags:
-            tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => ({
-                  _id: tag.tag_id._id,
-                  tag_name: tag.tag_id.tag_name,
-                }))
-              : [],
-          likeCount: likesResult.length,
-          isLiked: current_user_id ? !!likeStatus : false,
-          commentCount:
-            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
-        };
-      })
-    );
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? User_Like_Post.find({
+            user_id: current_user_id,
+            post_id: { $in: postIds },
+          }).select("post_id")
+        : [],
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? UserFollow.find({
+            user_id: current_user_id,
+            user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+          }).select("user_follow_id")
+        : [],
+    ]);
+
+    const postsWithDetails = posts.map((post) => {
+      const documents = allDocuments.filter(
+        (doc) => doc.post_id.toString() === post._id.toString()
+      );
+      const tags = allTags
+        .filter((tag) => tag.post_id.toString() === post._id.toString())
+        .map((tag) => ({ _id: tag.tag_id._id, tag_name: tag.tag_id.tag_name }));
+      const likes = allLikes.filter(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const commentCount =
+        allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+          ?.count || 0;
+      const likeStatus = allLikeStatuses.find(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const followersCount =
+        allFollowersCounts.find(
+          (fc) => fc._id.toString() === post.user_id._id.toString()
+        )?.count || 0;
+      const followStatus = allFollowStatuses.find(
+        (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+      );
+
+      const image =
+        documents.length > 0
+          ? documents.find((doc) => doc.type === "image")?.document_url ||
+            "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+          : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+      return {
+        ...post._doc,
+        reason: post.reason || "",
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? !!followStatus
+              : false,
+        },
+        image,
+        tags,
+        likeCount: likes.length,
+        isLiked: current_user_id ? !!likeStatus : false,
+        commentCount,
+      };
+    });
+
+    console.log(`getFollowingPostsService took ${Date.now() - startTime}ms`);
 
     return {
-      message: "Lấy danh sách bài viết từ người dùng đang theo dõi thành công",
+      message: "Following posts retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithDetails,
@@ -1121,7 +1237,7 @@ const getFollowingPostsService = async ({
     };
   } catch (error) {
     console.error("Error in getFollowingPostsService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
@@ -1130,6 +1246,7 @@ const getPopularPostsService = async ({
   limit = 10,
   current_user_id,
 }) => {
+  const startTime = Date.now();
   try {
     const skip = (page - 1) * limit;
 
@@ -1140,42 +1257,93 @@ const getPopularPostsService = async ({
       })
       .populate("course_id", "course_name course_code")
       .populate("category_id", "category_name")
-      .sort({ createdAt: -1, likeCount: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
     const total = await Post.countDocuments({ status: "accepted" });
 
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const [
-          documentsResult,
-          tagsResult,
-          likesResult,
-          commentsResult,
-          likeStatus,
-          followersCount,
-          followStatus,
-        ] = await Promise.all([
-          getDocumentsByPostService(post._id),
-          getTagsByPostService(post._id),
-          User_Like_Post.find({ post_id: post._id }),
-          getCommentsByPostService(post._id, { page: 1, limit: 0 }),
-          current_user_id
-            ? User_Like_Post.findOne({
-                user_id: current_user_id,
-                post_id: post._id,
-              })
-            : null,
-          UserFollow.countDocuments({ user_follow_id: post.user_id._id }),
-          current_user_id && current_user_id !== post.user_id._id.toString()
-            ? checkUserFollowService(current_user_id, post.user_id._id)
-            : null,
-        ]);
+    const postIds = posts.map((post) => post._id);
+
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+      likeCounts,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? User_Like_Post.find({
+            user_id: current_user_id,
+            post_id: { $in: postIds },
+          }).select("post_id")
+        : [],
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      current_user_id
+        ? UserFollow.find({
+            user_id: current_user_id,
+            user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+          }).select("user_follow_id")
+        : [],
+      User_Like_Post.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const postsWithDetails = posts
+      .map((post) => {
+        const documents = allDocuments.filter(
+          (doc) => doc.post_id.toString() === post._id.toString()
+        );
+        const tags = allTags
+          .filter((tag) => tag.post_id.toString() === post._id.toString())
+          .map((tag) => ({
+            _id: tag.tag_id._id,
+            tag_name: tag.tag_id.tag_name,
+          }));
+        const likes = allLikes.filter(
+          (like) => like.post_id.toString() === post._id.toString()
+        );
+        const commentCount =
+          allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+            ?.count || 0;
+        const likeStatus = allLikeStatuses.find(
+          (like) => like.post_id.toString() === post._id.toString()
+        );
+        const followersCount =
+          allFollowersCounts.find(
+            (fc) => fc._id.toString() === post.user_id._id.toString()
+          )?.count || 0;
+        const followStatus = allFollowStatuses.find(
+          (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+        );
+        const likeCount =
+          likeCounts.find((lc) => lc._id.toString() === post._id.toString())
+            ?.count || 0;
+
         const image =
-          documentsResult.EC === 0 && documentsResult.data.length > 0
-            ? documentsResult.data.find((doc) => doc.type === "image")
-                ?.document_url ||
+          documents.length > 0
+            ? documents.find((doc) => doc.type === "image")?.document_url ||
               "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
             : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
 
@@ -1187,29 +1355,22 @@ const getPopularPostsService = async ({
             followers_count: followersCount,
             isFollowing:
               current_user_id && current_user_id !== post.user_id._id.toString()
-                ? followStatus.EC === 0
-                  ? followStatus.data.following
-                  : false
+                ? !!followStatus
                 : false,
           },
           image,
-          tags:
-            tagsResult.EC === 0
-              ? tagsResult.data.map((tag) => ({
-                  _id: tag.tag_id._id,
-                  tag_name: tag.tag_id.tag_name,
-                }))
-              : [],
-          likeCount: likesResult.length,
+          tags,
+          likeCount,
           isLiked: current_user_id ? !!likeStatus : false,
-          commentCount:
-            commentsResult.EC === 0 ? commentsResult.data.pagination.total : 0,
+          commentCount,
         };
       })
-    );
+      .sort((a, b) => b.likeCount - a.likeCount); // Sắp xếp theo likeCount giảm dần
+
+    console.log(`getPopularPostsService took ${Date.now() - startTime}ms`);
 
     return {
-      message: "Lấy danh sách bài viết phổ biến thành công",
+      message: "Popular posts retrieved successfully",
       EC: 0,
       data: {
         posts: postsWithDetails,
@@ -1223,7 +1384,7 @@ const getPopularPostsService = async ({
     };
   } catch (error) {
     console.error("Error in getPopularPostsService:", error);
-    return { message: "Lỗi server", EC: -1 };
+    return { message: "Server error", EC: -1 };
   }
 };
 
