@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthContext } from "../contexts/auth.context";
 import { useUsers } from "../features/user/hooks/useUsers";
 import {
@@ -14,6 +14,29 @@ import {
 import { SearchOutlined } from "@ant-design/icons";
 import SearchingUserList from "../features/searching/components/templates/SearchingUserList";
 
+// Hook để lấy kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const FollowerPage = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const user_id = user?._id;
@@ -24,6 +47,12 @@ const FollowerPage = () => {
   } = useUsers({}, user_id);
   const [followerSearch, setFollowerSearch] = useState("");
   const [followingSearch, setFollowingSearch] = useState("");
+
+  // Lấy kích thước màn hình
+  const { width } = useWindowSize();
+  const isMobile = width < 600;
+  const isTablet = width < 1000;
+  const isDesktop = width < 1200;
 
   // Hàm chuẩn hóa chuỗi để tìm kiếm không phân biệt dấu
   const normalizeString = (str) => {
@@ -48,10 +77,12 @@ const FollowerPage = () => {
       <Row justify="center" align={"middle"} style={{ marginTop: 50 }}>
         <Col>
           <Flex align="center" justify="center" vertical gap={16}>
-            <Typography.Text type="secondary">
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: isMobile ? 14 : isTablet ? 16 : 18 }}
+            >
               Vui lòng đăng nhập để có chức năng này
             </Typography.Text>
-
             <Button type="primary" style={{ marginLeft: 10 }} href="/login">
               Đăng nhập
             </Button>
@@ -63,38 +94,63 @@ const FollowerPage = () => {
 
   if (authLoading || isUserLoading) {
     return (
-      <Row justify="center" style={{ marginTop: 20 }}>
-        <Col span={16}>
-          <Skeleton active paragraph={{ rows: 4 }} />
+      <Row justify="center" style={{ marginTop: 20 }} gutter={[16, 16]}>
+        <Col
+          span={isDesktop ? 24 : 16}
+          style={{ padding: isMobile ? "0px 12px" : "0px 24px" }}
+        >
+          <Skeleton active paragraph={{ rows: isMobile ? 2 : 4 }} />
           <Divider />
-          <Skeleton active paragraph={{ rows: 4 }} />
+          <Skeleton active paragraph={{ rows: isMobile ? 2 : 4 }} />
           <Divider />
-          <Skeleton active paragraph={{ rows: 4 }} />
+          <Skeleton active paragraph={{ rows: isMobile ? 2 : 4 }} />
         </Col>
       </Row>
     );
   }
 
   return (
-    <Row justify="center" style={{ marginTop: 20 }}>
-      <Col span={16}>
-        <Typography.Title level={2}>Danh sách người theo dõi</Typography.Title>
+    <Row justify="center" style={{ marginTop: 20 }} gutter={[16, 16]}>
+      <Col
+        span={isDesktop ? 24 : 16}
+        style={{ padding: isMobile ? "0px 12px" : "0px 24px" }}
+      >
+        <Typography.Title
+          level={isMobile ? 3 : 2}
+          style={{ marginBottom: isMobile ? 12 : 16 }}
+        >
+          Danh sách người theo dõi
+        </Typography.Title>
         <Input
           placeholder="Tìm kiếm người theo dõi"
           prefix={<SearchOutlined />}
           value={followerSearch}
           onChange={(e) => setFollowerSearch(e.target.value)}
-          style={{ marginBottom: 16 }}
+          size={isMobile ? "middle" : "large"}
+          style={{
+            marginBottom: isMobile ? 12 : 16,
+            fontSize: isMobile ? 14 : isTablet ? 16 : 18,
+          }}
         />
         {filteredFollowers && filteredFollowers.length > 0 ? (
           <SearchingUserList users={filteredFollowers} />
         ) : (
-          <div>Không có người theo dõi phù hợp.</div>
+          <div
+            style={{
+              fontSize: isMobile ? 14 : isTablet ? 16 : 18,
+              color: "#8c8c8c",
+            }}
+          >
+            Không có người theo dõi phù hợp.
+          </div>
         )}
 
-        <Divider />
+        <Divider style={{ margin: isMobile ? "12px 0" : "16px 0" }} />
 
-        <Typography.Title level={2}>
+        <Typography.Title
+          level={isMobile ? 3 : 2}
+          style={{ marginBottom: isMobile ? 12 : 16 }}
+        >
           Danh sách người đang theo dõi
         </Typography.Title>
         <Input
@@ -102,12 +158,23 @@ const FollowerPage = () => {
           prefix={<SearchOutlined />}
           value={followingSearch}
           onChange={(e) => setFollowingSearch(e.target.value)}
-          style={{ marginBottom: 16 }}
+          size={isMobile ? "middle" : "large"}
+          style={{
+            marginBottom: isMobile ? 12 : 16,
+            fontSize: isMobile ? 14 : isTablet ? 16 : 18,
+          }}
         />
         {filteredFollowing && filteredFollowing.length > 0 ? (
           <SearchingUserList users={filteredFollowing} />
         ) : (
-          <div>Không có người dùng nào đang được theo dõi phù hợp.</div>
+          <div
+            style={{
+              fontSize: isMobile ? 14 : isTablet ? 16 : 18,
+              color: "#8c8c8c",
+            }}
+          >
+            Không có người dùng nào đang được theo dõi phù hợp.
+          </div>
         )}
       </Col>
     </Row>

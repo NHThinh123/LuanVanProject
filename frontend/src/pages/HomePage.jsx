@@ -18,6 +18,29 @@ import { useCategories } from "../features/category/hooks/useCategories";
 import { useUsers } from "../features/user/hooks/useUsers";
 import { useAuthContext } from "../contexts/auth.context";
 
+// Hook để lấy kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const { Title } = Typography;
 
 const HomePage = () => {
@@ -26,6 +49,12 @@ const HomePage = () => {
   const { categories, loading: isCategoriesLoading } = useCategories();
   const { users, isLoading: isUserLoading } = useUsers({});
   const [activeTab, setActiveTab] = useState(user ? "recommended" : "popular");
+
+  // Lấy kích thước màn hình và định nghĩa các biến responsive
+  const { width } = useWindowSize();
+  const isMobile = width < 600;
+  const isTablet = width < 1000;
+  const isDesktop = width < 1200;
 
   // Cập nhật activeTab khi user hoặc authLoading thay đổi
   useEffect(() => {
@@ -66,7 +95,10 @@ const HomePage = () => {
   if (isCategoriesLoading || isUserLoading || authLoading) {
     return (
       <Row justify="center" gutter={[16, 16]}>
-        <Col span={16} style={{ padding: "0px 24px" }}>
+        <Col
+          span={isDesktop ? 24 : 16}
+          style={{ padding: isMobile ? "0px 12px" : "0px 24px" }}
+        >
           <Skeleton active paragraph={{ rows: 1 }} />
           <Divider />
           <Skeleton active paragraph={{ rows: 4 }} />
@@ -75,20 +107,22 @@ const HomePage = () => {
           <Divider />
           <Skeleton active paragraph={{ rows: 4 }} />
         </Col>
-        <Col
-          span={8}
-          style={{
-            padding: "0px 24px",
-            maxWidth: 350,
-            borderLeft: "1px solid #f0f0f0",
-          }}
-        >
-          <Skeleton active paragraph={{ rows: 3 }} />
-          <Divider />
-          <Skeleton active paragraph={{ rows: 3 }} />
-          <Divider />
-          <Skeleton active paragraph={{ rows: 3 }} />
-        </Col>
+        {!isDesktop && (
+          <Col
+            span={isTablet ? 6 : 8}
+            style={{
+              padding: isMobile ? "0px 12px" : "0px 24px",
+              maxWidth: isTablet ? 200 : 350,
+              borderLeft: "1px solid #f0f0f0",
+            }}
+          >
+            <Skeleton active paragraph={{ rows: 3 }} />
+            <Divider />
+            <Skeleton active paragraph={{ rows: 3 }} />
+            <Divider />
+            <Skeleton active paragraph={{ rows: 3 }} />
+          </Col>
+        )}
       </Row>
     );
   }
@@ -189,38 +223,56 @@ const HomePage = () => {
       ];
 
   return (
-    <Row gutter={16}>
-      <Col span={16} style={{ padding: "0px 24px" }}>
+    <Row gutter={[16, 16]}>
+      <Col
+        span={isDesktop ? 24 : 16}
+        style={{ padding: isMobile ? "0px 12px" : "0px 24px" }}
+      >
         <Tabs
           defaultActiveKey={user ? "recommended" : "popular"}
           items={tabItems}
           onChange={(key) => setActiveTab(key)}
+          tabBarStyle={
+            isMobile
+              ? { fontSize: "14px" }
+              : isTablet
+              ? { fontSize: "16px" }
+              : {}
+          }
         />
       </Col>
-      <Col
-        span={8}
-        style={{
-          padding: "0px 24px",
-          maxWidth: 350,
-          borderLeft: "1px solid #f0f0f0",
-        }}
-      >
-        <Title level={4} style={{ marginBottom: 28 }}>
-          Bài viết phổ biến
-        </Title>
-        <PostPopularList
-          postPopular={posts?.slice(0, 3)}
-          loading={isPostsLoading}
-        />
-        <Divider />
-        <Title level={4} style={{ marginBottom: 28 }}>
-          Người dùng nổi bật
-        </Title>
-        <UserList
-          users={filteredUsers?.slice(0, 3)}
-          loading={isUserLoading || isPostsLoading}
-        />
-      </Col>
+      {!isDesktop && (
+        <Col
+          span={isTablet ? 6 : 8}
+          style={{
+            padding: isMobile ? "0px 12px" : "0px 24px",
+            maxWidth: isTablet ? 200 : 350,
+            borderLeft: "1px solid #f0f0f0",
+          }}
+        >
+          <Title
+            level={isMobile ? 5 : isTablet ? 4 : 3}
+            style={{ marginBottom: 28 }}
+          >
+            Bài viết phổ biến
+          </Title>
+          <PostPopularList
+            postPopular={posts?.slice(0, isTablet ? 2 : 3)}
+            loading={isPostsLoading}
+          />
+          <Divider />
+          <Title
+            level={isMobile ? 5 : isTablet ? 4 : 3}
+            style={{ marginBottom: 28 }}
+          >
+            Người dùng nổi bật
+          </Title>
+          <UserList
+            users={filteredUsers?.slice(0, isTablet ? 2 : 3)}
+            loading={isUserLoading || isPostsLoading}
+          />
+        </Col>
+      )}
     </Row>
   );
 };

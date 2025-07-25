@@ -9,6 +9,7 @@ import {
   Input,
   Avatar,
   Dropdown,
+  Drawer,
 } from "antd";
 import {
   CommentOutlined,
@@ -38,6 +39,11 @@ const { Header, Content, Sider } = Layout;
 
 export const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(true);
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  // eslint-disable-next-line no-unused-vars
+  const [isTablet, setIsTablet] = useState(window.innerWidth < 1000);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth < 1200); // Thêm trạng thái isDesktop
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
@@ -55,11 +61,35 @@ export const MainLayout = ({ children }) => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
+
   useEffect(() => {
     if (user) {
       setCollapsed(false);
     }
   }, [user]);
+
+  // Theo dõi kích thước màn hình để chuyển đổi giữa Sider và Drawer
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobileView = window.innerWidth < 600;
+      const isTabletView = window.innerWidth < 1000;
+      const isDesktopView = window.innerWidth < 1200;
+
+      setIsMobile(isMobileView);
+      setIsTablet(isTabletView);
+      setIsDesktop(isDesktopView);
+
+      if (isDesktopView) {
+        setIsDrawerVisible(false); // Đóng Drawer khi thay đổi kích thước
+      } else {
+        setCollapsed(false); // Hiển thị Sider khi trên hoặc bằng 1200px
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const dropdownItems = [
     {
@@ -146,13 +176,20 @@ export const MainLayout = ({ children }) => {
     if (path.startsWith("/searching")) return "searching";
     if (path.startsWith("/categories")) return "categories";
     if (path.startsWith("/messages")) return "messages";
-    if (path.startsWith("/tags")) return "tags";
     if (path.startsWith("/followers")) return "followers";
     return "home";
   };
 
   const handleLogoClick = () => {
     window.location.reload();
+  };
+
+  const toggleDrawer = () => {
+    if (isDesktop) {
+      setIsDrawerVisible(!isDrawerVisible);
+    } else {
+      setCollapsed(!collapsed);
+    }
   };
 
   return (
@@ -170,25 +207,27 @@ export const MainLayout = ({ children }) => {
           padding: "0 16px",
         }}
       >
-        <Row align="middle" gutter={16}>
-          <Col span={6}>
+        <Row align="middle" gutter={16} justify={"space-between"}>
+          <Col span={isDesktop ? 1 : 6}>
             <Flex align="center">
               <Button
                 type="text"
                 icon={<MenuOutlined />}
-                onClick={() => setCollapsed(!collapsed)}
+                onClick={toggleDrawer}
                 style={{ marginRight: 16 }}
               />
-              <Link
-                to="/"
-                onClick={handleLogoClick}
-                style={{ display: "flex", alignItems: "center" }}
-              >
-                <img src={logo} alt="Logo" style={{ height: 42 }} />
-              </Link>
+              {!isDesktop && (
+                <Link
+                  to="/"
+                  onClick={handleLogoClick}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <img src={logo} alt="Logo" style={{ height: 42 }} />
+                </Link>
+              )}
             </Flex>
           </Col>
-          <Col span={11}>
+          <Col span={isMobile ? 10 : 11}>
             <AutoComplete
               ref={autoCompleteRef}
               options={searchOptions}
@@ -217,17 +256,26 @@ export const MainLayout = ({ children }) => {
               />
             </AutoComplete>
           </Col>
-          <Col span={3}>
+          <Col span={isDesktop ? 5 : 3}>
             <Flex justify="end">
               {user && (
-                <Button variant="outlined" color="primary" href="/posts/create">
-                  <PenLine strokeWidth={1.25} size={18} />
+                <Button
+                  size={isMobile ? "small" : "medium"}
+                  variant="outlined"
+                  color="primary"
+                  href="/posts/create"
+                  style={{ fontSize: isMobile ? 12 : 14 }}
+                >
+                  <PenLine
+                    strokeWidth={isMobile ? 1 : 1.25}
+                    size={isMobile ? 16 : 18}
+                  />
                   Đăng bài
                 </Button>
               )}
             </Flex>
           </Col>
-          <Col span={4}>
+          <Col span={isDesktop ? 5 : 4}>
             {!user ? (
               <Flex justify="end" gap={16}>
                 <Button variant="outlined" color="primary" href="/login">
@@ -239,18 +287,20 @@ export const MainLayout = ({ children }) => {
               </Flex>
             ) : (
               <Flex justify="end" align="center" gap={16}>
-                <p
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 16,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 1,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {user.full_name}
-                </p>
+                {!isMobile && (
+                  <p
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 16,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {user.full_name}
+                  </p>
+                )}
                 <Dropdown
                   menu={{ items: dropdownItems }}
                   placement="bottomRight"
@@ -263,47 +313,91 @@ export const MainLayout = ({ children }) => {
         </Row>
       </Header>
       <Layout style={{ marginTop: 64 }}>
-        <Sider
-          collapsed={collapsed}
-          width={200}
-          style={{ position: "fixed", top: 64, bottom: 0 }}
-        >
-          <Menu
-            mode="inline"
-            selectedKeys={[getSelectedKey()]}
-            style={{ height: "100%" }}
-            items={[
-              {
-                key: "home",
-                icon: <HomeOutlined />,
-                label: <Link to="/">Trang chủ</Link>,
-              },
-              {
-                key: "profile",
-                icon: <UserOutlined />,
-                label: <Link to="/profile">Trang cá nhân</Link>,
-              },
-              {
-                key: "followers",
-                icon: <TeamOutlined />,
-                label: <Link to="/followers">Người theo dõi</Link>,
-              },
-              {
-                key: "categories",
-                icon: <SearchOutlined />,
-                label: <Link to="/categories">Tìm kiếm</Link>,
-              },
-              {
-                key: "messages",
-                icon: <CommentOutlined />,
-                label: <Link to="/messages">Tin nhắn</Link>,
-              },
-            ]}
-          />
-        </Sider>
+        {isDesktop ? (
+          <Drawer
+            placement="left"
+            onClose={toggleDrawer}
+            open={isDrawerVisible}
+            width={200}
+            bodyStyle={{ padding: 0 }}
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[getSelectedKey()]}
+              style={{ height: "100%" }}
+              items={[
+                {
+                  key: "home",
+                  icon: <HomeOutlined />,
+                  label: <Link to="/">Trang chủ</Link>,
+                },
+                {
+                  key: "profile",
+                  icon: <UserOutlined />,
+                  label: <Link to="/profile">Trang cá nhân</Link>,
+                },
+                {
+                  key: "followers",
+                  icon: <TeamOutlined />,
+                  label: <Link to="/followers">Người theo dõi</Link>,
+                },
+                {
+                  key: "categories",
+                  icon: <SearchOutlined />,
+                  label: <Link to="/categories">Tìm kiếm</Link>,
+                },
+                {
+                  key: "messages",
+                  icon: <CommentOutlined />,
+                  label: <Link to="/messages">Tin nhắn</Link>,
+                },
+              ]}
+              onClick={toggleDrawer}
+            />
+          </Drawer>
+        ) : (
+          <Sider
+            collapsed={collapsed}
+            width={200}
+            style={{ position: "fixed", top: 64, bottom: 0 }}
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[getSelectedKey()]}
+              style={{ height: "100%" }}
+              items={[
+                {
+                  key: "home",
+                  icon: <HomeOutlined />,
+                  label: <Link to="/">Trang chủ</Link>,
+                },
+                {
+                  key: "profile",
+                  icon: <UserOutlined />,
+                  label: <Link to="/profile">Trang cá nhân</Link>,
+                },
+                {
+                  key: "followers",
+                  icon: <TeamOutlined />,
+                  label: <Link to="/followers">Người theo dõi</Link>,
+                },
+                {
+                  key: "categories",
+                  icon: <SearchOutlined />,
+                  label: <Link to="/categories">Tìm kiếm</Link>,
+                },
+                {
+                  key: "messages",
+                  icon: <CommentOutlined />,
+                  label: <Link to="/messages">Tin nhắn</Link>,
+                },
+              ]}
+            />
+          </Sider>
+        )}
         <Layout
           style={{
-            marginLeft: collapsed ? 80 : 200,
+            marginLeft: isDesktop ? 0 : collapsed ? 80 : 200,
             transition: "margin-left 0.3s",
             background: "#fff",
           }}

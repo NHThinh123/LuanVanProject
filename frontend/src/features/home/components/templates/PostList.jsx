@@ -42,6 +42,29 @@ import { useCourses } from "../../../course/hooks/useCourses";
 import { uploadImageToCloudinary } from "../../../post/services/upload.service";
 import { EllipsisOutlined } from "@ant-design/icons";
 
+// Hook để lấy kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const { Text } = Typography;
 
 // Component QuillEditor
@@ -179,6 +202,12 @@ const PostList = ({ posts = [], isLoading }) => {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [postIdToDelete, setPostIdToDelete] = useState(null);
   const [form] = Form.useForm();
+
+  // Lấy kích thước màn hình
+  const { width } = useWindowSize();
+  const isMobile = width < 600;
+  const isTablet = width < 1000;
+  const isDesktop = width < 1200;
 
   // Memoize filteredCourses to prevent unnecessary re-renders
   const filteredCourses = useMemo(() => {
@@ -379,7 +408,7 @@ const PostList = ({ posts = [], isLoading }) => {
         renderItem={(item) => (
           <List.Item
             key={item._id}
-            style={{ marginBottom: 28 }}
+            style={{ marginBottom: isMobile ? 16 : isTablet ? 20 : 28 }}
             styles={{
               extra: {
                 display: "flex",
@@ -395,7 +424,9 @@ const PostList = ({ posts = [], isLoading }) => {
                 commentCount={item.commentCount || 0}
               />,
               <Flex align="center" gap={8}>
-                <span>{formatDate(item?.createdAt)}</span>
+                <span style={{ fontSize: isMobile ? 12 : isTablet ? 14 : 16 }}>
+                  {formatDate(item?.createdAt)}
+                </span>
                 {user?._id === item.user_id?._id && (
                   <Popover
                     content={getMenuContent(item._id, item)}
@@ -403,7 +434,11 @@ const PostList = ({ posts = [], isLoading }) => {
                     placement="top"
                   >
                     <EllipsisOutlined
-                      style={{ fontSize: 18, cursor: "pointer", marginLeft: 8 }}
+                      style={{
+                        fontSize: isMobile ? 16 : 18,
+                        cursor: "pointer",
+                        marginLeft: 8,
+                      }}
                     />
                   </Popover>
                 )}
@@ -414,7 +449,11 @@ const PostList = ({ posts = [], isLoading }) => {
                 <img
                   src={item.image}
                   alt={item.title}
-                  style={{ maxWidth: 250, height: "auto", objectFit: "cover" }}
+                  style={{
+                    maxWidth: isMobile ? 150 : isTablet ? 200 : 250,
+                    height: "auto",
+                    objectFit: "cover",
+                  }}
                 />
               )
             }
@@ -423,28 +462,37 @@ const PostList = ({ posts = [], isLoading }) => {
               <AvatarCustom
                 src={item.user_id?.avatar_url || ""}
                 name={item.user_id?.full_name || "Unknown"}
-                size={36}
+                size={isMobile ? 28 : isTablet ? 32 : 36}
                 color={"#000"}
                 user_id={item.user_id?._id}
                 isFollowing={item.user_id?.isFollowing || false}
                 follower={item.user_id?.followers_count || 0}
                 fontWeight="normal"
               />
-              <div>
-                <Tag color="blue">
+              <Flex justify="end" wrap>
+                <Tag color="blue" style={{ fontSize: 12 }}>
                   {item?.course_id?.course_code} -{" "}
                   {item?.course_id?.course_name}
                 </Tag>
-                <Tag color="green">{item?.category_id?.category_name}</Tag>
-              </div>
+                <Tag color="green" style={{ fontSize: 12 }}>
+                  {item?.category_id?.category_name}
+                </Tag>
+              </Flex>
             </Flex>
 
             <List.Item.Meta
-              style={{ minHeight: 80, margin: 0 }}
+              style={{ minHeight: isMobile ? 60 : 80, margin: 0 }}
               title={
                 <a
                   href={`/posts/${item?._id}`}
-                  style={{ textDecoration: "none" }}
+                  style={{
+                    textDecoration: "none",
+                    fontSize: isMobile ? 16 : isTablet ? 18 : 20,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
                   onMouseEnter={(e) =>
                     (e.target.style.textDecoration = "underline")
                   }
@@ -457,9 +505,10 @@ const PostList = ({ posts = [], isLoading }) => {
                 <div
                   style={{
                     display: "-webkit-box",
-                    WebkitLineClamp: 2,
+                    WebkitLineClamp: isMobile ? 1 : 2,
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
+                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
                   }}
                   dangerouslySetInnerHTML={{
                     __html: getAllParagraphs(item?.content),
@@ -468,20 +517,27 @@ const PostList = ({ posts = [], isLoading }) => {
               }
             />
             <Flex gap="4px 0" wrap style={{ marginTop: 8 }}>
-              {item.tags?.map((tag) => (
-                <Tag
-                  key={tag._id}
-                  color="#222831"
-                  onClick={() => navigate(`/posts/tag/${tag._id}`)}
-                  style={{ cursor: "pointer" }}
-                  onMouseEnter={(e) =>
-                    (e.target.style.textDecoration = "underline")
-                  }
-                  onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
-                >
-                  #{tag.tag_name}
-                </Tag>
-              ))}
+              {item.tags
+                ?.slice(0, isMobile ? 2 : isTablet ? 3 : 4)
+                .map((tag) => (
+                  <Tag
+                    key={tag._id}
+                    color="#222831"
+                    onClick={() => navigate(`/posts/tag/${tag._id}`)}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.textDecoration = "underline")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.textDecoration = "none")
+                    }
+                  >
+                    #{tag.tag_name}
+                  </Tag>
+                ))}
             </Flex>
           </List.Item>
         )}
@@ -492,7 +548,7 @@ const PostList = ({ posts = [], isLoading }) => {
         centered={true}
         onCancel={handleCancel}
         footer={null}
-        width={800}
+        width={isMobile ? "90%" : isTablet ? "95%" : 800}
         destroyOnClose={true}
         styles={{
           body: { maxHeight: "80vh", overflow: "auto", padding: "16px" },
@@ -509,7 +565,7 @@ const PostList = ({ posts = [], isLoading }) => {
               size="large"
               autoSize
               style={{
-                fontSize: "24px",
+                fontSize: isMobile ? 18 : isTablet ? 20 : 24,
                 borderRadius: "4px",
                 fontWeight: "bold",
               }}
