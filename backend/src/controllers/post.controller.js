@@ -9,7 +9,8 @@ const {
   searchPostsService,
   getPostsByTagService,
   getFollowingPostsService,
-  getPopularPostsService, // Thêm service mới
+  getPopularPostsService,
+  getLikedPostsService, // Thêm service mới
 } = require("../services/post.service");
 const {
   addSearchHistoryService,
@@ -192,6 +193,20 @@ const getPopularPosts = async (req, res) => {
     .json(result);
 };
 
+const getLikedPosts = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const current_user_id = req.user._id;
+
+  const result = await getLikedPostsService({
+    current_user_id,
+    page,
+    limit,
+  });
+  return res
+    .status(result.EC === 0 ? 200 : result.EC === 1 ? 404 : 500)
+    .json(result);
+};
+
 module.exports = {
   createPost,
   updatePost,
@@ -204,4 +219,5 @@ module.exports = {
   getPostsByTag,
   getFollowingPosts,
   getPopularPosts,
+  getLikedPosts,
 };

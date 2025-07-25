@@ -83,7 +83,7 @@ const PostFilterByTagPage = () => {
         swiperRef.current.slideTo(index, 300); // Cuộn đến slide với animation 300ms
       }
     }
-  }, [selectedTagId, relatedTags, allTags]);
+  }, [selectedTagId, relatedTags, allTags, swiperRef, relevantTags, otherTags]);
 
   if (isPostsLoading || tagsLoading || allTagsLoading) {
     return (

@@ -1363,6 +1363,160 @@ const getPopularPostsService = async ({
   }
 };
 
+const getLikedPostsService = async ({
+  current_user_id,
+  page = 1,
+  limit = 10,
+}) => {
+  const startTime = Date.now();
+  try {
+    const skip = (page - 1) * limit;
+
+    const likedPosts = await User_Like_Post.find({
+      user_id: current_user_id,
+    })
+      .select("post_id")
+      .skip(skip)
+      .limit(limit);
+
+    if (!likedPosts || likedPosts.length === 0) {
+      return {
+        message: "No liked posts found",
+        EC: 1,
+        data: {
+          posts: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+          },
+        },
+      };
+    }
+
+    const postIds = likedPosts.map((lp) => lp.post_id);
+
+    const posts = await Post.find({
+      _id: { $in: postIds },
+      status: "accepted",
+    })
+      .populate({
+        path: "user_id",
+        select: "full_name avatar_url",
+      })
+      .populate("course_id", "course_name course_code")
+      .populate("category_id", "category_name")
+      .sort({ createdAt: -1 });
+
+    const total = await User_Like_Post.countDocuments({
+      user_id: current_user_id,
+    });
+
+    const [
+      allDocuments,
+      allTags,
+      allLikes,
+      allCommentCounts,
+      allLikeStatuses,
+      allFollowersCounts,
+      allFollowStatuses,
+    ] = await Promise.all([
+      Document.find({ post_id: { $in: postIds } }).select(
+        "post_id type document_url"
+      ),
+      Post_Tag.find({ post_id: { $in: postIds } }).populate("tag_id"),
+      User_Like_Post.find({ post_id: { $in: postIds } }).select(
+        "post_id user_id"
+      ),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      User_Like_Post.find({
+        user_id: current_user_id,
+        post_id: { $in: postIds },
+      }).select("post_id"),
+      UserFollow.aggregate([
+        {
+          $match: { user_follow_id: { $in: posts.map((p) => p.user_id._id) } },
+        },
+        { $group: { _id: "$user_follow_id", count: { $sum: 1 } } },
+      ]),
+      UserFollow.find({
+        user_id: current_user_id,
+        user_follow_id: { $in: posts.map((p) => p.user_id._id) },
+      }).select("user_follow_id"),
+    ]);
+
+    const postsWithDetails = posts.map((post) => {
+      const documents = allDocuments.filter(
+        (doc) => doc.post_id.toString() === post._id.toString()
+      );
+      const tags = allTags
+        .filter((tag) => tag.post_id.toString() === post._id.toString())
+        .map((tag) => ({ _id: tag.tag_id._id, tag_name: tag.tag_id.tag_name }));
+      const likes = allLikes.filter(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const commentCount =
+        allCommentCounts.find((c) => c._id.toString() === post._id.toString())
+          ?.count || 0;
+      const likeStatus = allLikeStatuses.find(
+        (like) => like.post_id.toString() === post._id.toString()
+      );
+      const followersCount =
+        allFollowersCounts.find(
+          (fc) => fc._id.toString() === post.user_id._id.toString()
+        )?.count || 0;
+      const followStatus = allFollowStatuses.find(
+        (fs) => fs.user_follow_id.toString() === post.user_id._id.toString()
+      );
+
+      const image =
+        documents.length > 0
+          ? documents.find((doc) => doc.type === "image")?.document_url ||
+            "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg"
+          : "https://res.cloudinary.com/luanvan/image/upload/v1751021776/learning-education-academics-knowledge-concept_yyoyge.jpg";
+
+      return {
+        ...post._doc,
+        reason: post.reason || "",
+        user_id: {
+          ...post.user_id._doc,
+          followers_count: followersCount,
+          isFollowing:
+            current_user_id && current_user_id !== post.user_id._id.toString()
+              ? !!followStatus
+              : false,
+        },
+        image,
+        tags,
+        likeCount: likes.length,
+        isLiked: true, // Since these are liked posts
+        commentCount,
+      };
+    });
+
+    return {
+      message: "Liked posts retrieved successfully",
+      EC: 0,
+      data: {
+        posts: postsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getLikedPostsService:", error);
+    return { message: "Server error", EC: -1 };
+  }
+};
+
 module.exports = {
   createPostService,
   updatePostService,
@@ -1375,4 +1529,5 @@ module.exports = {
   getPostsByTagService,
   getFollowingPostsService,
   getPopularPostsService,
+  getLikedPostsService,
 };

@@ -488,7 +488,7 @@ const PostList = ({ posts = [], isLoading }) => {
                     {item?.course_id?.course_name}
                   </Tag>
                 )}
-                {item.category_id && (
+                {item.category_id && !isTablet && (
                   <Tag color="green" style={{ fontSize: 12 }}>
                     {item?.category_id?.category_name}
                   </Tag>

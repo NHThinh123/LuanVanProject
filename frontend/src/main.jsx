@@ -31,6 +31,7 @@ import AdminChartPage from "./pages/AdminChartPage.jsx";
 import AdminCategoryPage from "./pages/AdminCategoryPage.jsx";
 import AdminCoursePage from "./pages/AdminCoursePage.jsx";
 import AdminTagPage from "./pages/AdminTagPage.jsx";
+import PostLikedPage from "./pages/PostLikedPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
           {
             path: "create",
             element: <PostCreatePage />,
+          },
+          {
+            path: "liked",
+            element: <PostLikedPage />,
           },
           {
             path: "tag/:tag_id",

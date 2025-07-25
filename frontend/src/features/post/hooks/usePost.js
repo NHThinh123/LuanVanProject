@@ -6,6 +6,7 @@ import {
   getPostsByTag,
   getFollowingPosts,
   getPopularPosts,
+  getLikedPosts,
 } from "../services/post.service";
 import { notification } from "antd";
 
@@ -20,6 +21,7 @@ export const usePosts = (queryParams = {}) => {
     recommend = false,
     following = false,
     popular = false,
+    liked = false,
   } = queryParams;
 
   const {
@@ -41,6 +43,7 @@ export const usePosts = (queryParams = {}) => {
       recommend,
       following,
       popular,
+      liked,
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const limit = 5;
@@ -53,6 +56,9 @@ export const usePosts = (queryParams = {}) => {
       }
       if (popular) {
         return getPopularPosts({ page: pageParam, limit });
+      }
+      if (liked) {
+        return getLikedPosts({ page: pageParam, limit });
       }
       if (keyword) {
         return searchPosts({ keyword, page: pageParam, limit });

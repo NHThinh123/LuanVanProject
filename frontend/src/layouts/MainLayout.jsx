@@ -13,6 +13,7 @@ import {
 } from "antd";
 import {
   CommentOutlined,
+  HeartOutlined,
   HomeOutlined,
   MenuOutlined,
   ProfileOutlined,
@@ -171,6 +172,7 @@ export const MainLayout = ({ children }) => {
   const getSelectedKey = () => {
     const path = location.pathname;
     if (path === "/") return "home";
+    if (path.startsWith("/posts/liked")) return "liked";
     if (path.startsWith("/posts")) return "post";
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/searching")) return "searching";
@@ -342,6 +344,11 @@ export const MainLayout = ({ children }) => {
                   label: <Link to="/followers">Người theo dõi</Link>,
                 },
                 {
+                  key: "liked",
+                  icon: <HeartOutlined />,
+                  label: <Link to="/posts/liked">Bài viết đã thích</Link>,
+                },
+                {
                   key: "categories",
                   icon: <SearchOutlined />,
                   label: <Link to="/categories">Tìm kiếm</Link>,
@@ -380,6 +387,11 @@ export const MainLayout = ({ children }) => {
                   key: "followers",
                   icon: <TeamOutlined />,
                   label: <Link to="/followers">Người theo dõi</Link>,
+                },
+                {
+                  key: "liked",
+                  icon: <HeartOutlined />,
+                  label: <Link to="/posts/liked">Bài viết đã thích</Link>,
                 },
                 {
                   key: "categories",
