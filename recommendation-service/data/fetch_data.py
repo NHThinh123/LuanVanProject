@@ -78,7 +78,7 @@ async def calculate_keyword_relevance(post_id, keywords_with_time, post_metadata
         keyword = item["keyword"].lower()
         created_at = item["createdAt"]
         # Tối ưu fuzzy matching bằng cách giới hạn độ dài văn bản
-        score = fuzz.partial_ratio(keyword, text[:500])  # Giới hạn 500 ký tự
+        score = fuzz.partial_ratio(keyword, text[:1000]) 
         time_diff = (current_time - created_at).total_seconds() / (24 * 3600)
         time_weight = max(0.1, 1.0 - (index * 0.2))
         weighted_score = score * time_weight

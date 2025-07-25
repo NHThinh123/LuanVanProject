@@ -110,8 +110,14 @@ const PostDetailPage = () => {
           {post.title || "Tiêu đề bài viết"}
         </Typography.Title>
         <Flex style={{ marginBottom: 16 }} gap={8}>
-          <Tag color="blue">{post.course_id?.course_name}</Tag>
-          <Tag color="green">{post.category_id?.category_name}</Tag>
+          {post.course_id && (
+            <Tag color="blue">
+              {post.course_id?.course_code} - {post.course_id?.course_name}
+            </Tag>
+          )}
+          {post.category_id && (
+            <Tag color="green">{post.category_id?.category_name}</Tag>
+          )}
         </Flex>
 
         <Flex align="center" gap={16}>

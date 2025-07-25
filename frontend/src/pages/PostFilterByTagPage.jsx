@@ -1,16 +1,6 @@
-import {
-  Col,
-  Row,
-  Skeleton,
-  Typography,
-  Tag,
-  Flex,
-  Divider,
-  Button,
-  Space,
-} from "antd";
+import { Col, Row, Skeleton, Typography, Tag, Flex, Divider } from "antd";
 import { useParams, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SearchingPostList from "../features/searching/components/templates/SearchingPostList";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useTag } from "../features/tag/hooks/useTag";
@@ -48,6 +38,7 @@ const PostFilterByTagPage = () => {
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
   const [selectedTagId, setSelectedTagId] = useState(initialTagId || null);
+  const swiperRef = useRef(null);
 
   const { tags: relatedTags, tagsLoading } = useTag({ keyword });
   const { tags: allTags, isLoading: allTagsLoading } = useTag();
@@ -78,6 +69,21 @@ const PostFilterByTagPage = () => {
       setSelectedTagId(initialTagId);
     }
   }, [initialTagId, selectedTagId]);
+
+  // Cuộn tới slide của tag được chọn
+  useEffect(() => {
+    if (
+      swiperRef.current &&
+      selectedTagId &&
+      (relatedTags.length > 0 || allTags.length > 0)
+    ) {
+      const allTagsList = [...relevantTags, ...otherTags];
+      const index = allTagsList.findIndex((tag) => tag._id === selectedTagId);
+      if (index !== -1) {
+        swiperRef.current.slideTo(index, 300); // Cuộn đến slide với animation 300ms
+      }
+    }
+  }, [selectedTagId, relatedTags, allTags]);
 
   if (isPostsLoading || tagsLoading || allTagsLoading) {
     return (
@@ -151,6 +157,7 @@ const PostFilterByTagPage = () => {
               nextEl: ".custom-next-button",
             }}
             style={{ flex: 1 }}
+            onSwiper={(swiper) => (swiperRef.current = swiper)}
           >
             {relevantTags.map((tag) => (
               <SwiperSlide key={tag._id} style={{ width: "auto" }}>

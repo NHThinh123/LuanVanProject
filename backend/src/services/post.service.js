@@ -167,7 +167,8 @@ const updatePostService = async (user_id, post_id, postData) => {
       return { message: "Post not found", EC: 1 };
     }
 
-    const isAdmin = user.role === "admin";
+    const isAdmin = user.role == "admin";
+
     if (!isAdmin && post.user_id.toString() !== user_id) {
       return {
         message: "You are not authorized to edit this post",

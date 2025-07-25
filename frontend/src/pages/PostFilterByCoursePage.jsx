@@ -1,6 +1,6 @@
 import { Col, Row, Skeleton, Typography, Tag, Flex, Divider } from "antd";
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SearchingPostList from "../features/searching/components/templates/SearchingPostList";
 import { usePosts } from "../features/post/hooks/usePost";
 import { useCourses } from "../features/course/hooks/useCourses";
@@ -35,10 +35,10 @@ const useWindowSize = () => {
 
 const PostFilterByCoursePage = () => {
   const { course_id: initialCourseId } = useParams();
-  console.log("Initial Course ID:", initialCourseId);
   const [selectedCourseId, setSelectedCourseId] = useState(
     initialCourseId || null
   );
+  const swiperRef = useRef(null);
 
   const { courses, loading: coursesLoading } = useCourses();
   const {
@@ -62,6 +62,18 @@ const PostFilterByCoursePage = () => {
       setSelectedCourseId(initialCourseId);
     }
   }, [initialCourseId, selectedCourseId]);
+
+  // Cuộn tới slide của course được chọn
+  useEffect(() => {
+    if (swiperRef.current && selectedCourseId && courses.length > 0) {
+      const index = courses.findIndex(
+        (course) => course._id === selectedCourseId
+      );
+      if (index !== -1) {
+        swiperRef.current.slideTo(index, 300); // Cuộn đến slide với animation 300ms
+      }
+    }
+  }, [selectedCourseId, courses]);
 
   if (isPostsLoading || coursesLoading) {
     return (
@@ -135,6 +147,7 @@ const PostFilterByCoursePage = () => {
               nextEl: ".custom-next-button",
             }}
             style={{ flex: 1 }}
+            onSwiper={(swiper) => (swiperRef.current = swiper)}
           >
             {courses.map((course) => (
               <SwiperSlide key={course._id} style={{ width: "auto" }}>

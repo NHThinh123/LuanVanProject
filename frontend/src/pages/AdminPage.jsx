@@ -69,6 +69,9 @@ const AdminPage = () => {
     if (path.startsWith("/admin/users")) return "users";
     if (path.startsWith("/admin/moderation")) return "moderation";
     if (path.startsWith("/admin/charts")) return "charts";
+    if (path.startsWith("/admin/categories")) return "categories";
+    if (path.startsWith("/admin/courses")) return "courses";
+    if (path.startsWith("/admin/tags")) return "tags";
     return "posts";
   };
 
@@ -144,12 +147,13 @@ const AdminPage = () => {
       <Layout style={{ marginTop: 64 }}>
         <Sider
           collapsed={collapsed}
-          width={200}
+          width={205}
           style={{ position: "fixed", top: 64, bottom: 0 }}
         >
           <Menu
             mode="inline"
             selectedKeys={[getSelectedKey()]}
+            openKeys={["categories-management"]}
             style={{ height: "100%" }}
             items={[
               {
@@ -171,6 +175,25 @@ const AdminPage = () => {
                 key: "charts",
                 icon: <BarChartOutlined />,
                 label: <Link to="/admin/charts">Phân tích</Link>,
+              },
+              {
+                key: "categories-management",
+                icon: <AppstoreOutlined />,
+                label: "Quản lý danh mục",
+                children: [
+                  {
+                    key: "categories",
+                    label: <Link to="/admin/categories">Chủ đề</Link>,
+                  },
+                  {
+                    key: "courses",
+                    label: <Link to="/admin/courses">Khóa học</Link>,
+                  },
+                  {
+                    key: "tags",
+                    label: <Link to="/admin/tags">Thẻ</Link>,
+                  },
+                ],
               },
             ]}
           />

@@ -470,13 +470,29 @@ const PostList = ({ posts = [], isLoading }) => {
                 fontWeight="normal"
               />
               <Flex justify="end" wrap>
-                <Tag color="blue" style={{ fontSize: 12 }}>
-                  {item?.course_id?.course_code} -{" "}
-                  {item?.course_id?.course_name}
-                </Tag>
-                <Tag color="green" style={{ fontSize: 12 }}>
-                  {item?.category_id?.category_name}
-                </Tag>
+                {item.course_id && (
+                  <Tag
+                    color="blue"
+                    style={{ fontSize: 12, cursor: "pointer" }}
+                    onClick={() =>
+                      navigate(`/posts/course/${item.course_id?._id}`)
+                    }
+                    onMouseEnter={(e) =>
+                      (e.target.style.textDecoration = "underline")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.textDecoration = "none")
+                    }
+                  >
+                    {item?.course_id?.course_code} -{" "}
+                    {item?.course_id?.course_name}
+                  </Tag>
+                )}
+                {item.category_id && (
+                  <Tag color="green" style={{ fontSize: 12 }}>
+                    {item?.category_id?.category_name}
+                  </Tag>
+                )}
               </Flex>
             </Flex>
 

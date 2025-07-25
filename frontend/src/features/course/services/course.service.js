@@ -19,3 +19,21 @@ export const createCourse = async (courseData) => {
     throw new Error(error.message || "Lỗi khi tạo khóa học");
   }
 };
+
+export const updateCourse = async (courseId, courseData) => {
+  try {
+    const response = await axios.put(`/courses/${courseId}`, courseData);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật khóa học");
+  }
+};
+
+export const deleteCourse = async (courseId) => {
+  try {
+    const response = await axios.delete(`/courses/${courseId}`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi xóa khóa học");
+  }
+};

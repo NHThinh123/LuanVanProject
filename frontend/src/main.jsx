@@ -28,6 +28,9 @@ import AdminModerationPage from "./pages/AdminModerationPage.jsx";
 import CategorySearchingPage from "./pages/CategorySearchingPage.jsx";
 import PostFilterByCoursePage from "./pages/PostFilterByCoursePage.jsx";
 import AdminChartPage from "./pages/AdminChartPage.jsx";
+import AdminCategoryPage from "./pages/AdminCategoryPage.jsx";
+import AdminCoursePage from "./pages/AdminCoursePage.jsx";
+import AdminTagPage from "./pages/AdminTagPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -142,6 +145,18 @@ const router = createBrowserRouter([
       {
         path: "charts",
         element: <AdminChartPage />,
+      },
+      {
+        path: "categories",
+        element: <AdminCategoryPage />,
+      },
+      {
+        path: "courses",
+        element: <AdminCoursePage />,
+      },
+      {
+        path: "tags",
+        element: <AdminTagPage />,
       },
     ],
   },

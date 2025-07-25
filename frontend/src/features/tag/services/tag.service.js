@@ -18,6 +18,24 @@ export const createTag = async (tag_name) => {
   }
 };
 
+export const updateTag = async (tagId, tagData) => {
+  try {
+    const response = await axios.put(`/tags/${tagId}`, tagData);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi cập nhật thẻ");
+  }
+};
+
+export const deleteTag = async (tagId) => {
+  try {
+    const response = await axios.delete(`/tags/${tagId}`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi khi xóa thẻ");
+  }
+};
+
 export const addTagsToPost = async ({ post_id, tag_ids }) => {
   try {
     const promises = tag_ids.map((tag_id) =>
