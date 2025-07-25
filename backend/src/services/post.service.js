@@ -468,8 +468,6 @@ const getPostsService = async (query) => {
       };
     });
 
-    console.log(`getPostsService took ${Date.now() - startTime}ms`);
-
     return {
       message: "Posts retrieved successfully",
       EC: 0,
@@ -531,8 +529,6 @@ const getPostByIdService = async (post_id, current_user_id) => {
         ? checkUserFollowService(current_user_id, post.user_id._id)
         : null,
     ]);
-
-    console.log(`getPostByIdService took ${Date.now() - startTime}ms`);
 
     return {
       message: "Post retrieved successfully",
@@ -651,12 +647,6 @@ const getRecommendedPostsService = async (query) => {
           reason: post.reason || "",
         }));
 
-        console.log(
-          `getRecommendedPostsService (search history) took ${
-            Date.now() - startTime
-          }ms`
-        );
-
         return {
           message: "Posts retrieved based on search history successfully",
           EC: 0,
@@ -709,12 +699,6 @@ const getRecommendedPostsService = async (query) => {
         })),
       ].slice(0, limit);
 
-      console.log(
-        `getRecommendedPostsService (popular/random) took ${
-          Date.now() - startTime
-        }ms`
-      );
-
       return {
         message: "Popular and random posts retrieved successfully",
         EC: 0,
@@ -761,8 +745,6 @@ const getRecommendedPostsService = async (query) => {
         };
       })
       .filter((post) => post !== null);
-
-    console.log(`getRecommendedPostsService took ${Date.now() - startTime}ms`);
 
     return {
       message: "Recommended posts retrieved successfully",
@@ -905,8 +887,6 @@ const searchPostsService = async ({
         commentCount,
       };
     });
-
-    console.log(`searchPostsService took ${Date.now() - startTime}ms`);
 
     return {
       message: "Search results retrieved successfully",
@@ -1059,8 +1039,6 @@ const getPostsByTagService = async ({
         commentCount,
       };
     });
-
-    console.log(`getPostsByTagService took ${Date.now() - startTime}ms`);
 
     return {
       message: "Posts by tag retrieved successfully",
@@ -1221,8 +1199,6 @@ const getFollowingPostsService = async ({
       };
     });
 
-    console.log(`getFollowingPostsService took ${Date.now() - startTime}ms`);
-
     return {
       message: "Following posts retrieved successfully",
       EC: 0,
@@ -1367,8 +1343,6 @@ const getPopularPostsService = async ({
         };
       })
       .sort((a, b) => b.likeCount - a.likeCount); // Sắp xếp theo likeCount giảm dần
-
-    console.log(`getPopularPostsService took ${Date.now() - startTime}ms`);
 
     return {
       message: "Popular posts retrieved successfully",

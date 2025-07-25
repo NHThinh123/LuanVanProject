@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useState, useCallback, useEffect } from "react";
 import { Table, Modal, Form, Input, Button } from "antd";
 import moment from "moment";
