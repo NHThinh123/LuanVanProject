@@ -555,6 +555,15 @@ const PostList = ({ posts = [], isLoading }) => {
                   </Tag>
                 ))}
             </Flex>
+            {(item?.status === "pending" || item?.status === "rejected") && (
+              <Tag
+                color={item?.status === "pending" ? "orange" : "red"}
+                style={{ marginTop: 8 }}
+              >
+                Lý do {item?.status === "pending" ? "kiểm duyệt" : "từ chối"}:{" "}
+                {item?.reason || "Nội dung bài viết chưa phù hợp"}
+              </Tag>
+            )}
           </List.Item>
         )}
       />
@@ -565,7 +574,7 @@ const PostList = ({ posts = [], isLoading }) => {
         onCancel={handleCancel}
         footer={null}
         width={isMobile ? "90%" : isTablet ? "95%" : 800}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         styles={{
           body: { maxHeight: "80vh", overflow: "auto", padding: "16px" },
         }}

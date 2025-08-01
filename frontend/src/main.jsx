@@ -32,6 +32,7 @@ import AdminCategoryPage from "./pages/AdminCategoryPage.jsx";
 import AdminCoursePage from "./pages/AdminCoursePage.jsx";
 import AdminTagPage from "./pages/AdminTagPage.jsx";
 import PostLikedPage from "./pages/PostLikedPage.jsx";
+import PostPendingPage from "./pages/PostPendingPage.jsx";
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
           {
             path: "liked",
             element: <PostLikedPage />,
+          },
+          {
+            path: "pending",
+            element: <PostPendingPage />,
           },
           {
             path: "tag/:tag_id",

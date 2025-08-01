@@ -71,16 +71,11 @@ const createPostService = async (user_id, postData) => {
     const cleanedContent = removeImagesFromContent(content);
 
     const moderationPrompt = `
-      Kiểm tra nội dung văn bản của bài viết sau và xác định xem có phù hợp với tiêu chuẩn cộng đồng không. 
-      Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết, liên kết hình ảnh hoặc nội dung đa phương tiện.
+      Kiểm tra nội dung văn bản của bài viết sau và trả về một chuỗi JSON hợp lệ (không sử dụng markdown, không có ký tự \`\`\` hoặc các ký tự đặc biệt khác). Định dạng phải là:
+      {"status":"accepted" hoặc "pending","reason":"Lý do từ chối nếu status là pending, nếu không thì để trống"}
       Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
-      Trả về định dạng JSON thuần túy, không sử dụng markdown hoặc ký tự đặc biệt như \`\`\`:
-      {
-        "status": "accepted" hoặc "pending",
-        "reason": "Lý do từ chối nếu status là pending, nếu không thì để trống"
-      }
-      Tiêu đề: ${title}
-      Nội dung văn bản: ${cleanedContent}
+      Tiêu đề: ${title.replace(/"/g, '\\"')}
+      Nội dung văn bản: ${cleanedContent.replace(/"/g, '\\"')}
     `;
     const moderationResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -92,13 +87,19 @@ const createPostService = async (user_id, postData) => {
       const cleanedText = moderationResult.text
         .replace(/```json\n|```/g, "")
         .replace(/`/g, "")
+        .replace(/\n/g, "")
         .trim();
+      console.log("Cleaned JSON text in createPostService:", cleanedText); // Debug
       moderationData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error("Error parsing JSON from moderationResult:", parseError);
+      console.error(
+        "Error parsing JSON from moderationResult in createPostService:",
+        parseError
+      );
+      console.error("Invalid JSON string:", moderationResult.text);
       moderationData = {
         status: "pending",
-        reason: "Unable to parse moderation result",
+        reason: `Unable to parse moderation result: ${parseError.message}`,
       };
     }
 
@@ -215,16 +216,11 @@ const updatePostService = async (user_id, post_id, postData) => {
       const cleanedContent = removeImagesFromContent(content || post.content);
 
       const moderationPrompt = `
-        Kiểm tra nội dung văn bản của bài viết sau và xác định xem có phù hợp với tiêu chuẩn cộng đồng không. 
-        Chỉ kiểm duyệt nội dung văn bản, bỏ qua bất kỳ liên kết hình ảnh hoặc nội dung đa phương tiện.
+        Kiểm tra nội dung văn bản của bài viết sau và trả về một chuỗi JSON hợp lệ (không sử dụng markdown, không có ký tự \`\`\` hoặc các ký tự đặc biệt khác). Định dạng phải là:
+        {"status":"accepted" hoặc "pending","reason":"Lý do từ chối nếu status là pending, nếu không thì để trống"}
         Nội dung không được chứa bạo lực, ngôn từ phản cảm, nội dung chính trị, hoặc bất kỳ nội dung không phù hợp nào.
-        Trả về định dạng JSON thuần túy, không sử dụng markdown hoặc ký tự đặc biệt như \`\`\`:
-        {
-          "status": "accepted" hoặc "pending",
-          "reason": "Lý do từ chối nếu status là pending, nếu không thì để trống"
-        }
-        Tiêu đề: ${title || post.title}
-        Nội dung văn bản: ${cleanedContent}
+        Tiêu đề: ${(title || post.title).replace(/"/g, '\\"')}
+        Nội dung văn bản: ${cleanedContent.replace(/"/g, '\\"')}
       `;
       const moderationResult = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -236,13 +232,19 @@ const updatePostService = async (user_id, post_id, postData) => {
         const cleanedText = moderationResult.text
           .replace(/```json\n|```/g, "")
           .replace(/`/g, "")
+          .replace(/\n/g, "")
           .trim();
+        console.log("Cleaned JSON text in updatePostService:", cleanedText); // Debug
         moderationData = JSON.parse(cleanedText);
       } catch (parseError) {
-        console.error("Error parsing JSON from moderationResult:", parseError);
+        console.error(
+          "Error parsing JSON from moderationResult in updatePostService:",
+          parseError
+        );
+        console.error("Invalid JSON string:", moderationResult.text);
         moderationData = {
           status: "pending",
-          reason: "Unable to parse moderation result",
+          reason: `Unable to parse moderation result: ${parseError.message}`,
         };
       }
 

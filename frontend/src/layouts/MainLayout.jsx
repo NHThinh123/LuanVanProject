@@ -12,6 +12,7 @@ import {
   Drawer,
 } from "antd";
 import {
+  ClockCircleOutlined,
   CommentOutlined,
   HeartOutlined,
   HomeOutlined,
@@ -44,7 +45,7 @@ export const MainLayout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
   // eslint-disable-next-line no-unused-vars
   const [isTablet, setIsTablet] = useState(window.innerWidth < 1000);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth < 1200); // Thêm trạng thái isDesktop
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth < 1200);
   const [searchValue, setSearchValue] = useState("");
   const { user } = useAuthContext();
   const { handleLogout } = useAuth();
@@ -69,7 +70,6 @@ export const MainLayout = ({ children }) => {
     }
   }, [user]);
 
-  // Theo dõi kích thước màn hình để chuyển đổi giữa Sider và Drawer
   useEffect(() => {
     const handleResize = () => {
       const isMobileView = window.innerWidth < 600;
@@ -81,9 +81,9 @@ export const MainLayout = ({ children }) => {
       setIsDesktop(isDesktopView);
 
       if (isDesktopView) {
-        setIsDrawerVisible(false); // Đóng Drawer khi thay đổi kích thước
+        setIsDrawerVisible(false);
       } else {
-        setCollapsed(false); // Hiển thị Sider khi trên hoặc bằng 1200px
+        setCollapsed(false);
       }
     };
 
@@ -117,6 +117,17 @@ export const MainLayout = ({ children }) => {
     },
     {
       key: "3",
+      label: (
+        <Flex align="center" gap={16} style={{ padding: "4px 8px" }}>
+          <PenLine strokeWidth={1.25} />
+          <Link to="/posts/pending" style={{ color: "inherit" }}>
+            Bài viết chờ kiểm duyệt
+          </Link>
+        </Flex>
+      ),
+    },
+    {
+      key: "4",
       label: (
         <Flex align="center" gap={16} style={{ padding: "4px 8px" }}>
           <LogOut strokeWidth={1.25} />
@@ -173,6 +184,7 @@ export const MainLayout = ({ children }) => {
     const path = location.pathname;
     if (path === "/") return "home";
     if (path.startsWith("/posts/liked")) return "liked";
+    if (path.startsWith("/posts/pending")) return "pending";
     if (path.startsWith("/posts")) return "post";
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/searching")) return "searching";
@@ -193,6 +205,49 @@ export const MainLayout = ({ children }) => {
       setCollapsed(!collapsed);
     }
   };
+
+  // Lọc các menu item dựa trên trạng thái đăng nhập
+  const menuItems = [
+    {
+      key: "home",
+      icon: <HomeOutlined />,
+      label: <Link to="/">Trang chủ</Link>,
+    },
+    ...(user
+      ? [
+          {
+            key: "profile",
+            icon: <UserOutlined />,
+            label: <Link to="/profile">Trang cá nhân</Link>,
+          },
+          {
+            key: "followers",
+            icon: <TeamOutlined />,
+            label: <Link to="/followers">Người theo dõi</Link>,
+          },
+          {
+            key: "liked",
+            icon: <HeartOutlined />,
+            label: <Link to="/posts/liked">Bài viết đã thích</Link>,
+          },
+          {
+            key: "pending",
+            icon: <ClockCircleOutlined />,
+            label: <Link to="/posts/pending">Bài viết đang chờ duyệt</Link>,
+          },
+        ]
+      : []),
+    {
+      key: "categories",
+      icon: <SearchOutlined />,
+      label: <Link to="/categories">Tìm kiếm</Link>,
+    },
+    {
+      key: "messages",
+      icon: <CommentOutlined />,
+      label: <Link to="/messages">Tin nhắn</Link>,
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -327,38 +382,7 @@ export const MainLayout = ({ children }) => {
               mode="inline"
               selectedKeys={[getSelectedKey()]}
               style={{ height: "100%" }}
-              items={[
-                {
-                  key: "home",
-                  icon: <HomeOutlined />,
-                  label: <Link to="/">Trang chủ</Link>,
-                },
-                {
-                  key: "profile",
-                  icon: <UserOutlined />,
-                  label: <Link to="/profile">Trang cá nhân</Link>,
-                },
-                {
-                  key: "followers",
-                  icon: <TeamOutlined />,
-                  label: <Link to="/followers">Người theo dõi</Link>,
-                },
-                {
-                  key: "liked",
-                  icon: <HeartOutlined />,
-                  label: <Link to="/posts/liked">Bài viết đã thích</Link>,
-                },
-                {
-                  key: "categories",
-                  icon: <SearchOutlined />,
-                  label: <Link to="/categories">Tìm kiếm</Link>,
-                },
-                {
-                  key: "messages",
-                  icon: <CommentOutlined />,
-                  label: <Link to="/messages">Tin nhắn</Link>,
-                },
-              ]}
+              items={menuItems}
               onClick={toggleDrawer}
             />
           </Drawer>
@@ -372,38 +396,7 @@ export const MainLayout = ({ children }) => {
               mode="inline"
               selectedKeys={[getSelectedKey()]}
               style={{ height: "100%" }}
-              items={[
-                {
-                  key: "home",
-                  icon: <HomeOutlined />,
-                  label: <Link to="/">Trang chủ</Link>,
-                },
-                {
-                  key: "profile",
-                  icon: <UserOutlined />,
-                  label: <Link to="/profile">Trang cá nhân</Link>,
-                },
-                {
-                  key: "followers",
-                  icon: <TeamOutlined />,
-                  label: <Link to="/followers">Người theo dõi</Link>,
-                },
-                {
-                  key: "liked",
-                  icon: <HeartOutlined />,
-                  label: <Link to="/posts/liked">Bài viết đã thích</Link>,
-                },
-                {
-                  key: "categories",
-                  icon: <SearchOutlined />,
-                  label: <Link to="/categories">Tìm kiếm</Link>,
-                },
-                {
-                  key: "messages",
-                  icon: <CommentOutlined />,
-                  label: <Link to="/messages">Tin nhắn</Link>,
-                },
-              ]}
+              items={menuItems}
             />
           </Sider>
         )}

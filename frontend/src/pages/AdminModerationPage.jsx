@@ -128,6 +128,26 @@ const AdminModerationPage = () => {
       ),
     },
     {
+      title: "Lý do từ chối",
+      dataIndex: "reason",
+      key: "reason",
+      render: (reason) => (
+        <span
+          style={{
+            display: "inline-block",
+            maxWidth: "200px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            verticalAlign: "middle",
+          }}
+          title={reason || "Không có"}
+        >
+          {reason || "Không có"}
+        </span>
+      ),
+    },
+    {
       title: "Số lượt thích",
       dataIndex: "likeCount",
       key: "likeCount",
@@ -209,58 +229,78 @@ const AdminModerationPage = () => {
         centered={true}
         onCancel={handleCancel}
         footer={null}
-        width={600}
-        style={{
-          body: {
-            maxHeight: "60vh",
-            overflow: "auto",
-            padding: "16px",
-          },
+        width={800}
+        bodyStyle={{
+          maxHeight: "80vh",
+          overflow: "auto",
+          padding: "16px",
         }}
       >
         {selectedPost && (
           <div>
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
-                Tiêu đề
-              </label>
-              <h3
+            <div style={{ marginBottom: "20px" }}>
+              <label
                 style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  margin: "8px 0",
-                  padding: "8px",
-                  border: "1px solid #d9d9d9",
-                  borderRadius: "4px",
+                  fontWeight: "500",
+                  fontSize: "16px",
+                  color: "#f50", // Màu cam cho nhãn
                 }}
               >
-                {selectedPost.title || "Không có tiêu đề"}
-              </h3>
-            </div>
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
-                Danh mục
+                Lý do
               </label>
               <div
                 style={{
                   margin: "8px 0",
                   padding: "8px",
-                  border: "1px solid #d9d9d9",
+                  border: "1px solid #f50", // Viền màu cam
+                  borderRadius: "4px",
+                  backgroundColor: "#fff7e6", // Nền nhẹ để nổi bật
+                }}
+              >
+                {selectedPost.reason || "Không có lý do không duyệt"}
+              </div>
+            </div>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontWeight: "500", fontSize: "16px" }}>
+                Tiêu đề
+              </label>
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  margin: "8px 0",
+                  padding: "10px",
+                  border: "1px solid #d3d3d3",
+                  borderRadius: "4px",
+                }}
+              >
+                {selectedPost.title || "Không có tiêu đề"}
+              </div>
+            </div>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontWeight: "600", fontSize: "16px" }}>
+                Danh mục
+              </label>
+              <div
+                style={{
+                  margin: "8px 0",
+                  padding: "10px",
+                  border: "1px solid #d3d3d3",
                   borderRadius: "4px",
                 }}
               >
                 {selectedPost.category_id?.category_name || "Không có danh mục"}
               </div>
             </div>
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontWeight: "600", fontSize: "16px" }}>
                 Khóa học
               </label>
               <div
                 style={{
                   margin: "8px 0",
-                  padding: "8px",
-                  border: "1px solid #d9d9d9",
+                  padding: "10px",
+                  border: "1px solid #d3d3d3",
                   borderRadius: "4px",
                 }}
               >
@@ -270,8 +310,8 @@ const AdminModerationPage = () => {
               </div>
             </div>
             {selectedPost.tags?.length > 0 && (
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontWeight: "600", fontSize: "16px" }}>
                   Thẻ
                 </label>
                 <div style={{ marginTop: "8px" }}>
@@ -287,23 +327,23 @@ const AdminModerationPage = () => {
                 </div>
               </div>
             )}
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontWeight: "600", fontSize: "16px" }}>
                 Nội dung
               </label>
               <div
                 ref={editorRef}
                 style={{
                   minHeight: "300px",
-                  border: "1px solid #d9d9d9",
+                  border: "1px solid #d3d3d3",
                   borderRadius: "4px",
                   marginTop: "8px",
                 }}
               />
             </div>
             {selectedPost.documents?.length > 0 && (
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontWeight: "bold", fontSize: "16px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontWeight: "600", fontSize: "16px" }}>
                   Ảnh đính kèm
                 </label>
                 <div
@@ -329,8 +369,7 @@ const AdminModerationPage = () => {
             )}
             <div style={{ textAlign: "right" }}>
               <Button
-                variant="solid"
-                color="primary"
+                type="primary"
                 onClick={() => handleApprove(selectedPost._id, "accepted")}
                 style={{ marginRight: 8 }}
                 disabled={isActionLoading}
@@ -338,16 +377,14 @@ const AdminModerationPage = () => {
                 Duyệt
               </Button>
               <Button
-                variant="outlined"
-                color="red"
+                danger
                 onClick={() => handleApprove(selectedPost._id, "rejected")}
                 disabled={isActionLoading}
+                style={{ marginRight: 8 }}
               >
                 Từ chối
               </Button>
-              <Button style={{ marginLeft: 8 }} onClick={handleCancel}>
-                Hủy
-              </Button>
+              <Button onClick={handleCancel}>Hủy</Button>
             </div>
           </div>
         )}
