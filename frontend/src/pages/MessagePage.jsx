@@ -336,7 +336,11 @@ const MessagePage = () => {
         >
           <Title
             level={isMobile ? 5 : isTablet ? 4 : 3}
-            style={{ padding: isMobile ? "8px 16px" : "10px 20px", margin: 0 }}
+            style={{
+              padding: isMobile ? "8px 16px" : "10px 20px",
+              margin: 0,
+              color: "#1D267D",
+            }}
           >
             Tin nhắn
           </Title>

@@ -68,11 +68,15 @@ const PostPendingPage = () => {
     return (
       <Row justify="center" gutter={[16, 16]}>
         <Col span={16} style={{ padding: "0px 24px" }}>
-          <Title level={2}>Bài viết đang kiểm duyệt</Title>
+          <Title level={2} style={{ color: "#1D267D" }}>
+            Bài viết đang kiểm duyệt
+          </Title>
           <Divider />
           <Skeleton active paragraph={{ rows: 4 }} />
           <Divider />
-          <Title level={2}>Bài viết bị từ chối</Title>
+          <Title level={2} style={{ color: "#1D267D" }}>
+            Bài viết bị từ chối
+          </Title>
           <Divider />
           <Skeleton active paragraph={{ rows: 4 }} />
         </Col>
@@ -84,7 +88,9 @@ const PostPendingPage = () => {
     <Row justify="center" gutter={[16, 16]}>
       <Col span={16} style={{ padding: "0px 24px" }}>
         {/* Phần bài viết đang kiểm duyệt */}
-        <Title level={2}>Bài viết đang kiểm duyệt</Title>
+        <Title level={2} style={{ color: "#1D267D" }}>
+          Bài viết đang kiểm duyệt
+        </Title>
         <Divider />
         <PostList posts={pendingPosts} isLoading={isPendingPostsLoading} />
         <div ref={pendingRef} style={{ height: 20, textAlign: "center" }}>
@@ -103,7 +109,9 @@ const PostPendingPage = () => {
 
         {/* Phần bài viết bị từ chối */}
         <Divider style={{ margin: "40px 0" }} />
-        <Title level={2}>Bài viết bị từ chối</Title>
+        <Title level={2} style={{ color: "#1D267D" }}>
+          Bài viết bị từ chối
+        </Title>
         <Divider />
         <PostList posts={rejectedPosts} isLoading={isRejectedPostsLoading} />
         <div ref={rejectedRef} style={{ height: 20, textAlign: "center" }}>

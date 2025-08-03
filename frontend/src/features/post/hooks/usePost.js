@@ -46,7 +46,7 @@ export const usePosts = (queryParams = {}) => {
       liked,
     ],
     queryFn: async ({ pageParam = 1 }) => {
-      const limit = 5;
+      const limit = 6;
 
       if (recommend) {
         return getRecommendedPosts({ page: pageParam, limit });

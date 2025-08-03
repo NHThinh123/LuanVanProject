@@ -538,7 +538,7 @@ const PostList = ({ posts = [], isLoading }) => {
                 .map((tag) => (
                   <Tag
                     key={tag._id}
-                    color="#222831"
+                    color="#1D267D"
                     onClick={() => navigate(`/posts/tag/${tag._id}`)}
                     style={{
                       cursor: "pointer",

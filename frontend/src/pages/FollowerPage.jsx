@@ -117,7 +117,7 @@ const FollowerPage = () => {
       >
         <Typography.Title
           level={isMobile ? 3 : 2}
-          style={{ marginBottom: isMobile ? 12 : 16 }}
+          style={{ marginBottom: isMobile ? 12 : 16, color: "#1D267D" }}
         >
           Danh sách người theo dõi
         </Typography.Title>
@@ -149,7 +149,7 @@ const FollowerPage = () => {
 
         <Typography.Title
           level={isMobile ? 3 : 2}
-          style={{ marginBottom: isMobile ? 12 : 16 }}
+          style={{ marginBottom: isMobile ? 12 : 16, color: "#1D267D" }}
         >
           Danh sách người đang theo dõi
         </Typography.Title>

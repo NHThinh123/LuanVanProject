@@ -5,10 +5,11 @@ import { formatDate } from "../../../../constants/formatDate";
 import { Link } from "react-router-dom";
 import { getAllParagraphs } from "../../../../constants/getAllParagraphs";
 
-const SuggestedPost = ({ post }) => (
+const SuggestedPost = ({ post, hoverable = false }) => (
   <List.Item>
     <Link to={`/posts/${post._id}`}>
       <Card
+        hoverable={hoverable}
         cover={
           <img
             alt={post.title}

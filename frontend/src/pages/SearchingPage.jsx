@@ -123,7 +123,7 @@ const SearchingPage = () => {
       <div>
         <Typography.Title
           level={isMobile ? 5 : 4}
-          style={{ marginBottom: isMobile ? 12 : 16 }}
+          style={{ marginBottom: isMobile ? 12 : 16, color: "#1D267D" }}
         >
           Người dùng phù hợp với "{keyword || "Không có từ khóa"}"
         </Typography.Title>
@@ -144,7 +144,7 @@ const SearchingPage = () => {
         )}
       </div>
       <Divider style={{ margin: isMobile ? "12px 0" : "16px 0" }} />
-      <div style={{ marginTop: isMobile ? 12 : 24 }}>
+      <div style={{ marginTop: isMobile ? 12 : 24, color: "#1D267D" }}>
         <Typography.Title
           level={isMobile ? 5 : 4}
           style={{ marginBottom: isMobile ? 12 : 16 }}
@@ -199,7 +199,7 @@ const SearchingPage = () => {
       <div style={{ marginTop: isMobile ? 12 : 24 }}>
         <Typography.Title
           level={isMobile ? 5 : 4}
-          style={{ marginBottom: isMobile ? 12 : 16 }}
+          style={{ marginBottom: isMobile ? 12 : 16, color: "#1D267D" }}
         >
           Khóa học phù hợp với "{keyword || "Không có từ khóa"}"
         </Typography.Title>
@@ -267,6 +267,7 @@ const SearchingPage = () => {
           style={{
             fontSize: isMobile ? 24 : isTablet ? 32 : 40,
             marginBottom: isMobile ? 12 : 16,
+            color: "#1D267D",
           }}
         >
           Kết quả tìm kiếm cho "{keyword || "Không có từ khóa"}"

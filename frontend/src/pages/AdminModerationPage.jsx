@@ -318,7 +318,7 @@ const AdminModerationPage = () => {
                   {selectedPost.tags.map((tag) => (
                     <Tag
                       key={tag._id}
-                      color="#222831"
+                      color="#1D267D"
                       style={{ marginRight: "8px" }}
                     >
                       {tag.tag_name}

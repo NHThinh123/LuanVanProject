@@ -18,6 +18,7 @@ import {
   HomeOutlined,
   MenuOutlined,
   ProfileOutlined,
+  ReadOutlined,
   SearchOutlined,
   TagOutlined,
   TeamOutlined,
@@ -195,6 +196,7 @@ export const MainLayout = ({ children }) => {
   };
 
   const handleLogoClick = () => {
+    navigate("/landing");
     window.location.reload();
   };
 
@@ -210,8 +212,8 @@ export const MainLayout = ({ children }) => {
   const menuItems = [
     {
       key: "home",
-      icon: <HomeOutlined />,
-      label: <Link to="/">Trang chủ</Link>,
+      icon: <ReadOutlined />,
+      label: <Link to="/">Bài viết</Link>,
     },
     ...(user
       ? [

@@ -33,6 +33,11 @@ import AdminCoursePage from "./pages/AdminCoursePage.jsx";
 import AdminTagPage from "./pages/AdminTagPage.jsx";
 import PostLikedPage from "./pages/PostLikedPage.jsx";
 import PostPendingPage from "./pages/PostPendingPage.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
+import AboutUsPage from "./pages/AboutUsPage.jsx";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
+import TermsOfUsePage from "./pages/TermsOfUsePage.jsx";
+
 // import { AuthWrapper } from "./contexts/auth.context.jsx";
 
 notification.config({
@@ -51,6 +56,7 @@ const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
+
       {
         path: "/posts",
         children: [
@@ -121,7 +127,23 @@ const router = createBrowserRouter([
         path: "/user/:id",
         element: <UserProfilePage />,
       },
+      {
+        path: "/about-us",
+        element: <AboutUsPage />,
+      },
+      {
+        path: "/privacy-policy",
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: "terms-of-use",
+        element: <TermsOfUsePage />,
+      },
     ],
+  },
+  {
+    path: "/landing",
+    element: <LandingPage />,
   },
   {
     path: "/signup",
@@ -198,11 +220,11 @@ createRoot(document.getElementById("root")).render(
             radioSize: 0,
           },
           Menu: {
-            itemSelectedBg: "#222831",
+            itemSelectedBg: "#0C134F",
             itemSelectedColor: "#ffffff",
           },
           Card: {
-            bodyPadding: "16px 0px",
+            bodyPadding: "16px",
             colorBorderSecondary: "#fff",
           },
           Button: {
@@ -214,7 +236,7 @@ createRoot(document.getElementById("root")).render(
           },
         },
         token: {
-          colorPrimary: "#222831",
+          colorPrimary: "#0C134F",
           fontFamily: "Roboto, serif",
         },
       }}

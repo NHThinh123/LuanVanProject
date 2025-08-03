@@ -132,6 +132,7 @@ const CategorySearchingPage = () => {
               marginBottom: isMobile ? 8 : 12,
               fontSize: isMobile ? 24 : isTablet ? 32 : 40,
               fontWeight: 700,
+              color: "#1D267D",
             }}
           >
             Tìm kiếm môn học hoặc chủ đề bạn quan tâm
@@ -189,7 +190,7 @@ const CategorySearchingPage = () => {
         <Divider style={{ margin: isMobile ? "12px 0" : "16px 0" }} />
         <Typography.Title
           level={isMobile ? 3 : 2}
-          style={{ marginBottom: isMobile ? 16 : 24 }}
+          style={{ marginBottom: isMobile ? 16 : 24, color: "#1D267D" }}
         >
           Các môn học phổ biến
         </Typography.Title>
@@ -232,7 +233,7 @@ const CategorySearchingPage = () => {
         <Divider style={{ margin: isMobile ? "12px 0" : "16px 0" }} />
         <Typography.Title
           level={isMobile ? 3 : 2}
-          style={{ marginBottom: isMobile ? 16 : 24 }}
+          style={{ marginBottom: isMobile ? 16 : 24, color: "#1D267D" }}
         >
           Các chủ đề phổ biến
         </Typography.Title>

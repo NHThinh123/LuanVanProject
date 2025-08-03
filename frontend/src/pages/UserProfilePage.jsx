@@ -209,7 +209,9 @@ const UserProfilePage = () => {
       <Col span={6}>
         <div style={{ position: "sticky", top: 80, padding: "0px 16px" }}>
           <div>
-            <Typography.Title level={4}>Người theo dõi</Typography.Title>
+            <Typography.Title level={4} style={{ color: "#1D267D" }}>
+              Người theo dõi
+            </Typography.Title>
             <UserList users={followers?.slice(0, 3)} loading={isUserLoading} />
             {followers?.length > 3 && (
               <p
@@ -227,7 +229,9 @@ const UserProfilePage = () => {
           </div>
           <Divider />
           <div>
-            <Typography.Title level={4}>Đang theo dõi</Typography.Title>
+            <Typography.Title level={4} style={{ color: "#1D267D" }}>
+              Đang theo dõi
+            </Typography.Title>
             <UserList users={following?.slice(0, 3)} loading={isUserLoading} />
             {following?.length > 3 && (
               <p

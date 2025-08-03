@@ -248,11 +248,16 @@ const HomePage = () => {
             padding: isMobile ? "0px 12px" : "0px 24px",
             maxWidth: isTablet ? 200 : 350,
             borderLeft: "1px solid #f0f0f0",
+            position: "sticky",
+            top: 80,
+            height: "90vh",
+            scrollbarWidth: "none",
+            overflowY: "auto",
           }}
         >
           <Title
             level={isMobile ? 5 : isTablet ? 4 : 3}
-            style={{ marginBottom: 28 }}
+            style={{ marginBottom: 28, color: "#1D267D" }}
           >
             Bài viết phổ biến
           </Title>
@@ -263,7 +268,7 @@ const HomePage = () => {
           <Divider />
           <Title
             level={isMobile ? 5 : isTablet ? 4 : 3}
-            style={{ marginBottom: 28 }}
+            style={{ marginBottom: 28, color: "#1D267D" }}
           >
             Người dùng nổi bật
           </Title>

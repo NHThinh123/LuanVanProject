@@ -45,7 +45,9 @@ const PostLikedPage = () => {
   return (
     <Row justify="center" gutter={[16, 16]}>
       <Col span={16} style={{ padding: "0px 24px" }}>
-        <Title level={2}>Bài viết đã thích</Title>
+        <Title level={2} style={{ color: "#1D267D" }}>
+          Bài viết đã thích
+        </Title>
         <Divider />
         <PostList posts={posts} isLoading={isPostsLoading} />
         <div ref={ref} style={{ height: 20, textAlign: "center" }}>

@@ -214,7 +214,7 @@ const ProfilePage = () => {
             <div>
               <Typography.Title
                 level={isMobile ? 5 : isTablet ? 4 : 3}
-                style={{ marginBottom: 28 }}
+                style={{ marginBottom: 28, color: "#1D267D" }}
               >
                 Người theo dõi
               </Typography.Title>
@@ -241,7 +241,7 @@ const ProfilePage = () => {
             <div>
               <Typography.Title
                 level={isMobile ? 5 : isTablet ? 4 : 3}
-                style={{ marginBottom: 28 }}
+                style={{ marginBottom: 28, color: "#1D267D" }}
               >
                 Đang theo dõi
               </Typography.Title>
