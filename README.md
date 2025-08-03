@@ -39,6 +39,7 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 ## 🏗️ **Architecture & Technology Stack**
 
 ### **Frontend (React.js)**
+
 ```javascript
 ├── React 18.2.0 (Latest)
 ├── Vite 6.3.5 (Build Tool)
@@ -46,11 +47,11 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 ├── React Query 5.76.2 (State Management)
 ├── React Router DOM 7.6.0 (Routing)
 ├── Socket.IO Client 4.8.1 (Real-time)
-├── Tailwind CSS 4.1.7 (Styling)
 └── Lucide React 0.522.0 (Icons)
 ```
 
 ### **Backend (Node.js)**
+
 ```javascript
 ├── Express.js 5.1.0 (Web Framework)
 ├── MongoDB 8.14.2 (Database)
@@ -63,6 +64,7 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 ```
 
 ### **AI Recommendation Service (Python)**
+
 ```python
 ├── FastAPI 0.115.2 (API Framework)
 ├── Scikit-Surprise 1.1.4 (ML Library)
@@ -78,12 +80,14 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 ## 🎯 **Core Functionalities**
 
 ### **1. AI-Powered Content Recommendation System**
+
 - **Collaborative Filtering** using Surprise library
 - **Content-Based Filtering** with keyword analysis
 - **Hybrid Recommendations** combining multiple algorithms
 - **Real-time Personalization** based on user behavior
 
 ### **2. Social Learning Features**
+
 - **Post Creation & Sharing** with rich text editor
 - **Comment System** with nested replies
 - **Like & Follow** mechanisms
@@ -91,18 +95,21 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 - **Course & Tag Filtering**
 
 ### **3. Real-time Communication**
+
 - **Instant Messaging** between users
 - **Chat Rooms** for group discussions
 - **Real-time Notifications**
 - **Online Status** indicators
 
 ### **4. Advanced Search & Discovery**
+
 - **Full-text Search** across posts and users
 - **Search History** tracking
 - **Auto-complete** suggestions
 - **Filter by Categories, Tags, Courses**
 
 ### **5. Admin Dashboard**
+
 - **User Management** with role-based access
 - **Content Moderation** system
 - **Analytics & Statistics** visualization
@@ -113,18 +120,21 @@ KNOWEE is a comprehensive social learning platform designed specifically for uni
 ## 🛠️ **Installation & Setup**
 
 ### **Prerequisites**
-- Node.js 18+ 
+
+- Node.js 18+
 - Python 3.8+
 - MongoDB 8.0+
 - Git
 
 ### **1. Clone the Repository**
+
 ```bash
 git clone https://github.com/yourusername/knowee-platform.git
 cd knowee-platform
 ```
 
 ### **2. Backend Setup**
+
 ```bash
 cd backend
 npm install
@@ -134,6 +144,7 @@ npm run dev
 ```
 
 ### **3. Frontend Setup**
+
 ```bash
 cd frontend
 npm install
@@ -143,6 +154,7 @@ npm run dev
 ```
 
 ### **4. AI Service Setup**
+
 ```bash
 cd recommendation-service
 python -m venv venv
@@ -154,6 +166,7 @@ python main.py
 ### **5. Environment Variables**
 
 **Backend (.env)**
+
 ```env
 PORT=8888
 MONGODB_URI=mongodb://localhost:27017/knowee
@@ -165,6 +178,7 @@ GOOGLE_AI_API_KEY=your_google_ai_key
 ```
 
 **Frontend (.env)**
+
 ```env
 VITE_API_URL=http://localhost:8888/api
 VITE_SOCKET_URL=http://localhost:8888
@@ -175,6 +189,7 @@ VITE_SOCKET_URL=http://localhost:8888
 ## 📊 **Database Schema**
 
 ### **Core Models**
+
 - **Users** - Authentication, profiles, preferences
 - **Posts** - Content, metadata, engagement metrics
 - **Comments** - Nested comment system
@@ -184,6 +199,7 @@ VITE_SOCKET_URL=http://localhost:8888
 - **Search History** - User behavior tracking
 
 ### **Relationships**
+
 - User ↔ Posts (One-to-Many)
 - User ↔ Comments (One-to-Many)
 - User ↔ User (Follow/Following)
@@ -195,6 +211,7 @@ VITE_SOCKET_URL=http://localhost:8888
 ## 🤖 **AI Recommendation System**
 
 ### **Algorithm Architecture**
+
 ```python
 # Hybrid Recommendation Engine
 class HybridRecommender:
@@ -202,21 +219,22 @@ class HybridRecommender:
         self.collaborative_model = SVD(n_factors=20)
         self.content_model = KeywordBasedFilter()
         self.following_model = SocialBasedFilter()
-    
+
     def get_recommendations(self, user_id):
         # Combine multiple recommendation sources
         collaborative_scores = self.collaborative_model.predict(user_id)
         content_scores = self.content_model.get_scores(user_id)
         social_scores = self.following_model.get_scores(user_id)
-        
+
         return self.ensemble_scores([
-            collaborative_scores, 
-            content_scores, 
+            collaborative_scores,
+            content_scores,
             social_scores
         ])
 ```
 
 ### **Features**
+
 - **SVD (Singular Value Decomposition)** for collaborative filtering
 - **Keyword-based filtering** using search history
 - **Social-based filtering** using follow relationships
@@ -240,6 +258,7 @@ class HybridRecommender:
 ## 📱 **User Interface**
 
 ### **Design Principles**
+
 - **Mobile-First** responsive design
 - **Material Design** inspired components
 - **Accessibility** compliant (WCAG 2.1)
@@ -247,6 +266,7 @@ class HybridRecommender:
 - **Modern UI/UX** with smooth animations
 
 ### **Key Components**
+
 - **Landing Page** with hero carousel
 - **Dashboard** with personalized feed
 - **Post Editor** with rich text capabilities
@@ -258,6 +278,7 @@ class HybridRecommender:
 ## 🚀 **Performance Optimizations**
 
 ### **Frontend**
+
 - **Code Splitting** with React.lazy()
 - **Image Optimization** with lazy loading
 - **Bundle Optimization** with Vite
@@ -265,6 +286,7 @@ class HybridRecommender:
 - **Virtual Scrolling** for large lists
 
 ### **Backend**
+
 - **Database Indexing** for fast queries
 - **Connection Pooling** for MongoDB
 - **Caching** with Redis (planned)
@@ -276,6 +298,7 @@ class HybridRecommender:
 ## 📈 **Analytics & Monitoring**
 
 ### **User Analytics**
+
 - **Engagement Metrics** (likes, comments, shares)
 - **Content Performance** tracking
 - **User Behavior** analysis
@@ -283,6 +306,7 @@ class HybridRecommender:
 - **Recommendation Accuracy** measurement
 
 ### **System Monitoring**
+
 - **API Response Times**
 - **Database Performance**
 - **Error Tracking**
@@ -294,12 +318,14 @@ class HybridRecommender:
 ## 🧪 **Testing Strategy**
 
 ### **Frontend Testing**
+
 - **Unit Tests** with Jest & React Testing Library
 - **Integration Tests** for component interactions
 - **E2E Tests** with Playwright (planned)
 - **Accessibility Tests** with axe-core
 
 ### **Backend Testing**
+
 - **API Tests** with Supertest
 - **Unit Tests** for business logic
 - **Integration Tests** for database operations
@@ -310,6 +336,7 @@ class HybridRecommender:
 ## 📚 **API Documentation**
 
 ### **RESTful Endpoints**
+
 ```http
 # Authentication
 POST   /api/users/login
@@ -329,11 +356,12 @@ POST   /train/surprise
 ```
 
 ### **WebSocket Events**
+
 ```javascript
 // Real-time messaging
-socket.emit('join_room', roomId)
-socket.emit('send_message', messageData)
-socket.on('receive_message', handleMessage)
+socket.emit("join_room", roomId);
+socket.emit("send_message", messageData);
+socket.on("receive_message", handleMessage);
 ```
 
 ---
@@ -343,6 +371,7 @@ socket.on('receive_message', handleMessage)
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ### **Development Workflow**
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
@@ -357,8 +386,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-
 ### **Academic Context**
+
 This project was developed as part of the **Final Year Project** in Computer Science, demonstrating advanced web development skills, machine learning implementation, and full-stack architecture design.
 
 ---
@@ -382,4 +411,4 @@ This project was developed as part of the **Final Year Project** in Computer Sci
 [![Forks](https://img.shields.io/github/forks/yourusername/knowee-platform?style=social)](https://github.com/yourusername/knowee-platform/network/members)
 [![Issues](https://img.shields.io/github/issues/yourusername/knowee-platform)](https://github.com/yourusername/knowee-platform/issues)
 
-</div> 
+</div>
